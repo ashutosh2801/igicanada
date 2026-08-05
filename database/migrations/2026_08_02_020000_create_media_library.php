@@ -20,7 +20,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('media_folder_id')->nullable()->constrained()->nullOnDelete();
             $table->string('disk')->default('public');
-            $table->string('path')->unique();
+            $pathColumn = $table->string('path');
+
+            if (DB::getDriverName() === 'mysql') {
+                $pathColumn->collation('utf8mb4_bin');
+            }
+
+            $pathColumn->unique();
             $table->string('filename');
             $table->string('title')->nullable();
             $table->string('alt_text')->nullable();

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->boolean('show_new_arrivals')->default(true);
             $table->string('new_arrivals_eyebrow')->nullable()->default('Fresh for your store');
             $table->string('new_arrivals_title')->default('New arrivals');
-            $table->text('new_arrivals_description')->nullable()->default('Discover the latest wholesale products added to IGI Canada.');
+            $table->text('new_arrivals_description')->nullable();
             $table->unsignedTinyInteger('new_arrivals_count')->default(8);
         });
     }
