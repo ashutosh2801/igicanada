@@ -29,6 +29,10 @@
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <env name="WHOLESALE_DOMAIN" value="igicanada.ca" force="true"/>
+        <env name="WHOLESALE_DOMAIN_ALIASES" value="www.igicanada.ca" force="true"/>
+        <env name="RETAIL_DOMAIN" value="leatherwallets.ca" force="true"/>
+        <env name="RETAIL_DOMAIN_ALIASES" value="www.leatherwallets.ca" force="true"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

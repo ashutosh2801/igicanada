@@ -1,0 +1,283 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Filament\Resources\Categories\CategoryResource;
+use App\Filament\Resources\HomepageSettings\Pages\EditHomepageSetting;
+use App\Filament\Resources\NavigationItems\NavigationItemResource;
+use App\Filament\Resources\Products\Pages\CreateProduct;
+use App\Filament\Resources\Products\Pages\EditProduct;
+use App\Filament\Resources\Products\Pages\ListProducts;
+use App\Filament\Resources\StandardShippingRates\StandardShippingRateResource;
+use App\Filament\Resources\Users\Pages\EditUser;
+use App\Models\Category;
+use App\Models\HomepageSetting;
+use App\Models\NavigationItem;
+use App\Models\Product;
+use App\Models\User;
+use App\Support\AdminStorefront;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use Tests\TestCase;
+
+class AdminContextualFieldsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_product_fields_follow_the_selected_website_and_preserve_hidden_channel_data(): void
+    {
+        $this->actingAs($this->admin());
+
+        $product = Product::create([
+            'name' => 'Shared wallet',
+            'retail_name' => 'Retail wallet',
+            'slug' => 'shared-wallet',
+            'description' => '<p>Wholesale copy</p>',
+            'retail_description' => '<p>Retail copy</p>',
+            'visibility' => 'both',
+            'is_active' => true,
+        ]);
+        $variant = $product->variants()->create([
+            'sku' => 'WALLET-01',
+            'wholesale_price' => 20,
+            'wholesale_minimum_quantity' => 6,
+            'retail_price' => 49,
+            'retail_compare_at_price' => 59,
+            'stock_quantity' => 10,
+            'is_available_wholesale' => true,
+            'is_available_retail' => true,
+            'is_active' => true,
+        ]);
+
+        AdminStorefront::select('retail');
+
+        Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
+            ->assertFormFieldDoesNotExist('name')
+            ->assertFormFieldExists('retail_name')
+            ->assertFormFieldExists('retail_description')
+            ->assertFormFieldDoesNotExist('description')
+            ->assertFormFieldDoesNotExist('visibility')
+            ->fillForm(['retail_name' => 'Updated retail wallet'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('Shared wallet', $product->fresh()->name);
+        $this->assertSame('Updated retail wallet', $product->fresh()->retail_name);
+        $this->assertSame('<p>Wholesale copy</p>', $product->fresh()->description);
+        $this->assertSame('20.00', $variant->fresh()->wholesale_price);
+        $this->assertTrue($variant->fresh()->is_available_wholesale);
+
+        AdminStorefront::select('wholesale');
+
+        Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
+            ->assertFormFieldExists('name')
+            ->assertFormFieldExists('description')
+            ->assertFormFieldDoesNotExist('retail_name')
+            ->assertFormFieldDoesNotExist('retail_description')
+            ->assertFormFieldDoesNotExist('visibility');
+
+        AdminStorefront::select('all');
+
+        Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
+            ->assertFormFieldExists('name')
+            ->assertFormFieldExists('description')
+            ->assertFormFieldExists('retail_name')
+            ->assertFormFieldExists('retail_description')
+            ->assertFormFieldExists('visibility');
+
+        AdminStorefront::select('retail');
+
+        Livewire::test(CreateProduct::class)
+            ->assertFormFieldDoesNotExist('name')
+            ->assertFormFieldExists('retail_name')
+            ->fillForm([
+                'retail_name' => 'Retail-only card holder',
+                'slug' => 'retail-only-card-holder',
+                'is_active' => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('products', [
+            'name' => 'Retail-only card holder',
+            'retail_name' => 'Retail-only card holder',
+            'slug' => 'retail-only-card-holder',
+            'visibility' => 'retail',
+        ]);
+    }
+
+    public function test_homepage_fields_follow_the_homepage_website(): void
+    {
+        $this->actingAs($this->admin());
+        AdminStorefront::select('all');
+
+        $retail = HomepageSetting::query()->where('sales_channel', 'retail')->firstOrFail();
+        $wholesale = HomepageSetting::query()->where('sales_channel', 'wholesale')->firstOrFail();
+
+        Livewire::test(EditHomepageSetting::class, ['record' => $retail->getRouteKey()])
+            ->assertFormFieldExists('sales_channel')
+            ->assertFormFieldDoesNotExist('show_category_menu')
+            ->assertFormFieldDoesNotExist('category_menu_label');
+
+        Livewire::test(EditHomepageSetting::class, ['record' => $wholesale->getRouteKey()])
+            ->assertFormFieldExists('sales_channel')
+            ->assertFormFieldExists('show_category_menu')
+            ->assertFormFieldExists('category_menu_label');
+
+        AdminStorefront::select('retail');
+
+        Livewire::test(EditHomepageSetting::class, ['record' => $retail->getRouteKey()])
+            ->assertFormFieldDoesNotExist('sales_channel');
+    }
+
+    public function test_product_listing_columns_and_records_follow_the_selected_website(): void
+    {
+        $this->actingAs($this->admin());
+
+        $wholesale = Product::create([
+            'name' => 'Wholesale belt',
+            'slug' => 'wholesale-belt',
+            'visibility' => 'wholesale',
+            'is_active' => true,
+        ]);
+        $retail = Product::create([
+            'name' => 'Internal card holder',
+            'retail_name' => 'Retail card holder',
+            'slug' => 'retail-card-holder',
+            'primary_image_path' => '/storage/https%3A//igicanada.ca/upload/post/Retail Wallet.jpg',
+            'visibility' => 'retail',
+            'is_active' => true,
+        ]);
+
+        AdminStorefront::select('retail');
+
+        Livewire::test(ListProducts::class)
+            ->assertCanSeeTableRecords([$retail])
+            ->assertCanNotSeeTableRecords([$wholesale])
+            ->assertTableColumnHidden('name')
+            ->assertTableColumnVisible('retail_name')
+            ->assertTableColumnHidden('minimum_wholesale_price')
+            ->assertTableColumnVisible('minimum_retail_price')
+            ->assertTableColumnHidden('visibility');
+
+        AdminStorefront::select('wholesale');
+
+        Livewire::test(ListProducts::class)
+            ->assertCanSeeTableRecords([$wholesale])
+            ->assertCanNotSeeTableRecords([$retail])
+            ->assertTableColumnVisible('name')
+            ->assertTableColumnHidden('retail_name')
+            ->assertTableColumnVisible('minimum_wholesale_price')
+            ->assertTableColumnHidden('minimum_retail_price')
+            ->assertTableColumnHidden('visibility');
+
+        AdminStorefront::select('all');
+
+        Livewire::test(ListProducts::class)
+            ->assertCanSeeTableRecords([$wholesale, $retail])
+            ->assertTableColumnVisible('name')
+            ->assertTableColumnVisible('retail_name')
+            ->assertTableColumnVisible('minimum_wholesale_price')
+            ->assertTableColumnVisible('minimum_retail_price')
+            ->assertTableColumnVisible('visibility');
+
+        $this->get('/admin/products')
+            ->assertSuccessful()
+            ->assertSee('https://igicanada.ca/upload/post/Retail%20Wallet.jpg', false)
+            ->assertDontSee('https%3A//igicanada.ca', false);
+    }
+
+    public function test_customer_fields_follow_the_customer_and_selected_website(): void
+    {
+        $this->actingAs($this->admin());
+        AdminStorefront::select('all');
+
+        $retail = User::factory()->create([
+            'account_type' => 'retail',
+            'approval_status' => 'approved',
+        ]);
+        $wholesale = User::factory()->create([
+            'account_type' => 'wholesale',
+            'approval_status' => 'approved',
+        ]);
+
+        Livewire::test(EditUser::class, ['record' => $retail->getRouteKey()])
+            ->assertFormFieldExists('account_type')
+            ->assertFormFieldDoesNotExist('resellerProfile.company')
+            ->assertFormFieldDoesNotExist('approval_status')
+            ->assertFormFieldDoesNotExist('price_tier_id');
+
+        Livewire::test(EditUser::class, ['record' => $wholesale->getRouteKey()])
+            ->assertFormFieldExists('account_type')
+            ->assertFormFieldExists('resellerProfile.company')
+            ->assertFormFieldExists('approval_status')
+            ->assertFormFieldExists('price_tier_id');
+
+        AdminStorefront::select('retail');
+
+        Livewire::test(EditUser::class, ['record' => $retail->getRouteKey()])
+            ->assertFormFieldDoesNotExist('account_type');
+    }
+
+    public function test_categories_menus_and_shipping_queries_follow_the_selected_website(): void
+    {
+        $wholesaleCategory = Category::create([
+            'name' => 'Wholesale category',
+            'slug' => 'wholesale-category',
+            'visibility' => 'wholesale',
+            'is_active' => true,
+        ]);
+        $retailCategory = Category::create([
+            'name' => 'Retail category',
+            'slug' => 'retail-category',
+            'visibility' => 'retail',
+            'is_active' => true,
+        ]);
+        $sharedCategory = Category::create([
+            'name' => 'Shared category',
+            'slug' => 'shared-category',
+            'visibility' => 'both',
+            'is_active' => true,
+        ]);
+        $wholesaleMenu = NavigationItem::create([
+            'sales_channel' => 'wholesale',
+            'location' => 'header',
+            'label' => 'Wholesale menu',
+            'url' => '/catalogue',
+            'is_active' => true,
+        ]);
+        $retailMenu = NavigationItem::create([
+            'sales_channel' => 'retail',
+            'location' => 'header',
+            'label' => 'Retail menu',
+            'url' => '/shop',
+            'is_active' => true,
+        ]);
+
+        AdminStorefront::select('retail');
+        $this->assertEqualsCanonicalizing(
+            [$retailCategory->id, $sharedCategory->id],
+            CategoryResource::getEloquentQuery()->whereKey([$wholesaleCategory->id, $retailCategory->id, $sharedCategory->id])->pluck('id')->all(),
+        );
+        $this->assertSame([$retailMenu->id], NavigationItemResource::getEloquentQuery()->whereKey([$wholesaleMenu->id, $retailMenu->id])->pluck('id')->all());
+        $this->assertTrue(StandardShippingRateResource::getEloquentQuery()->get()->every(fn ($rate): bool => $rate->sales_channel === 'retail'));
+
+        AdminStorefront::select('wholesale');
+        $this->assertEqualsCanonicalizing(
+            [$wholesaleCategory->id, $sharedCategory->id],
+            CategoryResource::getEloquentQuery()->whereKey([$wholesaleCategory->id, $retailCategory->id, $sharedCategory->id])->pluck('id')->all(),
+        );
+        $this->assertSame([$wholesaleMenu->id], NavigationItemResource::getEloquentQuery()->whereKey([$wholesaleMenu->id, $retailMenu->id])->pluck('id')->all());
+        $this->assertTrue(StandardShippingRateResource::getEloquentQuery()->get()->every(fn ($rate): bool => $rate->sales_channel === 'wholesale'));
+    }
+
+    private function admin(): User
+    {
+        return User::factory()->create([
+            'account_type' => 'admin',
+            'approval_status' => 'approved',
+            'admin_sales_channel' => 'all',
+            'email_verified_at' => now(),
+        ]);
+    }
+}

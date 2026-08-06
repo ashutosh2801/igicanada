@@ -24,6 +24,7 @@ class MediaLibraryAdminTest extends TestCase
         $admin = User::factory()->create([
             'account_type' => 'admin',
             'approval_status' => 'approved',
+            'admin_sales_channel' => 'all',
             'email_verified_at' => now(),
         ]);
         $folder = MediaFolder::create(['name' => 'Products']);
@@ -67,7 +68,7 @@ class MediaLibraryAdminTest extends TestCase
             ->assertSee('justify-content: center !important', false)
             ->assertSee('align-self: start', false)
             ->assertDontSee('Legacy ID')
-            ->assertDontSee('Visibility');
+            ->assertSee('Visibility');
 
         Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
             ->assertFormComponentActionExists('primary_media_asset_id', 'select')
@@ -93,7 +94,7 @@ class MediaLibraryAdminTest extends TestCase
         );
     }
 
-    public function test_new_admin_products_default_to_wholesale_without_a_visibility_field(): void
+    public function test_new_admin_products_default_to_wholesale_with_a_channel_visibility_field(): void
     {
         $admin = User::factory()->create([
             'account_type' => 'admin',
@@ -105,7 +106,7 @@ class MediaLibraryAdminTest extends TestCase
 
         Livewire::test(CreateProduct::class)
             ->assertFormFieldDoesNotExist('legacy_id')
-            ->assertFormFieldDoesNotExist('visibility')
+            ->assertFormFieldExists('visibility')
             ->fillForm([
                 'name' => 'Wholesale Only Product',
                 'slug' => 'wholesale-only-product',

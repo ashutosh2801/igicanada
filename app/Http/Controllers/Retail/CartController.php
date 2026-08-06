@@ -1,0 +1,95 @@
+<?php
+
+namespace App\Http\Controllers\Retail;
+
+use App\Http\Controllers\Controller;
+use App\Models\CartItem;
+use App\Models\ProductVariant;
+use App\Services\RetailCartService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class CartController extends Controller
+{
+    public function index(Request $request, RetailCartService $retailCart): Response
+    {
+        $cart = $retailCart->get($request);
+        $cart->load('items.variant.product.primaryMedia');
+        $subtotal = 0;
+
+        return Inertia::render('Cart/Index', [
+            'items' => $cart->items->map(function (CartItem $item) use (&$subtotal): array {
+                $unitPrice = (float) $item->variant->retail_price;
+                $lineTotal = round($unitPrice * $item->quantity, 2);
+                $subtotal += $lineTotal;
+
+                return [
+                    'id' => $item->id,
+                    'product' => $item->variant->product->retail_name ?: $item->variant->product->name,
+                    'slug' => $item->variant->product->slug,
+                    'option' => $item->variant->optionLabel(),
+                    'image' => $item->variant->product->primaryImageUrl(),
+                    'quantity' => $item->quantity,
+                    'maximumQuantity' => max(0, (int) $item->variant->stock_quantity),
+                    'unitPrice' => number_format($unitPrice, 2, '.', ''),
+                    'lineTotal' => number_format($lineTotal, 2, '.', ''),
+                ];
+            }),
+            'subtotal' => number_format($subtotal, 2, '.', ''),
+        ]);
+    }
+
+    public function store(Request $request, RetailCartService $retailCart): RedirectResponse
+    {
+        $data = $request->validate([
+            'variant_id' => ['required', 'integer', 'exists:product_variants,id'],
+            'quantity' => ['required', 'integer', 'min:1'],
+        ]);
+        $variant = ProductVariant::query()
+            ->where('is_active', true)
+            ->where('is_available_retail', true)
+            ->whereNotNull('retail_price')
+            ->whereHas('product', fn ($query) => $query->where('is_active', true)->whereIn('visibility', ['retail', 'both']))
+            ->findOrFail($data['variant_id']);
+
+        $cart = $retailCart->get($request);
+        $item = $cart->items()->firstOrNew(['product_variant_id' => $variant->id]);
+        $quantity = ($item->exists ? $item->quantity : 0) + $data['quantity'];
+        $this->validateQuantity($variant, $quantity);
+        $item->quantity = $quantity;
+        $item->save();
+
+        return back()->with('status', 'Added to your bag.');
+    }
+
+    public function update(Request $request, CartItem $item, RetailCartService $retailCart): RedirectResponse
+    {
+        abort_unless($retailCart->owns($request, $item), 404);
+        $data = $request->validate(['quantity' => ['required', 'integer', 'min:1']]);
+        $this->validateQuantity($item->variant, $data['quantity']);
+        $item->update(['quantity' => $data['quantity']]);
+
+        return back();
+    }
+
+    public function destroy(Request $request, CartItem $item, RetailCartService $retailCart): RedirectResponse
+    {
+        abort_unless($retailCart->owns($request, $item), 404);
+        $item->delete();
+
+        return back();
+    }
+
+    private function validateQuantity(ProductVariant $variant, int $quantity): void
+    {
+        if (! $variant->is_active || ! $variant->is_available_retail || $variant->retail_price === null) {
+            throw ValidationException::withMessages(['quantity' => 'This option is no longer available.']);
+        }
+        if ($quantity > $variant->stock_quantity) {
+            throw ValidationException::withMessages(['quantity' => "Only {$variant->stock_quantity} units are currently available."]);
+        }
+    }
+}

@@ -10,10 +10,11 @@ class StandardShippingService
     /**
      * @return array{code:string, name:string, price:string}
      */
-    public function quote(float $subtotal, string $country, ?string $countryCode = null): array
+    public function quote(float $subtotal, string $country, ?string $countryCode = null, string $salesChannel = 'wholesale'): array
     {
         $destination = $this->destination($country, $countryCode);
         $rate = StandardShippingRate::query()
+            ->where('sales_channel', $salesChannel)
             ->where('country', $destination)
             ->where('is_active', true)
             ->where('min_order_amount', '<=', $subtotal)

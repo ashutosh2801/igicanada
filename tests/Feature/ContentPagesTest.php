@@ -81,7 +81,7 @@ class ContentPagesTest extends TestCase
         $page->update(['title' => 'Reviewed title', 'status' => 'published', 'published_at' => now()]);
         $this->artisan('legacy:import-pages')->assertSuccessful();
 
-        $this->assertSame(2, ContentPage::count());
+        $this->assertSame(2, ContentPage::forChannel('wholesale')->count());
         $this->assertDatabaseHas('content_pages', ['legacy_id' => 14, 'title' => 'Reviewed title', 'status' => 'published']);
     }
 
@@ -89,7 +89,7 @@ class ContentPagesTest extends TestCase
     {
         $this->artisan('legacy:import-pages --dry-run')->assertSuccessful();
 
-        $this->assertSame(0, ContentPage::count());
+        $this->assertSame(0, ContentPage::forChannel('wholesale')->count());
     }
 
     public function test_only_published_pages_are_public(): void

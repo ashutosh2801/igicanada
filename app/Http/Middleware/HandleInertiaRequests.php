@@ -3,9 +3,12 @@
 namespace App\Http\Middleware;
 
 use App\Models\Category;
+use App\Models\ContentPage;
 use App\Models\HomepageSetting;
 use App\Models\NavigationItem;
+use App\Services\RetailCartService;
 use App\Support\StorefrontAsset;
+use App\Support\StorefrontContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Middleware;
@@ -20,6 +23,11 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    public function rootView(Request $request): string
+    {
+        return app(StorefrontContext::class)->isRetail() ? 'retail' : $this->rootView;
+    }
 
     /**
      * Determines the current asset version.
@@ -40,13 +48,52 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $settings = HomepageSetting::query()->first();
+        if (app(StorefrontContext::class)->isRetail()) {
+            $settings = HomepageSetting::query()->forChannel('retail')->first();
+
+            return [
+                ...parent::share($request),
+                'salesChannel' => 'retail',
+                'seoDefaults' => $this->seoDefaults($settings, 'retail'),
+                'flash' => [
+                    'status' => fn () => $request->session()->get('status'),
+                ],
+                'retailStorefront' => [
+                    'brandName' => $settings?->brand_name ?? config('storefronts.retail.name'),
+                    'logoUrl' => StorefrontAsset::uploaded($settings?->logo_path),
+                    'logoAlt' => $settings?->logo_alt ?? config('storefronts.retail.name'),
+                    'announcement' => $settings?->announcement_text,
+                    'cartCount' => app(RetailCartService::class)->count($request),
+                    'footer' => [
+                        'description' => $settings?->footer_description,
+                        'address' => $settings?->footer_address,
+                        'phone' => $settings?->footer_phone,
+                        'email' => $settings?->footer_email,
+                        'copyright' => $settings?->footer_copyright,
+                    ],
+                    'legalNavigation' => ContentPage::query()
+                        ->forChannel('retail')
+                        ->published()
+                        ->where('is_legal', true)
+                        ->orderBy('title')
+                        ->get(['title', 'slug'])
+                        ->map(fn (ContentPage $page) => [
+                            'label' => $page->title,
+                            'url' => route('retail.pages.show', $page->slug, false),
+                        ]),
+                ],
+            ];
+        }
+
+        $settings = HomepageSetting::query()->forChannel('wholesale')->first();
         $navigation = NavigationItem::query()
+            ->where('sales_channel', 'wholesale')
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get()
             ->groupBy('location');
         $categoriesByParent = Category::query()
+            ->visibleForChannel('wholesale')
             ->where('is_active', true)
             ->orderBy('position')
             ->orderBy('name')
@@ -77,6 +124,8 @@ class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
+            'salesChannel' => app(StorefrontContext::class)->channel,
+            'seoDefaults' => $this->seoDefaults($settings, 'wholesale'),
             'auth' => [
                 'user' => $request->user()?->only([
                     'id',
@@ -154,5 +203,19 @@ class HandleInertiaRequests extends Middleware
     private function absoluteUrl(?string $path): ?string
     {
         return $path ? url($path) : null;
+    }
+
+    private function seoDefaults(?HomepageSetting $settings, string $channel): array
+    {
+        $baseUrl = 'https://'.config("storefronts.{$channel}.domain");
+        $image = StorefrontAsset::uploaded($settings?->og_image_path);
+
+        return [
+            'siteName' => config("storefronts.{$channel}.name"),
+            'baseUrl' => $baseUrl,
+            'defaultTitle' => $settings?->default_meta_title ?? config("storefronts.{$channel}.name"),
+            'defaultDescription' => $settings?->default_meta_description,
+            'defaultImage' => $image ? (str_starts_with($image, 'http') ? $image : $baseUrl.'/'.ltrim($image, '/')) : null,
+        ];
     }
 }

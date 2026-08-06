@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\StorefrontSelectionController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\ResellerApplicationController;
@@ -13,11 +14,50 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\PayPalWebhookController;
+use App\Http\Controllers\Retail\CartController as RetailCartController;
+use App\Http\Controllers\Retail\CatalogueController as RetailCatalogueController;
+use App\Http\Controllers\Retail\CheckoutController as RetailCheckoutController;
+use App\Http\Controllers\Retail\ContentPageController as RetailContentPageController;
+use App\Http\Controllers\Retail\HomeController as RetailHomeController;
+use App\Http\Controllers\Retail\OrderController as RetailOrderController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+Route::domain(config('storefronts.admin_domain'))
+    ->prefix('admin/storefront')
+    ->name('admin.storefront.')
+    ->middleware('auth')
+    ->group(function (): void {
+        Route::get('/select', [StorefrontSelectionController::class, 'create'])->name('select');
+        Route::post('/select', [StorefrontSelectionController::class, 'store'])->name('store');
+    });
+
+Route::domain(config('storefronts.retail.domain'))
+    ->name('retail.')
+    ->group(function (): void {
+        Route::get('/', RetailHomeController::class)->name('home');
+        Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+        Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
+        Route::get('/shop', [RetailCatalogueController::class, 'index'])->name('catalogue.index');
+        Route::get('/products/{product:slug}', [RetailCatalogueController::class, 'show'])->name('catalogue.show');
+        Route::get('/cart', [RetailCartController::class, 'index'])->name('cart.index');
+        Route::post('/cart/items', [RetailCartController::class, 'store'])->name('cart.store');
+        Route::put('/cart/items/{item}', [RetailCartController::class, 'update'])->name('cart.update');
+        Route::delete('/cart/items/{item}', [RetailCartController::class, 'destroy'])->name('cart.destroy');
+        Route::get('/checkout', [RetailCheckoutController::class, 'create'])->name('checkout.create');
+        Route::post('/checkout', [RetailCheckoutController::class, 'store'])->name('checkout.store');
+        Route::get('/orders/{order}', [RetailOrderController::class, 'show'])->name('orders.show');
+        Route::get('/policies/{slug}', RetailContentPageController::class)->name('pages.show');
+        Route::post('/orders/{order}/paypal', [PayPalController::class, 'create'])->name('paypal.create');
+        Route::get('/payments/paypal/return', [PayPalController::class, 'capture'])->name('paypal.return');
+        Route::get('/payments/paypal/cancel', [PayPalController::class, 'cancel'])->name('paypal.cancel');
+    });
+
 Route::get('/', HomeController::class)->name('home');
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 
 Route::get('/catalogue', CatalogueController::class)->name('catalogue.index');
 Route::get('/catalogue/{product:slug}', [CatalogueController::class, 'show'])->name('catalogue.show');

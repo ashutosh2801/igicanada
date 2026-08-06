@@ -5,7 +5,9 @@ namespace App\Filament\Resources\MediaAssets;
 use App\Filament\Resources\MediaAssets\Pages\CreateMediaAsset;
 use App\Filament\Resources\MediaAssets\Pages\EditMediaAsset;
 use App\Filament\Resources\MediaAssets\Pages\ListMediaAssets;
+use App\Filament\Tables\Columns\DirectImageColumn;
 use App\Models\MediaAsset;
+use App\Support\StorefrontAsset;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -17,7 +19,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -77,11 +78,11 @@ class MediaAssetResource extends Resource
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query->withCount(['productImages', 'primaryProducts']))
             ->columns([
-                ImageColumn::make('preview_url')
+                DirectImageColumn::make('preview_url')
                     ->label('Image')
-                    ->state(fn (MediaAsset $record): string => $record->disk === 'public'
+                    ->state(fn (MediaAsset $record): string => StorefrontAsset::directUrl($record->path) ?? ($record->disk === 'public'
                         ? ltrim($record->path, '/')
-                        : $record->url())
+                        : $record->url()))
                     ->disk('public')
                     ->square()
                     ->imageSize(72)

@@ -1,5 +1,7 @@
 import PublicShell from '@/components/PublicShell';
-import { Head, Link, router } from '@inertiajs/react';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import SeoHead, { type BreadcrumbItem } from '@/components/SeoHead';
+import { Link, router } from '@inertiajs/react';
 import { FormEvent, useState } from 'react';
 
 type Product = {
@@ -25,6 +27,9 @@ type Props = {
 
 export default function Catalogue({ products, categories, filters, pricing }: Props) {
     const [query, setQuery] = useState(filters.q);
+    const selectedCategory = categories.find(category => category.slug === filters.category);
+    const breadcrumbs: BreadcrumbItem[] = [{ label: 'Home', href: '/' }, { label: selectedCategory?.name || 'Wholesale catalogue' }];
+    const canonicalPath = selectedCategory ? `/catalogue?category=${encodeURIComponent(selectedCategory.slug)}` : '/catalogue';
 
     function search(event: FormEvent) {
         event.preventDefault();
@@ -33,8 +38,9 @@ export default function Catalogue({ products, categories, filters, pricing }: Pr
 
     return (
         <PublicShell>
-            <Head title="Wholesale products" />
+            <SeoHead title={selectedCategory ? `${selectedCategory.name} wholesale` : 'Wholesale leather goods catalogue'} description={selectedCategory ? `Browse wholesale ${selectedCategory.name.toLowerCase()} from IGI Canada.` : 'Browse IGI Canada wholesale leather goods, wallets, bags, belts and accessories.'} canonicalPath={canonicalPath} noIndex={filters.q !== ''} breadcrumbs={breadcrumbs} />
                 <main className="mx-auto min-h-[40rem] max-w-7xl px-6 py-12 lg:px-8">
+                    <Breadcrumbs items={breadcrumbs} />
                     <div className="flex flex-col justify-between gap-6 border-b border-stone-200 pb-8 md:flex-row md:items-end">
                         <div>
                             <p className="text-sm font-bold tracking-[0.18em] text-amber-800 uppercase">Wholesale products</p>

@@ -33,6 +33,7 @@ class ContactController extends Controller
         ]);
         unset($data['website']);
 
+        $data['sales_channel'] = $request->attributes->get('sales_channel', 'wholesale');
         $data['ip_hash'] = $request->ip()
             ? hash_hmac('sha256', $request->ip(), (string) config('app.key'))
             : null;

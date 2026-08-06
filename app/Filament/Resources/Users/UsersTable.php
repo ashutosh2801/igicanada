@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users;
 
 use App\Models\User;
+use App\Support\AdminStorefront;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
@@ -19,7 +20,16 @@ class UsersTable
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('resellerProfile.company')->label('Company')->searchable(),
+                TextColumn::make('account_type')
+                    ->label('Channel')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => str($state)->title())
+                    ->color(fn (string $state): string => $state === 'retail' ? 'warning' : 'info')
+                    ->visible(fn (): bool => AdminStorefront::current() === 'all'),
+                TextColumn::make('resellerProfile.company')
+                    ->label('Company')
+                    ->searchable()
+                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields()),
                 TextColumn::make('email')->searchable(),
                 TextColumn::make('email_verified_at')->label('Email verified')->dateTime()->placeholder('Not verified'),
                 TextColumn::make('approval_status')
@@ -28,16 +38,23 @@ class UsersTable
                         'approved' => 'success',
                         'pending' => 'warning',
                         default => 'danger',
-                    }),
-                TextColumn::make('priceTier.name')->label('Price tier'),
+                    })
+                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields()),
+                TextColumn::make('priceTier.name')
+                    ->label('Price tier')
+                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields()),
                 TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->filters([
+                SelectFilter::make('account_type')->label('Channel')->options([
+                    'wholesale' => 'Wholesale',
+                    'retail' => 'Retail',
+                ])->visible(fn (): bool => AdminStorefront::current() === 'all'),
                 SelectFilter::make('approval_status')->options([
                     'pending' => 'Pending review',
                     'approved' => 'Approved',
                     'suspended' => 'Suspended',
-                ]),
+                ])->visible(fn (): bool => AdminStorefront::showsWholesaleFields()),
             ])
             ->recordActions([
                 Action::make('approve')

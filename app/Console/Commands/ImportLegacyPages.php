@@ -43,6 +43,7 @@ class ImportLegacyPages extends Command
 
                 ContentPage::create([
                     'legacy_id' => $page->id,
+                    'sales_channel' => 'wholesale',
                     'title' => $title,
                     'slug' => $slug,
                     'excerpt' => Str::limit($plainText, 240),
@@ -69,7 +70,7 @@ class ImportLegacyPages extends Command
     {
         $base = Str::slug((string) ($page->slug ?: $page->title ?: $page->name)) ?: 'legacy-page-'.$page->id;
 
-        return ContentPage::where('slug', $base)->exists() ? $base.'-legacy-'.$page->id : $base;
+        return ContentPage::forChannel('wholesale')->where('slug', $base)->exists() ? $base.'-legacy-'.$page->id : $base;
     }
 
     private function isLegal(object $page): bool

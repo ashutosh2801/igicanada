@@ -22,7 +22,7 @@ class SearchController extends Controller
 
         $products = $searching ? Product::query()
             ->where('is_active', true)
-            ->where('visibility', 'wholesale')
+            ->whereIn('visibility', ['wholesale', 'both'])
             ->where(fn ($builder) => $builder
                 ->where('name', 'like', "%{$query}%")
                 ->orWhere('sku', 'like', "%{$query}%")
@@ -43,6 +43,7 @@ class SearchController extends Controller
             ]) : collect();
 
         $categories = $searching ? Category::query()
+            ->visibleForChannel('wholesale')
             ->where('is_active', true)
             ->where('name', 'like', "%{$query}%")
             ->orderBy('name')

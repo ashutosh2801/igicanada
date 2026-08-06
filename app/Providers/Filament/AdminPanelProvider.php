@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\StandardShippingRates\Pages\ListStandardShippingRates;
+use App\Http\Middleware\EnsureAdminStorefrontSelected;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -14,8 +15,6 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -31,6 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->domain(config('storefronts.admin_domain'))
             ->login()
             ->colors([
                 'primary' => Color::Red,
@@ -41,6 +41,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 PanelsRenderHook::STYLES_AFTER,
+                fn () => view('filament.styles.amazon-ember'),
+            )
+            ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
                 fn () => view('filament.styles.shipping-rates'),
                 ListStandardShippingRates::class,
             )
@@ -49,16 +53,16 @@ class AdminPanelProvider extends PanelProvider
                 fn () => view('filament.styles.media-picker'),
                 [CreateProduct::class, EditProduct::class],
             )
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_END,
+                fn () => view('filament.admin-storefront-switcher'),
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
-            ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
-            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -72,6 +76,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                EnsureAdminStorefrontSelected::class,
             ]);
     }
 }

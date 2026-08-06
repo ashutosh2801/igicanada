@@ -1,5 +1,7 @@
 import PublicShell from '@/components/PublicShell';
-import { Head, Link, router } from '@inertiajs/react';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import SeoHead, { type BreadcrumbItem } from '@/components/SeoHead';
+import { Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 
 type Variant = {
@@ -29,8 +31,10 @@ type SimilarProduct = {
 type Props = {
     product: {
         name: string;
+        slug: string;
         sku: string | null;
         description: string;
+        seoDescription: string;
         categories: { name: string; slug: string }[];
         images: { src: string; alt: string }[];
         variants: Variant[];
@@ -46,6 +50,13 @@ export default function Show({ product, pricing, similarProducts }: Props) {
     const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 50 });
     const thumbnailTrack = useRef<HTMLDivElement>(null);
     const selectedImage = product.images[selectedImageIndex] || product.images[0];
+    const category = product.categories[0];
+    const breadcrumbs: BreadcrumbItem[] = [
+        { label: 'Home', href: '/' },
+        { label: 'Wholesale catalogue', href: '/catalogue' },
+        ...(category ? [{ label: category.name, href: `/catalogue?category=${encodeURIComponent(category.slug)}` }] : []),
+        { label: product.name },
+    ];
 
     useEffect(() => {
         if (product.images.length <= 1 || isAutoplayPaused) return;
@@ -80,8 +91,16 @@ export default function Show({ product, pricing, similarProducts }: Props) {
 
     return (
         <PublicShell>
-            <Head title={product.name} />
+            <SeoHead title={`${product.name} wholesale`} description={product.seoDescription} canonicalPath={`/catalogue/${product.slug}`} image={product.images[0]?.src} type="product" breadcrumbs={breadcrumbs} schemas={[{
+                '@context': 'https://schema.org',
+                '@type': 'Product',
+                name: product.name,
+                sku: product.sku || undefined,
+                description: product.seoDescription,
+                image: product.images.map(image => image.src),
+            }]} />
                 <main className="mx-auto grid min-h-[40rem] max-w-7xl gap-12 px-6 py-12 lg:grid-cols-2 lg:px-8">
+                    <div className="lg:col-span-2"><Breadcrumbs items={breadcrumbs} /></div>
                     <section>
                         <div
                             className={'aspect-square overflow-hidden rounded-3xl bg-white ring-1 ring-stone-200 ' + (selectedImage ? (isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in') : '')}

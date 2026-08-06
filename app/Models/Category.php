@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -29,5 +30,10 @@ class Category extends Model
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class)->withPivot('position');
+    }
+
+    public function scopeVisibleForChannel(Builder $query, string $channel): Builder
+    {
+        return $query->whereIn('visibility', [$channel, 'both']);
     }
 }

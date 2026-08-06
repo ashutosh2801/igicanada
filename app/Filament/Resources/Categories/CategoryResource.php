@@ -8,11 +8,13 @@ use App\Filament\Resources\Categories\Pages\ListCategories;
 use App\Filament\Resources\Categories\Schemas\CategoryForm;
 use App\Filament\Resources\Categories\Tables\CategoriesTable;
 use App\Models\Category;
+use App\Support\AdminStorefront;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class CategoryResource extends Resource
@@ -24,6 +26,16 @@ class CategoryResource extends Resource
     protected static ?string $navigationLabel = 'Category mega menu';
 
     protected static string|UnitEnum|null $navigationGroup = 'Appearance';
+
+    public static function getNavigationLabel(): string
+    {
+        return AdminStorefront::current() === 'wholesale' ? 'Category mega menu' : 'Categories';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return AdminStorefront::applyVisibility(parent::getEloquentQuery());
+    }
 
     public static function form(Schema $schema): Schema
     {

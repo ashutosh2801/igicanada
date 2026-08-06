@@ -18,6 +18,7 @@ class StandardShippingAdminTest extends TestCase
         $admin = User::factory()->create([
             'account_type' => 'admin',
             'approval_status' => 'approved',
+            'admin_sales_channel' => 'all',
         ]);
 
         $this->actingAs($admin)
@@ -40,8 +41,9 @@ class StandardShippingAdminTest extends TestCase
             ->mountAction('bulkEdit')
             ->assertActionDataSet(function (array $data): array {
                 $rates = collect($data['rates']);
-                $this->assertCount(5, $rates);
+                $this->assertCount(10, $rates);
                 $this->assertTrue($rates->every(fn (array $rate): bool => $rate['country'] === 'CA'));
+                $this->assertEqualsCanonicalizing(['retail', 'wholesale'], $rates->pluck('sales_channel')->unique()->values()->all());
 
                 return [];
             });

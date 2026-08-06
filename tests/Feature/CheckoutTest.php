@@ -53,6 +53,7 @@ class CheckoutTest extends TestCase
 
         $order = $user->orders()->with('items')->firstOrFail();
         $this->assertStringStartsWith('IGI-', $order->order_number);
+        $this->assertSame('wholesale', $order->sales_channel);
         $this->assertSame('awaiting_quote', $order->status);
         $this->assertSame('unpaid', $order->payment_status);
         $this->assertSame('24.00', $order->subtotal);

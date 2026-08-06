@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\StorefrontAsset;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -39,8 +40,6 @@ class ProductImage extends Model
             return null;
         }
 
-        return str_starts_with($this->path, 'http')
-            ? $this->path
-            : 'https://igicanada.ca/'.ltrim($this->path, '/');
+        return StorefrontAsset::legacy($this->path);
     }
 }

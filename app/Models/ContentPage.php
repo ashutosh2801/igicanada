@@ -34,4 +34,9 @@ class ContentPage extends Model
                 ->whereNull('published_at')
                 ->orWhere('published_at', '<=', now()));
     }
+
+    public function scopeForChannel(Builder $query, string $channel): Builder
+    {
+        return $query->where('sales_channel', $channel);
+    }
 }

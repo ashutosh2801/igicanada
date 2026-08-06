@@ -25,6 +25,7 @@ use Illuminate\Notifications\Notifiable;
     'legacy_email',
     'password',
     'account_type',
+    'admin_sales_channel',
     'approval_status',
     'legacy_role_id',
     'price_tier_id',

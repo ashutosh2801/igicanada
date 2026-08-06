@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\StorefrontAsset;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,7 +22,7 @@ class MediaAsset extends Model
                 ->title()
                 ->limit(255);
 
-            if ($asset->disk !== 'legacy' && Storage::disk($asset->disk)->exists($asset->path)) {
+            if (! StorefrontAsset::directUrl($asset->path) && $asset->disk !== 'legacy' && Storage::disk($asset->disk)->exists($asset->path)) {
                 $asset->mime_type = Storage::disk($asset->disk)->mimeType($asset->path) ?: null;
                 $asset->size_bytes = Storage::disk($asset->disk)->size($asset->path);
 
@@ -49,8 +50,8 @@ class MediaAsset extends Model
 
     public function url(): string
     {
-        if (str_starts_with($this->path, 'http')) {
-            return $this->path;
+        if ($directUrl = StorefrontAsset::directUrl($this->path)) {
+            return $directUrl;
         }
 
         if ($this->disk === 'legacy' || str_starts_with($this->path, '/upload')) {

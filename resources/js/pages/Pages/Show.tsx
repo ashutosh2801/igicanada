@@ -1,9 +1,11 @@
 import PublicShell from '@/components/PublicShell';
-import { Head } from '@inertiajs/react';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import SeoHead, { type BreadcrumbItem } from '@/components/SeoHead';
 
 type Props = {
     page: {
         title: string;
+        slug: string;
         excerpt: string | null;
         bodyHtml: string | null;
         metaTitle: string | null;
@@ -13,12 +15,13 @@ type Props = {
 };
 
 export default function Show({ page }: Props) {
+    const breadcrumbs: BreadcrumbItem[] = [{ label: 'Home', href: '/' }, { label: page.title }];
+
     return (
         <PublicShell>
-            <Head title={page.metaTitle || page.title}>
-                {page.metaDescription && <meta name="description" content={page.metaDescription} />}
-            </Head>
+            <SeoHead title={page.metaTitle || page.title} description={page.metaDescription || page.excerpt} canonicalPath={`/page/${page.slug}`} type="article" breadcrumbs={breadcrumbs} />
             <main className="mx-auto max-w-4xl px-6 py-16 lg:px-8 lg:py-24">
+                <Breadcrumbs items={breadcrumbs} />
                 <p className="text-sm font-bold tracking-[0.18em] text-amber-800 uppercase">IGI Canada</p>
                 <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">{page.title}</h1>
                 {page.excerpt && <p className="mt-6 text-xl leading-8 text-stone-600">{page.excerpt}</p>}

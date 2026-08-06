@@ -1,0 +1,123 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\HomepageSetting;
+use App\Models\Product;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
+use Tests\TestCase;
+
+class MultiStorefrontTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_retail_domain_uses_its_own_frontend_and_channel(): void
+    {
+        $retailProduct = Product::create([
+            'name' => 'Shared Wallet Name',
+            'retail_name' => 'Slim Leather Wallet',
+            'slug' => 'slim-leather-wallet',
+            'visibility' => 'both',
+            'is_active' => true,
+            'published_at' => now(),
+        ]);
+        $retailProduct->variants()->create([
+            'retail_price' => 49.99,
+            'wholesale_price' => 25,
+            'stock_quantity' => 12,
+            'is_available_retail' => true,
+            'is_available_wholesale' => true,
+            'is_active' => true,
+        ]);
+
+        $wholesaleOnly = Product::create([
+            'name' => 'Wholesale Only Wallet',
+            'slug' => 'wholesale-only-wallet',
+            'visibility' => 'wholesale',
+            'is_active' => true,
+        ]);
+        $wholesaleOnly->variants()->create([
+            'retail_price' => 39.99,
+            'stock_quantity' => 5,
+            'is_available_retail' => true,
+            'is_active' => true,
+        ]);
+
+        $this->get('https://leatherwallets.ca/')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Home')
+                ->where('salesChannel', 'retail')
+                ->has('products', 1)
+                ->where('products.0.name', 'Slim Leather Wallet')
+                ->where('products.0.price', '49.99'));
+    }
+
+    public function test_retail_domain_does_not_expose_wholesale_routes(): void
+    {
+        $this->get('https://leatherwallets.ca/catalogue')->assertNotFound();
+    }
+
+    public function test_retail_homepage_content_and_brand_are_managed_separately(): void
+    {
+        HomepageSetting::query()->forChannel('retail')->firstOrFail()->update([
+            'brand_name' => 'Leather Wallets Test',
+            'announcement_text' => 'Retail announcement',
+            'hero_eyebrow' => 'Retail eyebrow',
+            'hero_title' => 'A retail-only hero',
+            'hero_description' => 'Retail homepage description.',
+            'new_arrivals_title' => 'Latest wallets',
+            'default_meta_title' => 'Retail SEO title',
+        ]);
+
+        $this->get('https://leatherwallets.ca/')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Home')
+                ->where('homepage.heroTitle', 'A retail-only hero')
+                ->where('homepage.newArrivalsTitle', 'Latest wallets')
+                ->where('homepage.metaTitle', 'Retail SEO title')
+                ->where('retailStorefront.brandName', 'Leather Wallets Test')
+                ->where('retailStorefront.announcement', 'Retail announcement'));
+
+        $this->assertNotSame(
+            'Leather Wallets Test',
+            HomepageSetting::query()->forChannel('wholesale')->firstOrFail()->brand_name,
+        );
+    }
+
+    public function test_retail_homepage_has_deployable_brand_and_hero_assets(): void
+    {
+        $settings = HomepageSetting::query()->forChannel('retail')->firstOrFail();
+
+        $this->assertSame('/assets/retail/leather-wallets-logo.svg', $settings->logo_path);
+        $this->assertSame('/assets/retail/leather-wallets-favicon.svg', $settings->favicon_path);
+        $this->assertCount(2, $settings->hero_image_paths);
+
+        foreach ([$settings->logo_path, $settings->favicon_path, ...$settings->hero_image_paths] as $asset) {
+            $this->assertFileExists(public_path(ltrim($asset, '/')));
+        }
+
+        $this->get('https://leatherwallets.ca/')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('retailStorefront.logoUrl', '/assets/retail/leather-wallets-logo.svg')
+                ->has('homepage.heroImages', 2));
+    }
+
+    public function test_retail_alias_redirects_to_the_canonical_domain(): void
+    {
+        $this->get('https://www.leatherwallets.ca/')
+            ->assertRedirect('https://leatherwallets.ca/');
+    }
+
+    public function test_wholesale_domain_keeps_the_existing_storefront(): void
+    {
+        $this->get('https://igicanada.ca/')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Home')
+                ->where('salesChannel', 'wholesale'));
+    }
+}

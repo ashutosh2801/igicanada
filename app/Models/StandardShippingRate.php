@@ -12,6 +12,8 @@ class StandardShippingRate extends Model
     protected static function booted(): void
     {
         static::saving(function (StandardShippingRate $rate): void {
+            $rate->sales_channel ??= 'wholesale';
+
             if (! $rate->is_active) {
                 return;
             }
@@ -23,6 +25,7 @@ class StandardShippingRate extends Model
             }
 
             $overlapExists = static::query()
+                ->where('sales_channel', $rate->sales_channel)
                 ->where('country', $rate->country)
                 ->where('is_active', true)
                 ->when($rate->exists, fn ($query) => $query->whereKeyNot($rate->getKey()))

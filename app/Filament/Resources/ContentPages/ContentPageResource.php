@@ -6,6 +6,7 @@ use App\Filament\Resources\ContentPages\Pages\CreateContentPage;
 use App\Filament\Resources\ContentPages\Pages\EditContentPage;
 use App\Filament\Resources\ContentPages\Pages\ListContentPages;
 use App\Models\ContentPage;
+use App\Support\AdminStorefront;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\RichEditor;
@@ -20,6 +21,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ContentPageResource extends Resource
 {
@@ -27,9 +29,21 @@ class ContentPageResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
+    public static function getEloquentQuery(): Builder
+    {
+        return AdminStorefront::apply(parent::getEloquentQuery());
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
+            Select::make('sales_channel')->label('Website')->options([
+                'wholesale' => 'IGI Canada wholesale',
+                'retail' => 'Leather Wallets retail',
+            ])->required()
+                ->visible(fn (): bool => AdminStorefront::current() === 'all')
+                ->dehydratedWhenHidden()
+                ->default(fn (): string => AdminStorefront::current() === 'retail' ? 'retail' : 'wholesale'),
             TextInput::make('title')->required()->maxLength(255),
             TextInput::make('slug')->required()->unique(ignoreRecord: true)->maxLength(255),
             Select::make('status')->options([
@@ -51,6 +65,12 @@ class ContentPageResource extends Resource
         return $table
             ->defaultSort('updated_at', 'desc')
             ->columns([
+                TextColumn::make('sales_channel')
+                    ->label('Website')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => $state === 'retail' ? 'Leather Wallets' : 'IGI Canada')
+                    ->color(fn (string $state): string => $state === 'retail' ? 'warning' : 'info')
+                    ->visible(fn (): bool => AdminStorefront::current() === 'all'),
                 TextColumn::make('title')->searchable()->sortable(),
                 TextColumn::make('slug')->searchable(),
                 TextColumn::make('status')->badge()->color(fn (string $state) => match ($state) {
@@ -62,6 +82,10 @@ class ContentPageResource extends Resource
                 TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
             ->filters([
+                SelectFilter::make('sales_channel')->label('Website')->options([
+                    'wholesale' => 'IGI Canada',
+                    'retail' => 'Leather Wallets',
+                ])->visible(fn (): bool => AdminStorefront::current() === 'all'),
                 SelectFilter::make('status')->options([
                     'draft' => 'Draft',
                     'review_required' => 'Review required',

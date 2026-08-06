@@ -1,0 +1,92 @@
+# Replace paths, PHP socket, and certificate paths for the production server.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name igicanada.ca www.igicanada.ca leatherwallets.ca www.leatherwallets.ca;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name www.igicanada.ca;
+    return 301 https://igicanada.ca$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name www.leatherwallets.ca;
+    return 301 https://leatherwallets.ca$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name igicanada.ca;
+
+    root /var/www/igicanada/app/public;
+    index index.php;
+    client_max_body_size 20M;
+
+    ssl_certificate /etc/letsencrypt/live/igicanada.ca/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/igicanada.ca/privkey.pem;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_read_timeout 60;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name leatherwallets.ca;
+
+    root /var/www/igicanada/app/public;
+    index index.php;
+    client_max_body_size 20M;
+
+    ssl_certificate /etc/letsencrypt/live/leatherwallets.ca/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/leatherwallets.ca/privkey.pem;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    location ^~ /admin {
+        return 404;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_read_timeout 60;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+}

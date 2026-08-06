@@ -18,11 +18,13 @@ class Order extends Model
             'discount_total' => 'decimal:2',
             'shipping_total' => 'decimal:2',
             'tax_total' => 'decimal:2',
+            'tax_breakdown' => 'array',
             'total' => 'decimal:2',
             'placed_at' => 'datetime',
             'quoted_at' => 'datetime',
             'paid_at' => 'datetime',
             'shipped_at' => 'datetime',
+            'inventory_released_at' => 'datetime',
         ];
     }
 

@@ -1,5 +1,6 @@
 import PublicShell from '@/components/PublicShell';
-import { Head, Link } from '@inertiajs/react';
+import SeoHead from '@/components/SeoHead';
+import { Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 type Homepage = {
@@ -27,9 +28,17 @@ type Props = { homepage: Homepage; categories: Category[]; newArrivals: NewArriv
 export default function Home({ homepage, categories, newArrivals, catalogue, pricing }: Props) {
     return (
         <PublicShell>
-            <Head title="Wholesale leather goods">
-                <meta name="description" content={homepage.heroDescription || 'IGI Canada wholesale leather goods and products.'} />
-            </Head>
+            <SeoHead title="Wholesale leather goods" description={homepage.heroDescription || 'IGI Canada wholesale leather goods and products.'} canonicalPath="/" schemas={[{
+                '@context': 'https://schema.org',
+                '@type': 'WebSite',
+                name: 'IGI Canada',
+                url: 'https://igicanada.ca/',
+            }, {
+                '@context': 'https://schema.org',
+                '@type': 'Organization',
+                name: 'IGI Canada',
+                url: 'https://igicanada.ca/',
+            }]} />
             <main>
                 <section className="overflow-hidden border-b border-stone-900/10">
                     <div className="mx-auto grid min-h-[31.5rem] max-w-[90rem] lg:grid-cols-[1.02fr_0.98fr]">

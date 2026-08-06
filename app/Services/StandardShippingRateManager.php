@@ -13,9 +13,21 @@ class StandardShippingRateManager
     /** @param array<int, array<string, mixed>> $rates */
     public function update(array $rates): void
     {
+        $channels = StandardShippingRate::query()
+            ->whereKey(collect($rates)->pluck('id')->filter())
+            ->pluck('sales_channel', 'id');
+        $rates = collect($rates)
+            ->map(function (array $rate) use ($channels): array {
+                $rate['sales_channel'] ??= $channels[$rate['id'] ?? null] ?? 'wholesale';
+
+                return $rate;
+            })
+            ->all();
+
         $data = Validator::make(['rates' => $rates], [
             'rates' => ['required', 'array', 'min:1'],
             'rates.*.id' => ['required', 'integer', 'distinct', Rule::exists('standard_shipping_rates', 'id')],
+            'rates.*.sales_channel' => ['required', Rule::in(['wholesale', 'retail'])],
             'rates.*.country' => ['required', Rule::in(['CA', 'US'])],
             'rates.*.name' => ['required', 'string', 'max:100'],
             'rates.*.min_order_amount' => ['required', 'numeric', 'min:0'],
@@ -35,13 +47,13 @@ class StandardShippingRateManager
         $submittedIds = collect($data)->pluck('id');
         $comparisonRates = StandardShippingRate::query()
             ->whereNotIn('id', $submittedIds)
-            ->get(['id', 'country', 'name', 'min_order_amount', 'max_order_amount', 'charge', 'is_active'])
+            ->get(['id', 'sales_channel', 'country', 'name', 'min_order_amount', 'max_order_amount', 'charge', 'is_active'])
             ->map(fn (StandardShippingRate $rate): array => [...$rate->toArray(), '_input_index' => null])
             ->concat(collect($data)->map(
                 fn (array $rate, int|string $index): array => [...$rate, '_input_index' => $index]
             ));
 
-        foreach ($comparisonRates->where('is_active', true)->groupBy('country') as $countryRates) {
+        foreach ($comparisonRates->where('is_active', true)->groupBy(fn (array $rate): string => $rate['sales_channel'].'|'.$rate['country']) as $countryRates) {
             $previous = null;
             foreach ($countryRates->sortBy('min_order_amount', SORT_NUMERIC) as $rate) {
                 if ($previous && (float) $rate['min_order_amount'] <= (float) $previous['max_order_amount']) {
@@ -57,6 +69,7 @@ class StandardShippingRateManager
         DB::transaction(function () use ($data): void {
             foreach ($data as $rate) {
                 StandardShippingRate::query()->whereKey($rate['id'])->update([
+                    'sales_channel' => $rate['sales_channel'],
                     'country' => $rate['country'],
                     'name' => $rate['name'],
                     'min_order_amount' => $rate['min_order_amount'],

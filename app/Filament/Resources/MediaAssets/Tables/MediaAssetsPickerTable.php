@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\MediaAssets\Tables;
 
+use App\Filament\Tables\Columns\DirectImageColumn;
 use App\Models\MediaAsset;
+use App\Support\StorefrontAsset;
 use Filament\Support\Enums\Alignment;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -17,11 +18,11 @@ class MediaAssetsPickerTable
             ->header(view('filament.forms.media-picker-header'))
             ->columns([
                 Stack::make([
-                    ImageColumn::make('preview_url')
+                    DirectImageColumn::make('preview_url')
                         ->label('Image')
-                        ->state(fn (MediaAsset $record): string => $record->disk === 'public'
+                        ->state(fn (MediaAsset $record): string => StorefrontAsset::directUrl($record->path) ?? ($record->disk === 'public'
                             ? ltrim($record->path, '/')
-                            : $record->url())
+                            : $record->url()))
                         ->disk('public')
                         ->square()
                         ->imageSize(150)

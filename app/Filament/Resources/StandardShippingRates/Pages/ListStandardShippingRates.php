@@ -41,6 +41,7 @@ class ListStandardShippingRates extends ListRecords
                         ->extraAttributes(['class' => 'shipping-rates-zebra'])
                         ->schema([
                             Hidden::make('id')->required(),
+                            Hidden::make('sales_channel')->required(),
                             Select::make('country')->label('Country')->hiddenLabel()->options(['CA' => 'Canada', 'US' => 'USA'])->required(),
                             TextInput::make('name')->label('Slab')->hiddenLabel()->required()->maxLength(100),
                             TextInput::make('min_order_amount')->label('Minimum')->hiddenLabel()->numeric()->prefix('$')->minValue(0)->step(0.01)->required(),
@@ -66,7 +67,7 @@ class ListStandardShippingRates extends ListRecords
     {
         return ($this->getFilteredSortedTableQuery() ?? StandardShippingRate::query())
             ->get()
-            ->map->only(['id', 'country', 'name', 'min_order_amount', 'max_order_amount', 'charge', 'is_active'])
+            ->map->only(['id', 'sales_channel', 'country', 'name', 'min_order_amount', 'max_order_amount', 'charge', 'is_active'])
             ->values()
             ->all();
     }

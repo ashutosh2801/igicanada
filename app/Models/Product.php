@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\StorefrontAsset;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -22,7 +23,11 @@ class Product extends Model
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean', 'published_at' => 'datetime', 'weight_kg' => 'decimal:3'];
+        return [
+            'is_active' => 'boolean',
+            'published_at' => 'datetime',
+            'weight_kg' => 'decimal:3',
+        ];
     }
 
     public function categories(): BelongsToMany
@@ -62,8 +67,6 @@ class Product extends Model
             return null;
         }
 
-        return str_starts_with($this->primary_image_path, 'http')
-            ? $this->primary_image_path
-            : 'https://igicanada.ca/'.ltrim($this->primary_image_path, '/');
+        return StorefrontAsset::legacy($this->primary_image_path);
     }
 }

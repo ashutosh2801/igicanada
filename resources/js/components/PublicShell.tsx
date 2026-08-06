@@ -4,6 +4,7 @@ import { FormEvent, PropsWithChildren, useState } from 'react';
 type NavigationItem = { label: string; url: string; opens_new_tab: boolean };
 type CategoryItem = { name: string; slug: string; url: string; children: CategoryItem[] };
 type SharedProps = {
+    seoDefaults: { baseUrl: string };
     storefront: {
         brandName: string;
         logoUrl: string | null;
@@ -34,7 +35,10 @@ type SharedProps = {
 };
 
 export default function PublicShell({ children }: PropsWithChildren) {
-    const { storefront } = usePage<SharedProps>().props;
+    const page = usePage<SharedProps>();
+    const { storefront, seoDefaults } = page.props;
+    const path = page.url.split('?')[0];
+    const privatePage = /^\/(account|cart|checkout|orders|login|forgot-password|reset-password|wholesale\/application-received)(\/|$)/.test(path);
     const [query, setQuery] = useState('');
 
     function search(event: FormEvent) {
@@ -45,6 +49,8 @@ export default function PublicShell({ children }: PropsWithChildren) {
     return (
         <div className="min-h-screen bg-white text-black">
             <Head>
+                <meta head-key="robots" name="robots" content={privatePage ? 'noindex,follow' : 'index,follow,max-image-preview:large'} />
+                <link head-key="canonical" rel="canonical" href={new URL(path, seoDefaults.baseUrl).toString()} />
                 {storefront.seo.description && <meta head-key="description" name="description" content={storefront.seo.description} />}
                 {storefront.seo.faviconUrl && <link head-key="favicon" rel="icon" href={storefront.seo.faviconUrl} />}
                 <meta head-key="og-type" property="og:type" content="website" />

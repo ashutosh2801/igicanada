@@ -26,7 +26,7 @@ class CatalogueController extends Controller
         $products = Product::query()
             ->select(['id', 'sku', 'name', 'slug', 'primary_image_path', 'primary_media_asset_id'])
             ->where('is_active', true)
-            ->where('visibility', 'wholesale')
+            ->whereIn('visibility', ['wholesale', 'both'])
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search): void {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%");
@@ -44,6 +44,7 @@ class CatalogueController extends Controller
         return Inertia::render('Catalogue/Index', [
             'products' => $products,
             'categories' => Category::query()
+                ->visibleForChannel('wholesale')
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['name', 'slug']),
@@ -57,7 +58,7 @@ class CatalogueController extends Controller
 
     public function show(Request $request, Product $product): Response
     {
-        abort_unless($product->is_active && $product->visibility === 'wholesale', 404);
+        abort_unless($product->is_active && in_array($product->visibility, ['wholesale', 'both'], true), 404);
 
         $product->load([
             'categories:id,name,slug',
@@ -74,8 +75,10 @@ class CatalogueController extends Controller
         return Inertia::render('Catalogue/Show', [
             'product' => [
                 'name' => $product->name,
+                'slug' => $product->slug,
                 'sku' => $product->sku,
                 'description' => trim((string) $product->description),
+                'seoDescription' => str(strip_tags((string) $product->description))->squish()->limit(160)->toString(),
                 'categories' => $product->categories->map->only(['name', 'slug']),
                 'images' => $this->productImages($product),
                 'variants' => $product->variants->map(function ($variant) use ($canViewPricing, $discount) {
@@ -135,7 +138,7 @@ class CatalogueController extends Controller
         return Product::query()
             ->select(['id', 'sku', 'name', 'slug', 'primary_image_path', 'primary_media_asset_id'])
             ->where('is_active', true)
-            ->where('visibility', 'wholesale')
+            ->whereIn('visibility', ['wholesale', 'both'])
             ->withCount('variants')
             ->withSum(['variants as stock_quantity' => fn ($query) => $query->where('is_active', true)], 'stock_quantity')
             ->withMin(['variants as minimum_wholesale_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_price')

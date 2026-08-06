@@ -46,6 +46,7 @@ class PayPalService
 
     public function createOrder(Order $order): array
     {
+        $retail = $order->sales_channel === 'retail';
         $response = $this->client()
             ->withHeaders(['PayPal-Request-Id' => 'igi-create-'.$order->id.'-'.$order->updated_at->timestamp])
             ->post($this->baseUrl().'/v2/checkout/orders', [
@@ -53,18 +54,18 @@ class PayPalService
                 'purchase_units' => [[
                     'reference_id' => $order->order_number,
                     'custom_id' => (string) $order->id,
-                    'description' => "IGI Canada order {$order->order_number}",
+                    'description' => ($retail ? 'Leather Wallets' : 'IGI Canada')." order {$order->order_number}",
                     'amount' => [
                         'currency_code' => $order->currency,
                         'value' => $order->total,
                     ],
                 ]],
                 'application_context' => [
-                    'brand_name' => 'IGI Canada',
+                    'brand_name' => $retail ? 'Leather Wallets Canada' : 'IGI Canada',
                     'shipping_preference' => 'NO_SHIPPING',
                     'user_action' => 'PAY_NOW',
-                    'return_url' => route('paypal.return'),
-                    'cancel_url' => route('paypal.cancel'),
+                    'return_url' => route($retail ? 'retail.paypal.return' : 'paypal.return'),
+                    'cancel_url' => route($retail ? 'retail.paypal.cancel' : 'paypal.cancel'),
                 ],
             ]);
 

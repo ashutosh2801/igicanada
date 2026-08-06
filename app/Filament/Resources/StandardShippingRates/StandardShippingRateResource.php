@@ -6,6 +6,7 @@ use App\Filament\Resources\StandardShippingRates\Pages\CreateStandardShippingRat
 use App\Filament\Resources\StandardShippingRates\Pages\EditStandardShippingRate;
 use App\Filament\Resources\StandardShippingRates\Pages\ListStandardShippingRates;
 use App\Models\StandardShippingRate;
+use App\Support\AdminStorefront;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -19,6 +20,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class StandardShippingRateResource extends Resource
 {
@@ -32,9 +34,24 @@ class StandardShippingRateResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Standard shipping charges';
 
+    public static function getEloquentQuery(): Builder
+    {
+        return AdminStorefront::apply(parent::getEloquentQuery());
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
+            Select::make('sales_channel')
+                ->label('Website')
+                ->options([
+                    'wholesale' => 'IGI Canada',
+                    'retail' => 'Leather Wallets',
+                ])
+                ->required()
+                ->visible(fn (): bool => AdminStorefront::current() === 'all')
+                ->dehydratedWhenHidden()
+                ->default(fn (): string => AdminStorefront::current() === 'retail' ? 'retail' : 'wholesale'),
             Select::make('country')
                 ->options(['CA' => 'Canada', 'US' => 'USA'])
                 ->required()
@@ -75,6 +92,11 @@ class StandardShippingRateResource extends Resource
             ->striped()
             ->defaultSort('country')
             ->columns([
+                TextColumn::make('sales_channel')
+                    ->label('Website')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => $state === 'retail' ? 'Leather Wallets' : 'IGI Canada')
+                    ->visible(fn (): bool => AdminStorefront::current() === 'all'),
                 TextColumn::make('country')
                     ->formatStateUsing(fn (string $state): string => $state === 'CA' ? 'Canada' : 'USA')
                     ->badge()
@@ -86,6 +108,10 @@ class StandardShippingRateResource extends Resource
                 IconColumn::make('is_active')->label('Active')->boolean(),
             ])
             ->filters([
+                SelectFilter::make('sales_channel')->label('Website')->options([
+                    'wholesale' => 'IGI Canada',
+                    'retail' => 'Leather Wallets',
+                ])->visible(fn (): bool => AdminStorefront::current() === 'all'),
                 SelectFilter::make('country')->options(['CA' => 'Canada', 'US' => 'USA']),
             ])
             ->recordActions([EditAction::make(), DeleteAction::make()]);

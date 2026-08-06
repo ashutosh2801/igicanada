@@ -15,20 +15,21 @@ class HomeController extends Controller
 {
     public function __invoke(Request $request): Response
     {
-        $settings = HomepageSetting::query()->firstOrFail();
+        $settings = HomepageSetting::query()->forChannel('wholesale')->firstOrFail();
         $user = $request->user()?->loadMissing('priceTier');
         $canViewPricing = $user?->isApprovedWholesale() ?? false;
         $discount = $canViewPricing ? (float) ($user->priceTier?->discount_percentage ?? 0) : 0;
         $featuredIds = collect($settings->featured_category_ids)->map(fn ($id) => (int) $id)->filter();
         $categories = Category::query()
+            ->visibleForChannel('wholesale')
             ->where('is_active', true)
             ->whereHas('products', fn ($query) => $query
                 ->where('is_active', true)
-                ->where('visibility', 'wholesale'))
+                ->whereIn('visibility', ['wholesale', 'both']))
             ->when($featuredIds->isNotEmpty(), fn ($query) => $query->whereIn('id', $featuredIds))
             ->withCount(['products' => fn ($query) => $query
                 ->where('is_active', true)
-                ->where('visibility', 'wholesale')])
+                ->whereIn('visibility', ['wholesale', 'both'])])
             ->orderBy('position')
             ->orderBy('name')
             ->limit(8)
@@ -39,7 +40,7 @@ class HomeController extends Controller
 
         $fallbackHero = Product::query()
             ->where('is_active', true)
-            ->where('visibility', 'wholesale')
+            ->whereIn('visibility', ['wholesale', 'both'])
             ->whereNotNull('primary_image_path')
             ->orderByDesc('published_at')
             ->value('primary_image_path');
@@ -62,7 +63,7 @@ class HomeController extends Controller
             $newArrivals = Product::query()
                 ->select(['id', 'sku', 'name', 'slug', 'primary_image_path', 'published_at'])
                 ->where('is_active', true)
-                ->where('visibility', 'wholesale')
+                ->whereIn('visibility', ['wholesale', 'both'])
                 ->withCount(['variants' => fn ($query) => $query->where('is_active', true)])
                 ->withSum(['variants as stock_quantity' => fn ($query) => $query->where('is_active', true)], 'stock_quantity')
                 ->withMin(['variants as minimum_wholesale_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_price')
@@ -119,9 +120,9 @@ class HomeController extends Controller
             ],
             'catalogue' => [
                 'categories' => Category::where('is_active', true)->count(),
-                'products' => Product::where('is_active', true)->where('visibility', 'wholesale')->count(),
+                'products' => Product::where('is_active', true)->whereIn('visibility', ['wholesale', 'both'])->count(),
                 'variants' => ProductVariant::where('is_active', true)
-                    ->whereHas('product', fn ($query) => $query->where('is_active', true)->where('visibility', 'wholesale'))
+                    ->whereHas('product', fn ($query) => $query->where('is_active', true)->whereIn('visibility', ['wholesale', 'both']))
                     ->count(),
             ],
         ]);

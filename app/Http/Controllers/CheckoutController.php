@@ -136,6 +136,7 @@ class CheckoutController extends Controller
 
             $order = Order::create([
                 'order_number' => $this->orderNumber(),
+                'sales_channel' => 'wholesale',
                 'user_id' => $user->id,
                 'customer_address_id' => $addressId,
                 'shipping_address' => [

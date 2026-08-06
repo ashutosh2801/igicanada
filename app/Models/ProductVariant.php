@@ -13,6 +13,10 @@ class ProductVariant extends Model
     {
         return [
             'is_active' => 'boolean',
+            'is_available_wholesale' => 'boolean',
+            'is_available_retail' => 'boolean',
+            'retail_price' => 'decimal:2',
+            'retail_compare_at_price' => 'decimal:2',
             'wholesale_price' => 'decimal:2',
             'sizes' => 'array',
         ];

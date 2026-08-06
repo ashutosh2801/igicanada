@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Products\Schemas;
 
 use App\Filament\Resources\MediaAssets\Tables\MediaAssetsPickerTable;
 use App\Models\MediaAsset;
+use App\Support\AdminStorefront;
 use Filament\Actions\Action;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\DateTimePicker;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\HtmlString;
@@ -24,15 +26,37 @@ class ProductForm
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->required(),
+                    ->label(fn (): string => AdminStorefront::current() === 'all' ? 'Wholesale product name' : 'Product name')
+                    ->required(fn (Get $get): bool => AdminStorefront::current() === 'wholesale'
+                        || (AdminStorefront::current() === 'all' && $get('visibility') !== 'retail'))
+                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                    ->dehydratedWhenHidden(),
+                TextInput::make('retail_name')
+                    ->label(fn (): string => AdminStorefront::current() === 'all' ? 'Retail product name' : 'Product name')
+                    ->required(fn (Get $get): bool => AdminStorefront::current() === 'retail'
+                        || (AdminStorefront::current() === 'all' && in_array($get('visibility'), ['retail', 'both'], true)))
+                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                    ->dehydratedWhenHidden(),
                 TextInput::make('slug')
                     ->required()
                     ->unique(ignoreRecord: true),
                 RichEditor::make('description')
-                    ->label('Description')
-                    ->columnSpanFull(),
+                    ->label('Wholesale description')
+                    ->columnSpanFull()
+                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                    ->dehydratedWhenHidden(),
+                RichEditor::make('retail_description')
+                    ->label('Retail description')
+                    ->helperText('Optional. The retail storefront can use different customer-facing copy.')
+                    ->columnSpanFull()
+                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                    ->dehydratedWhenHidden(),
                 Select::make('categories')
-                    ->relationship('categories', 'name')
+                    ->relationship(
+                        'categories',
+                        'name',
+                        modifyQueryUsing: fn ($query) => AdminStorefront::applyVisibility($query),
+                    )
                     ->multiple()
                     ->preload()
                     ->searchable(),
@@ -92,6 +116,17 @@ class ProductForm
                     ->label('SKU'),
                 TextInput::make('weight_kg')
                     ->numeric(),
+                Select::make('visibility')
+                    ->options([
+                        'wholesale' => 'Wholesale only',
+                        'retail' => 'Retail only',
+                        'both' => 'Retail and wholesale',
+                    ])
+                    ->required()
+                    ->live()
+                    ->visible(fn (): bool => AdminStorefront::current() === 'all')
+                    ->dehydratedWhenHidden()
+                    ->default(fn (): string => AdminStorefront::current() === 'retail' ? 'retail' : 'wholesale'),
                 Toggle::make('is_active')
                     ->default(true),
                 DateTimePicker::make('published_at'),
@@ -114,8 +149,31 @@ class ProductForm
                             ->native(false)
                             ->options(self::sizeOptions())
                             ->helperText('Select one or more sizes. Each selection appears here immediately.'),
-                        TextInput::make('wholesale_price')->numeric()->prefix('$'),
-                        TextInput::make('wholesale_minimum_quantity')->numeric()->default(1)->minValue(1),
+                        TextInput::make('wholesale_price')->numeric()->prefix('$')
+                            ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                            ->dehydratedWhenHidden(),
+                        TextInput::make('wholesale_minimum_quantity')->numeric()->default(1)->minValue(1)
+                            ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                            ->dehydratedWhenHidden(),
+                        Toggle::make('is_available_wholesale')
+                            ->label('Wholesale')
+                            ->default(true)
+                            ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                            ->dehydratedWhenHidden(),
+                        TextInput::make('retail_price')->numeric()->prefix('$')
+                            ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                            ->dehydratedWhenHidden(),
+                        TextInput::make('retail_compare_at_price')
+                            ->label('Retail compare-at price')
+                            ->numeric()
+                            ->prefix('$')
+                            ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                            ->dehydratedWhenHidden(),
+                        Toggle::make('is_available_retail')
+                            ->label('Retail')
+                            ->default(false)
+                            ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                            ->dehydratedWhenHidden(),
                         TextInput::make('stock_quantity')->numeric()->default(0),
                         Toggle::make('is_active')->default(true),
                     ])
@@ -144,5 +202,4 @@ class ProductForm
             <img src="{$url}" alt="{$name}" title="{$name}" style="width:3.5rem;height:3.5rem;border-radius:0.5rem;object-fit:cover" />
         HTML);
     }
-
 }

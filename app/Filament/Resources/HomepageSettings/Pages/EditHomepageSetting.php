@@ -14,9 +14,16 @@ class EditHomepageSetting extends EditRecord
     {
         return [
             Action::make('viewStorefront')
-                ->label('View homepage')
-                ->url(route('home'))
+                ->label(fn (): string => $this->record->sales_channel === 'retail' ? 'View Leather Wallets' : 'View IGI Canada')
+                ->url(fn (): string => $this->record->sales_channel === 'retail' ? route('retail.home') : route('home'))
                 ->openUrlInNewTab(),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return $this->record->sales_channel === 'retail'
+            ? 'Leather Wallets homepage'
+            : 'IGI Canada homepage';
     }
 }

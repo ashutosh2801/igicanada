@@ -1,5 +1,7 @@
 import PublicShell from '@/components/PublicShell';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import SeoHead, { type BreadcrumbItem } from '@/components/SeoHead';
+import { useForm, usePage } from '@inertiajs/react';
 import { FormEvent } from 'react';
 
 type Company = { name: string; address: string; city: string; country: string; phone: string; email: string };
@@ -10,6 +12,7 @@ const fieldClass = 'mt-2 w-full rounded-xl border border-stone-300 bg-white px-4
 export default function Create({ company }: { company: Company }) {
     const { flash } = usePage<SharedProps>().props;
     const form = useForm({ name: '', email: '', phone: '', company: '', subject: '', message: '', website: '' });
+    const breadcrumbs: BreadcrumbItem[] = [{ label: 'Home', href: '/' }, { label: 'Contact' }];
 
     function submit(event: FormEvent) {
         event.preventDefault();
@@ -18,8 +21,9 @@ export default function Create({ company }: { company: Company }) {
 
     return (
         <PublicShell>
-            <Head title="Contact IGI Canada" />
+            <SeoHead title="Contact IGI Canada" description="Contact IGI Canada about wholesale accounts, leather products, orders and shipping." canonicalPath="/contact" breadcrumbs={breadcrumbs} />
             <main className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[0.75fr_1.25fr] lg:px-8 lg:py-24">
+                <div className="lg:col-span-2"><Breadcrumbs items={breadcrumbs} /></div>
                 <section>
                     <p className="text-sm font-bold tracking-[0.18em] text-amber-800 uppercase">Let’s talk</p>
                     <h1 className="mt-3 text-5xl font-black tracking-tight">How can we help?</h1>

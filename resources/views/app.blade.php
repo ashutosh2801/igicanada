@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     @php
         $siteSetting = \Illuminate\Support\Facades\Schema::hasTable('homepage_settings')
-            ? \App\Models\HomepageSetting::query()->first()
+            ? \App\Models\HomepageSetting::query()->forChannel('wholesale')->first()
             : null;
         $favicon = \App\Support\StorefrontAsset::uploaded($siteSetting?->favicon_path);
         $ogImage = \App\Support\StorefrontAsset::uploaded($siteSetting?->og_image_path);
@@ -12,6 +12,7 @@
         <meta charset="utf-8">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="canonical" href="{{ request()->url() }}">
         <meta name="description" content="{{ $siteSetting?->default_meta_description ?? 'IGI Canada wholesale leather goods and accessories.' }}">
         <meta property="og:type" content="website">
         <meta property="og:title" content="{{ $siteSetting?->og_title ?? $siteSetting?->default_meta_title ?? 'IGI Canada' }}">

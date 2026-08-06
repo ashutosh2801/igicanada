@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Notifications\OrderStatusChanged;
+use App\Notifications\RetailPaymentConfirmed;
 use App\Services\PayPalService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -38,9 +40,12 @@ class PayPalController extends Controller
         $providerOrderId = trim((string) $request->query('token'));
         $payment = Payment::where('provider_order_id', $providerOrderId)->with('order')->firstOrFail();
         $this->authorizeOrder($request, $payment->order);
+        if ($payment->order->status === 'cancelled' || $payment->order->inventory_released_at) {
+            throw ValidationException::withMessages(['payment' => 'This order has been cancelled and can no longer be paid.']);
+        }
 
         if ($payment->status === 'completed') {
-            return redirect()->route('orders.show', $payment->order)->with('status', 'Payment already completed.');
+            return redirect()->to($this->orderUrl($payment->order))->with('status', 'Payment already completed.');
         }
 
         try {
@@ -77,12 +82,17 @@ class PayPalController extends Controller
             });
 
             try {
-                $payment->order->refresh()->user->notify(new OrderStatusChanged($payment->order));
+                $order = $payment->order->refresh();
+                if ($order->user) {
+                    $order->user->notify(new OrderStatusChanged($order));
+                } elseif (filter_var($order->customer_email, FILTER_VALIDATE_EMAIL)) {
+                    Notification::route('mail', $order->customer_email)->notify(new RetailPaymentConfirmed($order));
+                }
             } catch (Throwable $exception) {
                 report($exception);
             }
 
-            return redirect()->route('orders.show', $payment->order)->with('status', 'PayPal payment completed.');
+            return redirect()->to($this->orderUrl($payment->order))->with('status', 'PayPal payment completed.');
         } catch (ValidationException $exception) {
             throw $exception;
         } catch (Throwable $exception) {
@@ -101,11 +111,24 @@ class PayPalController extends Controller
             $payment->update(['status' => 'cancelled']);
         }
 
-        return redirect()->route('orders.show', $payment->order)->with('status', 'PayPal payment was cancelled.');
+        return redirect()->to($this->orderUrl($payment->order))->with('status', 'PayPal payment was cancelled. You can retry when ready.');
     }
 
     private function authorizeOrder(Request $request, Order $order): void
     {
-        abort_unless($order->user_id === $request->user()->id, 404);
+        if ($order->sales_channel === 'retail') {
+            abort_unless(in_array($order->id, $request->session()->get('retail_order_ids', []), true), 404);
+
+            return;
+        }
+
+        abort_unless($request->user() && $order->user_id === $request->user()->id, 404);
+    }
+
+    private function orderUrl(Order $order): string
+    {
+        return $order->sales_channel === 'retail'
+            ? route('retail.orders.show', $order)
+            : route('orders.show', $order);
     }
 }

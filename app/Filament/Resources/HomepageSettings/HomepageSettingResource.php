@@ -6,6 +6,7 @@ use App\Filament\Resources\HomepageSettings\Pages\EditHomepageSetting;
 use App\Filament\Resources\HomepageSettings\Pages\ListHomepageSettings;
 use App\Models\Category;
 use App\Models\HomepageSetting;
+use App\Support\AdminStorefront;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
@@ -19,6 +20,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class HomepageSettingResource extends Resource
@@ -33,17 +35,37 @@ class HomepageSettingResource extends Resource
 
     protected static ?string $modelLabel = 'homepage';
 
+    public static function getEloquentQuery(): Builder
+    {
+        return AdminStorefront::apply(parent::getEloquentQuery());
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
+            Section::make('Website')->schema([
+                TextInput::make('sales_channel')
+                    ->label('Sales channel')
+                    ->formatStateUsing(fn (string $state): string => $state === 'retail' ? 'Leather Wallets · Retail' : 'IGI Canada · Wholesale')
+                    ->disabled()
+                    ->visible(fn (): bool => AdminStorefront::current() === 'all'),
+            ])->columnSpanFull(),
             Section::make('Brand and header')->schema([
                 TextInput::make('brand_name')->required()->maxLength(255),
                 FileUpload::make('logo_path')->label('Logo')->image()->disk('public')->directory('storefront/branding'),
                 TextInput::make('logo_alt')->label('Logo alternative text')->required(),
                 FileUpload::make('favicon_path')->label('Favicon')->image()->disk('public')->directory('storefront/branding')->helperText('Upload a square PNG, ICO or WebP image.'),
                 TextInput::make('announcement_text')->columnSpanFull(),
-                Toggle::make('show_category_menu')->label('Show category mega menu')->default(true),
-                TextInput::make('category_menu_label')->label('Category menu label')->default('All categories'),
+                Toggle::make('show_category_menu')
+                    ->label('Show category mega menu')
+                    ->default(true)
+                    ->visible(fn (?HomepageSetting $record): bool => self::showsWholesaleFields($record))
+                    ->dehydratedWhenHidden(),
+                TextInput::make('category_menu_label')
+                    ->label('Category menu label')
+                    ->default('All categories')
+                    ->visible(fn (?HomepageSetting $record): bool => self::showsWholesaleFields($record))
+                    ->dehydratedWhenHidden(),
             ])->columns(2)->columnSpanFull(),
             Section::make('Hero')->schema([
                 TextInput::make('hero_eyebrow'),
@@ -67,9 +89,9 @@ class HomepageSettingResource extends Resource
                     ->default(5)
                     ->required(),
                 TextInput::make('hero_primary_label'),
-                TextInput::make('hero_primary_url')->placeholder('/catalogue'),
+                TextInput::make('hero_primary_url')->placeholder('/shop or /catalogue'),
                 TextInput::make('hero_secondary_label'),
-                TextInput::make('hero_secondary_url')->placeholder('/wholesale/apply'),
+                TextInput::make('hero_secondary_url')->placeholder('/shop or /wholesale/apply'),
             ])->columns(2)->columnSpanFull(),
             Section::make('Search and social metadata')->schema([
                 TextInput::make('default_meta_title')->label('Default browser and SEO title')->required()->columnSpanFull(),
@@ -94,8 +116,8 @@ class HomepageSettingResource extends Resource
                     ->multiple()
                     ->searchable()
                     ->preload()
-                    ->options(fn () => Category::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id'))
-                    ->helperText('Leave empty to show the first active wholesale categories.')
+                    ->options(fn () => AdminStorefront::applyVisibility(Category::query())->where('is_active', true)->orderBy('name')->pluck('name', 'id'))
+                    ->helperText('Leave empty to automatically show active categories for the selected website.')
                     ->columnSpanFull(),
             ])->columns(2)->columnSpanFull(),
             Section::make('New arrivals products')->schema([
@@ -119,6 +141,12 @@ class HomepageSettingResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('sales_channel')
+                    ->label('Website')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => $state === 'retail' ? 'Leather Wallets' : 'IGI Canada')
+                    ->color(fn (string $state): string => $state === 'retail' ? 'warning' : 'info')
+                    ->visible(fn (): bool => AdminStorefront::current() === 'all'),
                 TextColumn::make('brand_name')->label('Storefront'),
                 TextColumn::make('hero_title')->limit(70),
                 TextColumn::make('updated_at')->dateTime(),
@@ -132,5 +160,10 @@ class HomepageSettingResource extends Resource
             'index' => ListHomepageSettings::route('/'),
             'edit' => EditHomepageSetting::route('/{record}/edit'),
         ];
+    }
+
+    private static function showsWholesaleFields(?HomepageSetting $record): bool
+    {
+        return ($record?->sales_channel ?? AdminStorefront::current()) !== 'retail';
     }
 }

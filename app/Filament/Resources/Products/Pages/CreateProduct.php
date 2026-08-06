@@ -3,16 +3,18 @@
 namespace App\Filament\Resources\Products\Pages;
 
 use App\Filament\Resources\Products\ProductResource;
+use App\Support\AdminStorefront;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateProduct extends CreateRecord
 {
     protected static string $resource = ProductResource::class;
 
-    /** @param  array<string, mixed>  $data */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['visibility'] = 'wholesale';
+        if (AdminStorefront::current() === 'retail' && blank($data['name'] ?? null)) {
+            $data['name'] = $data['retail_name'];
+        }
 
         return $data;
     }

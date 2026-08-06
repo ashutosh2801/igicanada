@@ -1,11 +1,14 @@
 import PublicShell from '@/components/PublicShell';
-import { Head, Link, router } from '@inertiajs/react';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import SeoHead, { type BreadcrumbItem } from '@/components/SeoHead';
+import { Link, router } from '@inertiajs/react';
 import { FormEvent, useState } from 'react';
 
 type Result = { type: string; title: string; description: string | null; url: string; image: string | null; accountPrice: string | null };
 
 export default function Search({ query, results, pricingAuthorized }: { query: string; results: Result[]; pricingAuthorized: boolean }) {
     const [value, setValue] = useState(query);
+    const breadcrumbs: BreadcrumbItem[] = [{ label: 'Home', href: '/' }, { label: 'Search' }];
     function submit(event: FormEvent) {
         event.preventDefault();
         if (value.trim().length >= 2) router.get('/search', { q: value.trim() });
@@ -13,8 +16,9 @@ export default function Search({ query, results, pricingAuthorized }: { query: s
 
     return (
         <PublicShell>
-            <Head title={query ? `Search: ${query}` : 'Search'} />
+            <SeoHead title={query ? `Search: ${query}` : 'Search'} canonicalPath="/search" noIndex breadcrumbs={breadcrumbs} />
             <main className="mx-auto max-w-6xl px-6 py-16 lg:px-8 lg:py-24">
+                <Breadcrumbs items={breadcrumbs} />
                 <p className="text-xs font-black tracking-[0.2em] text-amber-800 uppercase">Global search</p>
                 <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">Find products and information</h1>
                 <form onSubmit={submit} className="mt-9 flex max-w-3xl gap-3">

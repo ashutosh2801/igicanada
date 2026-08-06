@@ -51,9 +51,9 @@
         <tr>
             <td>
                 <div class="label">Bill to</div>
-                <strong>{{ $order->user->name }}</strong><br>
-                @if($order->user->resellerProfile?->company){{ $order->user->resellerProfile->company }}<br>@endif
-                {{ $order->user->email }}
+                <strong>{{ $order->user?->name ?: data_get($order->shipping_address, 'name') }}</strong><br>
+                @if($order->user?->resellerProfile?->company){{ $order->user->resellerProfile->company }}<br>@endif
+                {{ $order->user?->email ?: $order->customer_email }}
             </td>
             <td>
                 <div class="label">Ship to</div>
@@ -86,7 +86,7 @@
         @if((float) $order->discount_total > 0)<tr><td class="muted">Discount</td><td class="right">-&#36;{{ number_format((float) $order->discount_total, 2) }}</td></tr>@endif
         <tr><td class="muted">Shipping</td><td class="right">&#36;{{ number_format((float) $order->shipping_total, 2) }}</td></tr>
         @if($order->shipping_method || $order->shipping_service)<tr><td colspan="2" class="muted right">{{ collect([$order->shipping_method, $order->shipping_service])->filter()->join(' · ') }}</td></tr>@endif
-        <tr><td class="muted">Tax</td><td class="right">&#36;{{ number_format((float) $order->tax_total, 2) }}</td></tr>
+        <tr><td class="muted">{{ data_get($order->tax_breakdown, 'label', 'Tax') }}@if(data_get($order->tax_breakdown, 'rate')) ({{ number_format((float) data_get($order->tax_breakdown, 'rate') * 100, 3) }}%)@endif</td><td class="right">&#36;{{ number_format((float) $order->tax_total, 2) }}</td></tr>
         <tr class="total"><td>{{ $order->legacy_id ? 'Recorded total' : 'Total' }}</td><td class="right">&#36;{{ number_format((float) $order->total, 2) }} {{ $order->currency }}</td></tr>
     </table>
     @if($order->legacy_id)

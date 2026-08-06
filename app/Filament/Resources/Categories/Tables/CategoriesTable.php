@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources\Categories\Tables;
 
+use App\Filament\Tables\Columns\DirectImageColumn;
+use App\Support\AdminStorefront;
+use App\Support\StorefrontAsset;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -21,12 +23,25 @@ class CategoriesTable
                     ->searchable(),
                 TextColumn::make('legacy_id')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields()),
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('slug')
                     ->searchable(),
-                ImageColumn::make('image_path'),
+                TextColumn::make('visibility')
+                    ->label('Website')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'both' => 'Both',
+                        'retail' => 'Leather Wallets',
+                        default => 'IGI Canada',
+                    })
+                    ->visible(fn (): bool => AdminStorefront::current() === 'all'),
+                DirectImageColumn::make('image_path')
+                    ->state(fn ($record): ?string => StorefrontAsset::directUrl($record->image_path) ?? $record->image_path)
+                    ->disk('public')
+                    ->checkFileExistence(false),
                 TextColumn::make('position')
                     ->numeric()
                     ->sortable(),

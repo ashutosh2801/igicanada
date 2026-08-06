@@ -1,6 +1,9 @@
 <?php
 
 return [
+    // Set true only after the business has approved the CA/US charges in Admin.
+    'shipping_rates_reviewed' => (bool) env('SHIPPING_RATES_REVIEWED', false),
+
     'company' => [
         'name' => env('COMMERCE_COMPANY_NAME', 'IGI Canada'),
         'address' => env('COMMERCE_COMPANY_ADDRESS', '966 Pantera Dr., Unit 7'),

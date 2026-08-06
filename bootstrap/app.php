@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\DetectStorefront;
 use App\Http\Middleware\EnsureApprovedReseller;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'approved.wholesale' => EnsureApprovedReseller::class,
         ]);
         $middleware->web(append: [
+            DetectStorefront::class,
             HandleInertiaRequests::class,
         ]);
     })

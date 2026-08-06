@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class HomepageSetting extends Model
@@ -16,5 +17,10 @@ class HomepageSetting extends Model
             'show_category_menu' => 'boolean',
             'show_new_arrivals' => 'boolean',
         ];
+    }
+
+    public function scopeForChannel(Builder $query, string $channel): Builder
+    {
+        return $query->where('sales_channel', $channel);
     }
 }

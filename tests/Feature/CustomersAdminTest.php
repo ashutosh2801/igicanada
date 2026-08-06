@@ -11,17 +11,20 @@ class CustomersAdminTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_customers_resource_lists_only_wholesale_accounts(): void
+    public function test_customers_resource_lists_retail_and_wholesale_accounts_but_not_admins(): void
     {
         $customer = User::factory()->create(['account_type' => 'wholesale']);
+        $retailCustomer = User::factory()->create(['account_type' => 'retail']);
         $admin = User::factory()->create([
             'account_type' => 'admin',
             'approval_status' => 'approved',
+            'admin_sales_channel' => 'all',
         ]);
 
         $listedIds = UserResource::getEloquentQuery()->pluck('id');
 
         $this->assertTrue($listedIds->contains($customer->id));
+        $this->assertTrue($listedIds->contains($retailCustomer->id));
         $this->assertFalse($listedIds->contains($admin->id));
     }
 
@@ -30,6 +33,7 @@ class CustomersAdminTest extends TestCase
         $admin = User::factory()->create([
             'account_type' => 'admin',
             'approval_status' => 'approved',
+            'admin_sales_channel' => 'all',
         ]);
 
         $this->actingAs($admin)
@@ -44,6 +48,7 @@ class CustomersAdminTest extends TestCase
         $admin = User::factory()->create([
             'account_type' => 'admin',
             'approval_status' => 'approved',
+            'admin_sales_channel' => 'all',
         ]);
 
         $this->actingAs($admin)

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Orders;
 use App\Filament\Resources\Orders\Pages\EditOrder;
 use App\Filament\Resources\Orders\Pages\ListOrders;
 use App\Models\Order;
+use App\Support\AdminStorefront;
 use BackedEnum;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -14,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class OrderResource extends Resource
 {
@@ -21,11 +23,21 @@ class OrderResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingBag;
 
+    public static function getEloquentQuery(): Builder
+    {
+        return AdminStorefront::apply(parent::getEloquentQuery());
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
             TextInput::make('order_number')->disabled(),
-            TextInput::make('user.name')->label('Wholesale account')->disabled(),
+            TextInput::make('sales_channel')
+                ->label('Sales channel')
+                ->disabled()
+                ->visible(fn (): bool => AdminStorefront::current() === 'all'),
+            TextInput::make('user.name')->label('Customer')->disabled(),
+            TextInput::make('customer_email')->label('Customer email')->disabled(),
             Select::make('status')->options([
                 'awaiting_quote' => 'Awaiting quote',
                 'quoted' => 'Quoted',
