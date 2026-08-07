@@ -53,30 +53,39 @@ class ProductsTable
             ->columns([
                 TextColumn::make('sku')
                     ->label('SKU')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
                 DirectImageColumn::make('primary_image_url')
                     ->label('Image')
                     ->state(fn (Product $record): ?string => $record->primaryImageUrl())
                     ->square()
                     ->imageSize(56)
-                    ->checkFileExistence(false),
+                    ->checkFileExistence(false)
+                    ->toggleable(),
                 TextColumn::make('name')
                     ->label(fn (): string => AdminStorefront::current() === 'all' ? 'Wholesale name' : 'Product name')
+                    ->width('13.5rem')
                     ->sortable()
                     ->searchable()
-                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields()),
+                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                    ->toggleable(),
                 TextColumn::make('retail_name')
                     ->label(fn (): string => AdminStorefront::current() === 'all' ? 'Retail name' : 'Product name')
+                    ->width('13.5rem')
                     ->sortable()
                     ->searchable()
                     ->placeholder('Retail name not set')
-                    ->visible(fn (): bool => AdminStorefront::showsRetailFields()),
+                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                    ->toggleable()
+                    ->toggledHiddenByDefault(fn (): bool => AdminStorefront::current() !== 'retail'),
                 TextColumn::make('categories.name')
                     ->label('Categories')
                     ->badge()
+                    ->listWithLineBreaks()
                     ->limitList(3)
                     ->expandableLimitedList()
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('visibility')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
@@ -89,60 +98,81 @@ class ProductsTable
                         'retail' => 'warning',
                         default => 'info',
                     })
-                    ->visible(fn (): bool => AdminStorefront::current() === 'all'),
+                    ->visible(fn (): bool => AdminStorefront::current() === 'all')
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 TextColumn::make('variants_count')
                     ->counts('variants')
-                    ->label('Variants'),
+                    ->label('Variants')
+                    ->toggleable(),
                 IconColumn::make('wholesale_ready_variants_count')
                     ->label('Wholesale ready')
                     ->boolean()
                     ->state(fn (Product $record): bool => (int) $record->wholesale_ready_variants_count > 0)
-                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields()),
+                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 TextColumn::make('minimum_wholesale_price')
                     ->label('Wholesale from')
                     ->money('CAD')
                     ->placeholder('Not priced')
-                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields()),
+                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 IconColumn::make('retail_ready_variants_count')
                     ->label('Retail ready')
                     ->boolean()
                     ->state(fn (Product $record): bool => (int) $record->retail_ready_variants_count > 0)
-                    ->visible(fn (): bool => AdminStorefront::showsRetailFields()),
+                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 TextColumn::make('minimum_retail_price')
                     ->label('Retail from')
                     ->money('CAD')
                     ->placeholder('Not priced')
-                    ->visible(fn (): bool => AdminStorefront::showsRetailFields()),
+                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 TextColumn::make('available_stock_quantity')
                     ->label('Stock')
-                    ->numeric(),
+                    ->numeric()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 TextColumn::make('weight_kg')
                     ->label('Weight kg')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 IconColumn::make('is_active')
                     ->label('Is active')
-                    ->boolean(),
+                    ->boolean()
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 TextColumn::make('published_at')
                     ->label('Published at')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('legacy_id')
                     ->label('Legacy ID')
                     ->numeric()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 TextColumn::make('slug')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
             ])
             ->filters([
                 SelectFilter::make('visibility')

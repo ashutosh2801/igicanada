@@ -173,18 +173,52 @@ class AdminContextualFieldsTest extends TestCase
 
         AdminStorefront::select('all');
 
-        Livewire::test(ListProducts::class)
+        $listing = Livewire::test(ListProducts::class)
             ->assertCanSeeTableRecords([$wholesale, $retail])
             ->assertTableColumnVisible('name')
-            ->assertTableColumnVisible('retail_name')
-            ->assertTableColumnVisible('minimum_wholesale_price')
-            ->assertTableColumnVisible('minimum_retail_price')
-            ->assertTableColumnVisible('visibility');
+            ->assertTableColumnVisible('variants_count')
+            ->assertTableColumnVisible('weight_kg')
+            ->assertTableColumnVisible('published_at');
+
+        $defaultColumns = collect($listing->instance()->tableColumns)->keyBy('name');
+        $this->assertSame('13.5rem', $listing->instance()->getTable()->getColumn('name')->getWidth());
+        $this->assertSame('13.5rem', $listing->instance()->getTable()->getColumn('retail_name')->getWidth());
+        foreach (['retail_name', 'visibility', 'retail_ready_variants_count', 'minimum_retail_price', 'minimum_wholesale_price', 'available_stock_quantity', 'is_active', 'legacy_id', 'slug', 'created_at', 'updated_at'] as $column) {
+            $this->assertFalse($defaultColumns[$column]['isToggled'], "Expected {$column} to be hidden by default.");
+        }
 
         $this->get('/admin/products')
             ->assertSuccessful()
             ->assertSee('https://igicanada.ca/upload/post/Retail%20Wallet.jpg', false)
             ->assertDontSee('https%3A//igicanada.ca', false);
+    }
+
+    public function test_product_category_show_more_keeps_extra_categories_in_the_page(): void
+    {
+        $this->actingAs($this->admin());
+        AdminStorefront::select('all');
+
+        $product = Product::create([
+            'name' => 'Multi-category wallet',
+            'slug' => 'multi-category-wallet',
+            'visibility' => 'both',
+            'is_active' => true,
+        ]);
+
+        $categories = collect(range(1, 4))->map(fn (int $number): Category => Category::create([
+            'name' => "Expandable category {$number}",
+            'slug' => "expandable-category-{$number}",
+            'visibility' => 'both',
+            'is_active' => true,
+        ]));
+        $product->categories()->attach($categories->pluck('id'));
+
+        Livewire::test(ListProducts::class)
+            ->assertSee('Expandable category 1')
+            ->assertSee('Expandable category 2')
+            ->assertSee('Expandable category 3')
+            ->assertSee('Expandable category 4')
+            ->assertSee('Show 1 more');
     }
 
     public function test_customer_fields_follow_the_customer_and_selected_website(): void

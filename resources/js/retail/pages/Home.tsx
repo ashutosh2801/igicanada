@@ -59,10 +59,10 @@ export default function Home({ homepage, products, categories }: Props) {
             }]} />
 
             <main className="bg-white">
-                <section className="relative isolate min-h-[72vh] overflow-hidden bg-[#d80621] sm:min-h-[78vh]">
+                <section className="relative isolate min-h-[54vh] overflow-hidden bg-[#d80621] sm:min-h-[58.5vh]">
                     <HeroBackdrop images={homepage.heroImages} fallbackProducts={heroProducts} interval={homepage.heroSliderInterval} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/15" />
-                    <div className="relative mx-auto flex min-h-[72vh] max-w-7xl items-end justify-center px-6 py-16 text-center text-white sm:min-h-[78vh] sm:py-20 lg:px-8">
+                    <div className="relative mx-auto flex min-h-[54vh] max-w-7xl items-end justify-center px-6 py-16 text-center text-white sm:min-h-[58.5vh] sm:py-20 lg:px-8">
                         <div className="max-w-3xl">
                             {homepage.heroEyebrow && <p className="text-[11px] font-semibold tracking-[0.34em] uppercase">{homepage.heroEyebrow}</p>}
                             <h1 className="font-display mt-5 text-5xl leading-[0.94] font-normal tracking-[-0.04em] text-balance sm:text-7xl lg:text-[5.5rem]">{homepage.heroTitle}</h1>
@@ -78,11 +78,11 @@ export default function Home({ homepage, products, categories }: Props) {
                 {categories.length > 0 && <section className="mx-auto max-w-[90rem] px-5 py-16 sm:px-8 sm:py-24">
                     <SectionHeading eyebrow={homepage.categoriesEyebrow || 'Explore'} title={homepage.categoriesTitle || 'Shop by category'} href="/shop" />
                     {homepage.categoriesDescription && <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-6 text-stone-500">{homepage.categoriesDescription}</p>}
-                    <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                    <div className="mt-14 grid grid-cols-2 gap-x-7 gap-y-14 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-16 lg:grid-cols-4 lg:gap-x-10 xl:grid-cols-6">
                         {categories.slice(0, 6).map((category) => (
                             <Link key={category.slug} href={`/shop?category=${encodeURIComponent(category.slug)}`} className="group text-center">
-                                <div className="aspect-[4/5] overflow-hidden bg-[#f5f5f5]">
-                                    {category.image ? <img src={category.image} alt={category.name} className="h-full w-full object-cover object-center transition duration-700 group-hover:scale-105" /> : <div className="grid h-full place-items-center font-display text-4xl text-[#d80621]/25">LW</div>}
+                                <div className="mx-auto aspect-[4/5] w-full max-w-44 rounded-none overflow-hidden bg-[#f5f5f5]">
+                                    {category.image ? <img src={category.image} alt={category.name} className="h-full w-full object-contain object-center p-3 transition duration-700 group-hover:scale-105 sm:p-4" /> : <div className="grid h-full place-items-center font-display text-4xl text-[#d80621]/25">LW</div>}
                                 </div>
                                 <h3 className="mt-4 text-xs font-semibold tracking-[0.14em] uppercase">{category.name}</h3>
                             </Link>

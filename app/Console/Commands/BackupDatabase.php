@@ -37,6 +37,7 @@ class BackupDatabase extends Command
         $arguments = [
             'mysqldump', '--single-transaction', '--quick', '--skip-lock-tables',
             '--routines', '--triggers', '--events', '--hex-blob', '--no-tablespaces',
+            '--set-gtid-purged=OFF',
             '--host='.(string) ($connection['host'] ?? '127.0.0.1'),
             '--port='.(string) ($connection['port'] ?? 3306),
             '--user='.$username, '--result-file='.$path, $database,
