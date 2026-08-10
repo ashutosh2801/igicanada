@@ -22,7 +22,10 @@ export default function OrderShow({ order, payment }: { order: Order; payment: {
                     </div>
 
                     <div className="mt-10 border-t border-leather-900/10 pt-7"><h2 className="font-display text-xl font-bold">Shipping to</h2><p className="mt-3 text-sm leading-6 text-stone-600">{order.address.name}<br />{order.address.address}<br />{order.address.city}, {order.address.province} {order.address.postal_code}<br />{order.address.country}</p></div>
-                    <Link href="/shop" className="mt-9 inline-flex rounded-full bg-leather-100 px-5 py-2.5 text-sm font-bold text-leather-900">Continue shopping</Link>
+                    <div className="mt-9 flex flex-wrap gap-4">
+                        <Link href="/shop" className="inline-flex rounded-full bg-leather-100 px-5 py-2.5 text-sm font-bold text-leather-900">Continue shopping</Link>
+                        <Link href={`/orders/enquiry?order=${encodeURIComponent(order.number)}`} className="inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-bold text-leather-900 ring-1 ring-leather-900/15">Ask about this order</Link>
+                    </div>
                 </div>
             </main>
         </RetailShell>

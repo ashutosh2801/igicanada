@@ -18,6 +18,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 class ProductForm
 {
@@ -113,7 +114,11 @@ class ProductForm
                     ->columnSpanFull()
                     ->helperText('Open the Media Library popup to view thumbnails and select multiple images.'),
                 TextInput::make('sku')
-                    ->label('SKU'),
+                    ->label('SKU')
+                    ->default(fn (Get $get): ?string => filled($get('name'))
+                        ? 'SKU-'.strtoupper(Str::slug($get('name'), '-'))
+                        : null)
+                    ->placeholder('SKU-'.strtoupper(Str::slug('Product name', '-'))),
                 TextInput::make('weight_kg')
                     ->numeric(),
                 Select::make('visibility')
@@ -133,7 +138,6 @@ class ProductForm
                 Repeater::make('variants')
                     ->relationship()
                     ->schema([
-                        TextInput::make('sku')->label('SKU'),
                         TextInput::make('color')
                             ->label('Color label')
                             ->placeholder('e.g. Vintage Brown')

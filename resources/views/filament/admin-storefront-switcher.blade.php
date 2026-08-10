@@ -1,9 +1,7 @@
-<form class="admin-storefront-switcher" method="POST" action="{{ route('admin.storefront.store') }}">
-    @csrf
-    <label class="sr-only" for="admin-sales-channel">Managing website</label>
-    <select id="admin-sales-channel" name="sales_channel" onchange="this.form.requestSubmit()" aria-label="Managing website">
-        @foreach (\App\Support\AdminStorefront::options() as $value => $label)
-            <option value="{{ $value }}" @selected(\App\Support\AdminStorefront::current() === $value)>{{ $label }}</option>
-        @endforeach
-    </select>
-</form>
+<div class="admin-storefront-switcher" title="{{ \App\Support\AdminStorefront::label() }}">
+    <span class="admin-storefront-switcher-label">Managing:</span>
+    <span class="admin-storefront-indicator">
+        <span class="admin-storefront-dot"></span>
+        {{ \App\Support\AdminStorefront::label() }}
+    </span>
+</div>

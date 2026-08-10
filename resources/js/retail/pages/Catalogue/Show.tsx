@@ -35,7 +35,8 @@ export default function ProductShow({ product }: Props) {
     }, [activeImage]);
 
     function addToBag() {
-        form.transform(data => ({ ...data, variant_id: selected.id })).post('/cart/items', { preserveScroll: true });
+        form.transform(data => ({ ...data, variant_id: selected.id }));
+        form.post('/cart/items', { preserveScroll: true });
     }
 
     function showImage(index: number) {

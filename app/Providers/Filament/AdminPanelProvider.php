@@ -46,7 +46,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->domain(config('storefronts.admin_domain'))
-            ->login()
+            ->login(\App\Filament\Auth\Pages\Login::class)
             ->sidebarCollapsibleOnDesktop()
             ->userMenu(position: UserMenuPosition::Topbar)
             ->colors([
@@ -114,7 +114,7 @@ class AdminPanelProvider extends PanelProvider
                 [CreateProduct::class, EditProduct::class],
             )
             ->renderHook(
-                PanelsRenderHook::USER_MENU_BEFORE,
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn () => view('filament.admin-storefront-switcher'),
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
