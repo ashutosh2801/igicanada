@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Retail;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\MediaAsset;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -57,6 +58,8 @@ class CatalogueController extends Controller
         ]);
         abort_if($product->variants->isEmpty(), 404);
 
+        $variantImageAssets = $this->variantImageAssets($product);
+
         return Inertia::render('Catalogue/Show', [
             'product' => [
                 'name' => $product->retail_name ?: $product->name,
@@ -72,6 +75,16 @@ class CatalogueController extends Controller
                     'color' => $variant->color,
                     'colorCode' => $variant->color_code,
                     'sizes' => $variant->sizeLabels(),
+                    'images' => collect($variant->image_ids ?? [])
+                        ->filter()
+                        ->map(fn (mixed $id) => $variantImageAssets[(int) $id] ?? null)
+                        ->filter()
+                        ->values()
+                        ->map(fn (MediaAsset $asset): array => [
+                            'src' => $asset->url(),
+                            'alt' => $asset->alt_text ?: $asset->title ?: $product->name,
+                        ])
+                        ->all(),
                     'price' => number_format((float) $variant->retail_price, 2, '.', ''),
                     'compareAtPrice' => $variant->retail_compare_at_price !== null
                         ? number_format((float) $variant->retail_compare_at_price, 2, '.', '')
@@ -81,6 +94,26 @@ class CatalogueController extends Controller
                 ]),
             ],
         ]);
+    }
+
+    private function variantImageAssets(Product $product): \Illuminate\Support\Collection
+    {
+        $ids = $product->variants
+            ->pluck('image_ids')
+            ->flatten()
+            ->filter()
+            ->map(fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        return MediaAsset::query()
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
     }
 
     private function retailProducts()

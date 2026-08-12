@@ -84,6 +84,7 @@ class AdminPanelProvider extends PanelProvider
                     ->group(NavigationGroup::make('Appearance')->icon(Heroicon::OutlinedPaintBrush)->collapsible()->items($groupItems([
                         ...CategoryResource::getNavigationItems(),
                         ...HomepageSettingResource::getNavigationItems(),
+                        ...\App\Filament\Pages\StorefrontBranding::getNavigationItems(),
                         ...NavigationItemResource::getNavigationItems(),
                     ])))
                     ->group(NavigationGroup::make('Media')->icon(Heroicon::OutlinedPhoto)->collapsible()->items($groupItems([

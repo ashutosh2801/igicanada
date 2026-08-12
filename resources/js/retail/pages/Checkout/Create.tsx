@@ -6,10 +6,31 @@ type PaymentMethod = { id: 'paypal' | 'manual'; label: string; description: stri
 type Quote = { subtotal: string; shippingTotal: string | null; shippingName: string | null; tax: { label: string; amount: string; rate: number }; total: string };
 type SharedProps = { flash?: { status?: string | null } };
 type CartItem = { name: string; option: string; image: string | null; quantity: number; unitPrice: string; lineTotal: string };
+type SavedAddress = { id: string; name: string; email: string | null; phone: string; address: string; city: string; province: string; country: string; country_code: string | null; postal_code: string; is_primary: boolean };
 
-export default function Checkout({ subtotal, paypalConfigured, paymentMethods, defaultPaymentMethod, items }: { subtotal: string; paypalConfigured: boolean; paymentMethods: PaymentMethod[]; defaultPaymentMethod: 'paypal' | 'manual'; items: CartItem[] }) {
+export default function Checkout({ subtotal, paypalConfigured, paymentMethods, defaultPaymentMethod, items, addresses }: { subtotal: string; paypalConfigured: boolean; paymentMethods: PaymentMethod[]; defaultPaymentMethod: 'paypal' | 'manual'; items: CartItem[]; addresses: SavedAddress[] }) {
     const { flash } = usePage<SharedProps>().props;
     const form = useForm({ name: '', email: '', phone: '', address: '', city: '', province: '', country: 'Canada', country_code: 'CA', postal_code: '', notes: '', payment_method: defaultPaymentMethod });
+    const [selectedAddressId, setSelectedAddressId] = useState<string>(addresses.find(a => a.is_primary)?.id ?? '');
+
+    function applyAddress(id: string) {
+        setSelectedAddressId(id);
+        if (!id) return;
+        const address = addresses.find(a => a.id === id);
+        if (!address) return;
+        form.setData(data => ({
+            ...data,
+            name: address.name,
+            email: address.email ?? data.email,
+            phone: address.phone,
+            address: address.address,
+            city: address.city,
+            province: address.province,
+            country: address.country,
+            country_code: address.country_code ?? 'CA',
+            postal_code: address.postal_code,
+        }));
+    }
     const selectedMethod = paymentMethods.find(method => method.id === form.data.payment_method) ?? paymentMethods[0];
     const payingOnline = form.data.payment_method === 'paypal' && paypalConfigured;
     const [quote, setQuote] = useState<Quote | null>(null);
@@ -47,17 +68,6 @@ export default function Checkout({ subtotal, paypalConfigured, paymentMethods, d
         form.post('/checkout');
     }
 
-    const [enquiring, setEnquiring] = useState(false);
-    function submitEnquiry() {
-        if (enquiring || form.processing) return;
-        setEnquiring(true);
-        form.setData('payment_method', 'manual');
-        form.post('/checkout/enquiry', {
-            preserveScroll: true,
-            onFinish: () => setEnquiring(false),
-        });
-    }
-
     function countryChanged(country: string) {
         form.setData(data => ({ ...data, country, country_code: country === 'Canada' ? 'CA' : 'US' }));
     }
@@ -71,6 +81,18 @@ export default function Checkout({ subtotal, paypalConfigured, paymentMethods, d
                     <form onSubmit={submit} id="checkout-form" className="rounded-3xl bg-white p-6 ring-1 ring-leather-900/10 sm:p-9">
                         <p className="text-xs font-bold tracking-[0.2em] text-leather-700 uppercase">Secure checkout</p>
                         <h1 className="font-display mt-3 text-4xl font-bold">Shipping details</h1>
+                        {addresses.length > 0 && (
+                            <div className="mt-6 rounded-2xl bg-leather-50 p-5 ring-1 ring-leather-900/10">
+                                <div className="flex items-center justify-between gap-4">
+                                    <span className="text-sm font-bold">Saved address</span>
+                                    <Link href="/account/addresses" className="text-xs font-bold text-leather-700">Manage addresses</Link>
+                                </div>
+                                <select value={selectedAddressId} onChange={e => applyAddress(e.target.value)} className="mt-3 w-full rounded-xl border-0 bg-white px-4 py-3 font-normal ring-1 ring-leather-900/15 outline-none focus:ring-2 focus:ring-leather-700">
+                                    <option value="">Enter a new address</option>
+                                    {addresses.map(address => <option key={address.id} value={address.id}>{address.name} — {address.address}, {address.city}</option>)}
+                                </select>
+                            </div>
+                        )}
                         <div className="mt-8 grid gap-5 sm:grid-cols-2">
                             <Field label="Full name" error={form.errors.name}><input value={form.data.name} onChange={e => form.setData('name', e.target.value)} required /></Field>
                             <Field label="Email" error={form.errors.email}><input type="email" value={form.data.email} onChange={e => form.setData('email', e.target.value)} required /></Field>
@@ -139,7 +161,6 @@ export default function Checkout({ subtotal, paypalConfigured, paymentMethods, d
                         {(form.errors.cart || form.errors.payment) && <p className="mt-5 rounded-xl bg-red-50 p-4 text-sm font-bold text-red-800">{form.errors.cart || form.errors.payment}</p>}
                         {flash?.status && <p className="mt-5 rounded-xl bg-green-50 p-4 text-sm font-bold text-green-800">{flash.status}</p>}
                         <button type="submit" form="checkout-form" disabled={form.processing || paymentMethods.length === 0} className="mt-6 w-full rounded-full bg-leather-900 px-6 py-3.5 font-bold text-white transition hover:bg-leather-700 disabled:opacity-50">{form.processing ? 'Placing order…' : (payingOnline ? 'Continue securely with PayPal' : 'Place order')}</button>
-                        <button type="button" onClick={submitEnquiry} disabled={enquiring || form.processing} className="mt-3 w-full rounded-full bg-white px-6 py-3 text-sm font-bold text-leather-900 ring-1 ring-leather-900/15 transition hover:bg-leather-50 disabled:opacity-50">{enquiring ? 'Sending enquiry…' : 'Submit order enquiry'}</button>
                         <Link href="/orders/enquiry" className="mt-4 block text-center text-sm font-bold text-leather-700">Have a question about an order?</Link>
                     </aside>
                 </div>

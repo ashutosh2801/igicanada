@@ -41,8 +41,8 @@ export default function Home({ homepage, categories, newArrivals, catalogue, pri
             }]} />
             <main>
                 <section className="overflow-hidden border-b border-stone-900/10">
-                    <div className="mx-auto grid min-h-[31.5rem] max-w-[90rem] lg:grid-cols-[1.02fr_0.98fr]">
-                        <div className="flex items-center px-6 py-15 sm:px-10 lg:px-14 lg:py-18 xl:px-20">
+                    <div className="mx-auto grid min-h-[20rem] max-w-[90rem] lg:grid-cols-[1.02fr_0.98fr]">
+                        <div className="flex items-center px-6 py-10 sm:px-10 lg:px-14 lg:py-12 xl:px-20">
                             <div className="max-w-3xl">
                                 {homepage.heroEyebrow && <p className="text-[10px] font-black tracking-[0.22em] text-amber-800 uppercase">{homepage.heroEyebrow}</p>}
                                 <h1 className="mt-4 text-4xl leading-[0.94] font-black tracking-[-0.055em] text-balance sm:text-[3.375rem] xl:text-[4.125rem]">{homepage.heroTitle}</h1>
@@ -155,7 +155,7 @@ function HeroSlider({ images, interval }: { images: string[]; interval: number }
     return (
         <div className="relative min-h-72 overflow-hidden bg-white lg:min-h-full" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
             {images.length > 0 ? images.map((image, index) => (
-                <img key={image} src={image} alt={`IGI Canada wholesale collection ${index + 1}`} loading={index === 0 ? 'eager' : 'lazy'} fetchPriority={index === 0 ? 'high' : 'auto'} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${index === active ? 'opacity-100' : 'pointer-events-none opacity-0'}`} />
+                <img key={image} src={image} alt={`IGI Canada wholesale collection ${index + 1}`} loading={index === 0 ? 'eager' : 'lazy'} fetchPriority={index === 0 ? 'high' : 'auto'} className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-700 ${index === active ? 'opacity-100' : 'pointer-events-none opacity-0'}`} />
             )) : <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_30%_30%,#ffffff,#d80621)] text-sm font-bold tracking-[0.2em] text-black uppercase">Hero images can be uploaded in Admin</div>}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-950/40 via-transparent to-transparent" />
             <div className="absolute bottom-5 left-5 rounded-xl bg-white/90 px-4 py-3 shadow-xl backdrop-blur sm:bottom-7 sm:left-7">

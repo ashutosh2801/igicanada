@@ -3,6 +3,8 @@
 use App\Http\Middleware\DetectStorefront;
 use App\Http\Middleware\EnsureApprovedReseller;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Support\StorefrontContext;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -25,6 +27,14 @@ return Application::configure(basePath: dirname(__DIR__))
             DetectStorefront::class,
             HandleInertiaRequests::class,
         ]);
+
+        Authenticate::redirectUsing(function (Request $request) {
+            if (StorefrontContext::fromRequest($request)->isRetail()) {
+                return route('retail.account.login', [], false);
+            }
+
+            return route('login', [], false);
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

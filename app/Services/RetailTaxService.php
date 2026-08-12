@@ -25,11 +25,14 @@ class RetailTaxService
         }
 
         $registered = (bool) config('retail-tax.gst_hst_registered');
-        $rate = $registered ? (float) $tax['rate'] : 0.0;
+
+        // Leatherwallets charges a flat 13% HST on all Canadian orders,
+        // regardless of the destination province's GST/HST rate.
+        $rate = $registered ? 0.13 : 0.0;
 
         return $this->result(
             $registered,
-            (string) $tax['label'],
+            'HST',
             $provinceCode,
             $rate,
             round(max(0, $taxableAmount) * $rate, 2),

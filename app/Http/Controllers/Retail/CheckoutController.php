@@ -10,6 +10,7 @@ use App\Notifications\OrderEnquiryReceived;
 use App\Notifications\OrderEnquirySubmitted;
 use App\Notifications\RetailOrderSubmitted;
 use App\Services\PayPalService;
+use App\Services\RetailAddressService;
 use App\Services\RetailCartService;
 use App\Services\RetailTaxService;
 use App\Services\StandardShippingService;
@@ -34,7 +35,7 @@ class CheckoutController extends Controller
             return redirect()->route('retail.cart.index');
         }
 
-        return Inertia::render('Checkout/Create', $this->checkoutProps($cart, $paypal));
+        return Inertia::render('Checkout/Create', $this->checkoutProps($cart, $paypal, ['addresses' => app(RetailAddressService::class)->all($request)]));
     }
 
     public function quote(

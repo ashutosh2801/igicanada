@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\Admin\StorefrontSelectionController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -14,10 +15,13 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\PayPalWebhookController;
+use App\Http\Controllers\Retail\AddressController as RetailAddressController;
 use App\Http\Controllers\Retail\CartController as RetailCartController;
 use App\Http\Controllers\Retail\CatalogueController as RetailCatalogueController;
 use App\Http\Controllers\Retail\CheckoutController as RetailCheckoutController;
 use App\Http\Controllers\Retail\ContentPageController as RetailContentPageController;
+use App\Http\Controllers\Retail\CustomerAccountController as RetailCustomerAccountController;
+use App\Http\Controllers\Retail\CustomerPasswordResetController as RetailCustomerPasswordResetController;
 use App\Http\Controllers\Retail\HomeController as RetailHomeController;
 use App\Http\Controllers\Retail\OrderController as RetailOrderController;
 use App\Http\Controllers\Retail\OrderEnquiryController as RetailOrderEnquiryController;
@@ -44,6 +48,34 @@ Route::domain(config('storefronts.retail.domain'))
         Route::get('/shop', [RetailCatalogueController::class, 'index'])->name('catalogue.index');
         Route::get('/products/{product:slug}', [RetailCatalogueController::class, 'show'])->name('catalogue.show');
         Route::get('/cart', [RetailCartController::class, 'index'])->name('cart.index');
+
+        // Guest shipping addresses (session-only)
+        Route::get('/addresses', [RetailAddressController::class, 'index'])->name('addresses.index');
+        Route::post('/addresses', [RetailAddressController::class, 'store'])->name('addresses.store');
+        Route::put('/addresses/{id}', [RetailAddressController::class, 'update'])->name('addresses.update');
+        Route::delete('/addresses/{id}', [RetailAddressController::class, 'destroy'])->name('addresses.destroy');
+
+        // Customer account (auth + profile + orders + addresses)
+        Route::get('/account/register', [RetailCustomerAccountController::class, 'register'])->name('account.register');
+        Route::post('/account/register', [RetailCustomerAccountController::class, 'store'])->name('account.store');
+        Route::get('/account/login', [RetailCustomerAccountController::class, 'login'])->name('account.login');
+        Route::post('/account/login', [RetailCustomerAccountController::class, 'authenticate'])->middleware('throttle:6,1');
+        Route::get('/account/forgot-password', [RetailCustomerPasswordResetController::class, 'request'])->name('account.password.request');
+        Route::post('/account/forgot-password', [RetailCustomerPasswordResetController::class, 'email'])->middleware('throttle:5,1')->name('account.password.email');
+        Route::get('/account/reset-password/{token}', [RetailCustomerPasswordResetController::class, 'reset'])->name('account.password.reset');
+        Route::post('/account/reset-password', [RetailCustomerPasswordResetController::class, 'update'])->name('account.password.update');
+
+        Route::middleware(['auth:web'])->group(function (): void {
+            Route::get('/account', [RetailCustomerAccountController::class, 'dashboard'])->name('account.dashboard');
+            Route::get('/account/profile', [RetailCustomerAccountController::class, 'profile'])->name('account.profile');
+            Route::put('/account/profile', [RetailCustomerAccountController::class, 'updateProfile'])->name('account.profile.update');
+            Route::get('/account/orders', [RetailCustomerAccountController::class, 'orders'])->name('account.orders');
+            Route::get('/account/addresses', [RetailAddressController::class, 'index'])->name('account.addresses.index');
+            Route::post('/account/addresses', [RetailAddressController::class, 'store'])->name('account.addresses.store');
+            Route::put('/account/addresses/{id}', [RetailAddressController::class, 'update'])->name('account.addresses.update');
+            Route::delete('/account/addresses/{id}', [RetailAddressController::class, 'destroy'])->name('account.addresses.destroy');
+            Route::post('/account/logout', [RetailCustomerAccountController::class, 'destroy'])->name('account.logout');
+        });
         Route::post('/cart/items', [RetailCartController::class, 'store'])->name('cart.store');
         Route::put('/cart/items/{item}', [RetailCartController::class, 'update'])->name('cart.update');
         Route::delete('/cart/items/{item}', [RetailCartController::class, 'destroy'])->name('cart.destroy');
@@ -118,6 +150,10 @@ Route::middleware(['auth', 'approved.wholesale'])->group(function (): void {
             'discountPercentage' => $user->priceTier?->discount_percentage,
         ]]);
     })->name('account.dashboard');
+    Route::get('/account/addresses', [AddressController::class, 'index'])->name('account.addresses.index');
+    Route::post('/account/addresses', [AddressController::class, 'store'])->name('account.addresses.store');
+    Route::put('/account/addresses/{address}', [AddressController::class, 'update'])->name('account.addresses.update');
+    Route::delete('/account/addresses/{address}', [AddressController::class, 'destroy'])->name('account.addresses.destroy');
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/items', [CartController::class, 'store'])->name('cart.store');
     Route::put('/cart/items/{item}', [CartController::class, 'update'])->name('cart.update');

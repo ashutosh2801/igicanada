@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\MediaAsset;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -72,6 +73,8 @@ class CatalogueController extends Controller
         $canViewPricing = $user?->isApprovedWholesale() ?? false;
         $discount = $canViewPricing ? (float) ($user->priceTier?->discount_percentage ?? 0) : 0;
 
+        $variantImageAssets = $this->variantImageAssets($product);
+
         return Inertia::render('Catalogue/Show', [
             'product' => [
                 'name' => $product->name,
@@ -81,7 +84,7 @@ class CatalogueController extends Controller
                 'seoDescription' => str(strip_tags((string) $product->description))->squish()->limit(160)->toString(),
                 'categories' => $product->categories->map->only(['name', 'slug']),
                 'images' => $this->productImages($product),
-                'variants' => $product->variants->map(function ($variant) use ($canViewPricing, $discount) {
+                'variants' => $product->variants->map(function ($variant) use ($canViewPricing, $discount, $product, $variantImageAssets) {
                     $basePrice = (float) $variant->wholesale_price;
 
                     return [
@@ -89,6 +92,16 @@ class CatalogueController extends Controller
                         'color' => $variant->color,
                         'colorCode' => $variant->color_code,
                         'sizes' => $variant->sizeLabels(),
+                        'images' => collect($variant->image_ids ?? [])
+                            ->filter()
+                            ->map(fn (mixed $id) => $variantImageAssets[(int) $id] ?? null)
+                            ->filter()
+                            ->values()
+                            ->map(fn (MediaAsset $asset): array => [
+                                'src' => $asset->url(),
+                                'alt' => $asset->alt_text ?: $asset->title ?: $product->name,
+                            ])
+                            ->all(),
                         'inStock' => $variant->stock_quantity > 0,
                         'stockQuantity' => $canViewPricing ? $variant->stock_quantity : null,
                         'minimumQuantity' => $variant->wholesale_minimum_quantity,
@@ -104,6 +117,26 @@ class CatalogueController extends Controller
             ],
             'similarProducts' => $this->similarProducts($product, $canViewPricing, $discount),
         ]);
+    }
+
+    private function variantImageAssets(Product $product): Collection
+    {
+        $ids = $product->variants
+            ->pluck('image_ids')
+            ->flatten()
+            ->filter()
+            ->map(fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        return MediaAsset::query()
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
     }
 
     /** @return Collection<int, array<string, mixed>> */

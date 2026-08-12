@@ -16,7 +16,7 @@ export default function Dashboard({ account }: { account: Account }) {
         <PublicShell>
             <Head title="My account" />
                 <main className="mx-auto min-h-[40rem] max-w-6xl px-6 py-14">
-                    <div className="mb-8 flex justify-end gap-5"><Link href="/orders" className="text-sm font-bold">Orders</Link><button onClick={() => router.post('/logout')} className="text-sm font-bold text-red-600">Sign out</button></div>
+                    <div className="mb-8 flex justify-end gap-5"><Link href="/orders" className="text-sm font-bold">Orders</Link><Link href="/account/addresses" className="text-sm font-bold">Addresses</Link><button onClick={() => router.post('/logout')} className="text-sm font-bold text-red-600">Sign out</button></div>
                     <p className="text-sm font-bold tracking-[0.18em] text-amber-800 uppercase">Wholesale account</p>
                     <h1 className="mt-3 text-4xl font-black tracking-tight">Hello, {account.name}</h1>
                     <p className="mt-2 text-stone-600">{account.company || account.email}</p>
@@ -37,10 +37,19 @@ export default function Dashboard({ account }: { account: Account }) {
                     </section>
 
                     <div className="mt-8 rounded-2xl bg-stone-950 p-8 text-white">
-                        <h2 className="text-2xl font-bold">Wholesale products</h2>
-                        <p className="mt-2 text-stone-400">Browse current products with your protected account pricing and place wholesale order requests.</p>
-                        <Link href="/catalogue" className="mt-6 inline-flex rounded-full bg-amber-700 px-5 py-3 text-sm font-bold hover:bg-amber-600">Browse products</Link>
+                        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h2 className="text-2xl font-bold">Wholesale products</h2>
+                                <p className="mt-2 text-stone-400">Browse current products with your protected account pricing and place wholesale order requests.</p>
+                            </div>
+                            <Link href="/catalogue" className="inline-flex shrink-0 rounded-full bg-amber-700 px-5 py-3 text-sm font-bold hover:bg-amber-600">Browse products</Link>
+                        </div>
                     </div>
+                    <Link href="/account/addresses" className="mt-5 block rounded-2xl bg-white p-6 ring-1 ring-stone-200 transition hover:ring-stone-400">
+                        <p className="text-sm font-bold tracking-[0.14em] text-amber-800 uppercase">Shipping addresses</p>
+                        <p className="mt-1 text-sm text-stone-600">Manage multiple shipping addresses and pick one at checkout.</p>
+                        <p className="mt-3 text-sm font-bold text-red-600">Manage addresses <span aria-hidden="true">→</span></p>
+                    </Link>
                 </main>
         </PublicShell>
     );

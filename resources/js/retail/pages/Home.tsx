@@ -43,6 +43,7 @@ type Props = { homepage: Homepage; products: Product[]; categories: Category[] }
 
 export default function Home({ homepage, products, categories }: Props) {
     const heroProducts = products.filter((product) => product.image).slice(0, 3);
+    const heroSlides = homepage.heroImages.map((src) => ({ src, cover: true }));
 
     return (
         <RetailShell>
@@ -60,7 +61,7 @@ export default function Home({ homepage, products, categories }: Props) {
 
             <main className="bg-white">
                 <section className="relative isolate min-h-[54vh] overflow-hidden bg-[#d80621] sm:min-h-[58.5vh]">
-                    <HeroBackdrop images={homepage.heroImages} fallbackProducts={heroProducts} interval={homepage.heroSliderInterval} />
+                    <HeroBackdrop images={heroSlides} fallbackProducts={heroProducts} interval={homepage.heroSliderInterval} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/15" />
                     <div className="relative mx-auto flex min-h-[54vh] max-w-7xl items-end justify-center px-6 py-16 text-center text-white sm:min-h-[58.5vh] sm:py-20 lg:px-8">
                         <div className="max-w-3xl">
@@ -132,7 +133,7 @@ export default function Home({ homepage, products, categories }: Props) {
     );
 }
 
-function HeroBackdrop({ images, fallbackProducts, interval }: { images: string[]; fallbackProducts: Product[]; interval: number }) {
+function HeroBackdrop({ images, fallbackProducts, interval }: { images: { src: string; cover: boolean }[]; fallbackProducts: Product[]; interval: number }) {
     const [active, setActive] = useState(0);
 
     useEffect(() => {
@@ -143,8 +144,8 @@ function HeroBackdrop({ images, fallbackProducts, interval }: { images: string[]
 
     if (images.length > 0) {
         return <div className="absolute inset-0">
-            {images.map((image, index) => <img key={image} src={image} alt="" className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${index === active ? 'opacity-100' : 'opacity-0'}`} />)}
-            {images.length > 1 && <div className="absolute right-6 bottom-6 z-10 flex gap-2">{images.map((image, index) => <button key={image} type="button" onClick={() => setActive(index)} aria-label={`Show hero slide ${index + 1}`} className={`h-0.5 transition-all ${index === active ? 'w-8 bg-[#d80621]' : 'w-4 bg-white/70'}`} />)}</div>}
+            {images.map((image, index) => <img key={image.src} src={image.src} alt="" className={`absolute inset-0 h-full w-full bg-[#d80621] transition-opacity duration-1000 ${index === active ? 'opacity-100' : 'opacity-0'} ${image.cover ? 'object-cover object-center' : 'object-contain object-center p-6 sm:p-10'}`} />)}
+            {images.length > 1 && <div className="absolute right-6 bottom-6 z-10 flex gap-2">{images.map((image, index) => <button key={image.src} type="button" onClick={() => setActive(index)} aria-label={`Show hero slide ${index + 1}`} className={`h-0.5 transition-all ${index === active ? 'w-8 bg-[#d80621]' : 'w-4 bg-white/70'}`} />)}</div>}
         </div>;
     }
 

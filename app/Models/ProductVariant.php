@@ -2,8 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\MediaAsset;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Collection;
 
 class ProductVariant extends Model
 {
@@ -19,7 +23,36 @@ class ProductVariant extends Model
             'retail_compare_at_price' => 'decimal:2',
             'wholesale_price' => 'decimal:2',
             'sizes' => 'array',
+            'image_ids' => 'array',
         ];
+    }
+
+    /** @return Collection<int, MediaAsset> */
+    public function imageAssets(): Collection
+    {
+        $ids = collect($this->image_ids ?? [])
+            ->filter()
+            ->map(fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        return MediaAsset::query()
+            ->whereIn('id', $ids)
+            ->orderByRaw("FIELD(id, {$ids->implode(',')})")
+            ->get();
+    }
+
+    /**
+     * Query-only relationship used to power the media library picker in
+     * Filament. The selected ids are stored in the image_ids column instead.
+     */
+    public function mediaAssets(): BelongsToMany
+    {
+        return $this->belongsToMany(MediaAsset::class, 'product_images', 'product_variant_id');
     }
 
     /** @return array<int, string> */

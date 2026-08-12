@@ -23,6 +23,9 @@ use Illuminate\Notifications\Notifiable;
     'legacy_username',
     'email',
     'legacy_email',
+    'gender',
+    'phone',
+    'avatar',
     'password',
     'account_type',
     'admin_sales_channel',
@@ -76,6 +79,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function avatarUrl(): ?string
+    {
+        return blank($this->avatar) ? null : \App\Support\StorefrontAsset::uploaded($this->avatar);
     }
 
     public function isApprovedWholesale(): bool

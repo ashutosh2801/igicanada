@@ -13,11 +13,11 @@ class OrderController extends Controller
 {
     public function show(Request $request, Order $order, PayPalService $paypal): Response
     {
-        abort_unless(
-            $order->sales_channel === 'retail'
-            && in_array($order->id, $request->session()->get('retail_order_ids', []), true),
-            404,
-        );
+        $user = $request->user();
+        $allowed = $order->sales_channel === 'retail'
+            && (($user && $order->user_id === $user->id)
+                || in_array($order->id, $request->session()->get('retail_order_ids', []), true));
+        abort_unless($allowed, 404);
         $order->load('items');
 
         return Inertia::render('Orders/Show', [

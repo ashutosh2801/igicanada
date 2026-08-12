@@ -55,6 +55,16 @@ class HandleInertiaRequests extends Middleware
                 ...parent::share($request),
                 'salesChannel' => 'retail',
                 'seoDefaults' => $this->seoDefaults($settings, 'retail'),
+                'auth' => [
+                    'user' => $request->user()
+                        ? [
+                            'id' => $request->user()->id,
+                            'name' => $request->user()->name,
+                            'email' => $request->user()->email,
+                            'avatar' => $request->user()->avatarUrl(),
+                        ]
+                        : null,
+                ],
                 'flash' => [
                     'status' => fn () => $request->session()->get('status'),
                 ],

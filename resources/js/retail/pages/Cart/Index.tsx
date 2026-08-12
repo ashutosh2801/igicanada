@@ -1,7 +1,8 @@
 import RetailShell from '../../components/RetailShell';
+import { swatchFallback } from '@/lib/variantOptions';
 import { Head, Link, router } from '@inertiajs/react';
 
-type Item = { id: number; product: string; slug: string; option: string; image: string | null; quantity: number; maximumQuantity: number; unitPrice: string; lineTotal: string };
+type Item = { id: number; product: string; slug: string; color: string | null; colorCode: string | null; sizes: string[]; option: string; image: string | null; quantity: number; maximumQuantity: number; unitPrice: string; lineTotal: string };
 
 export default function Cart({ items, subtotal }: { items: Item[]; subtotal: string }) {
     return (
@@ -17,7 +18,13 @@ export default function Cart({ items, subtotal }: { items: Item[]; subtotal: str
                             <Link href={'/products/' + item.slug} className="aspect-square overflow-hidden rounded-xl bg-leather-50">{item.image ? <img src={item.image} alt={item.product} className="h-full w-full object-contain p-2" /> : null}</Link>
                             <div>
                                 <h2 className="font-display text-xl font-bold"><Link href={'/products/' + item.slug}>{item.product}</Link></h2>
-                                <p className="mt-1 text-sm text-stone-500">{item.option}</p>
+                                {item.color
+                                    ? <p className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-stone-500">
+                                        <span className="size-3.5 shrink-0 rounded-full ring-1 ring-leather-900/15" style={{ backgroundColor: item.colorCode || swatchFallback(item.color) }} aria-hidden="true" />
+                                        <span className="font-bold text-stone-700">{item.color}</span>
+                                        {item.sizes.length > 0 && <span>· {item.sizes.join(', ')}</span>}
+                                    </p>
+                                    : <p className="mt-1 text-sm text-stone-500">{item.option}</p>}
                                 <p className="mt-2 font-bold text-leather-700">${item.unitPrice} each</p>
                                 <button onClick={() => router.delete(`/cart/items/${item.id}`, { preserveScroll: true })} className="mt-4 text-xs font-bold text-stone-500 underline">Remove</button>
                             </div>

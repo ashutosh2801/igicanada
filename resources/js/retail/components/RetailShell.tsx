@@ -1,9 +1,10 @@
-import { Head, Link, usePage } from '@inertiajs/react';
-import { PropsWithChildren } from 'react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { PropsWithChildren, useEffect, useRef, useState } from 'react';
 
 type SharedProps = {
     seoDefaults: { baseUrl: string };
     flash: { status: string | null };
+    auth: { user: { id: number; name: string; email: string; avatar: string | null } | null };
     retailStorefront: {
         brandName: string;
         logoUrl: string | null;
@@ -17,9 +18,21 @@ type SharedProps = {
 
 export default function RetailShell({ children }: PropsWithChildren) {
     const page = usePage<SharedProps>();
-    const { flash, retailStorefront, seoDefaults } = page.props;
+    const { flash, retailStorefront, seoDefaults, auth } = page.props;
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
     const path = page.url.split('?')[0];
     const privatePage = /^\/(cart|checkout|orders)(\/|$)/.test(path);
+
+    useEffect(() => {
+        function close(event: MouseEvent) {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setMenuOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', close);
+        return () => document.removeEventListener('mousedown', close);
+    }, []);
 
     return (
         <div className="min-h-screen bg-white text-ink">
@@ -40,6 +53,25 @@ export default function RetailShell({ children }: PropsWithChildren) {
                     <Link href="/" className="font-display text-center text-[30px] tracking-[0.08em] text-black uppercase sm:text-[36px]" aria-label={retailStorefront.brandName + ' home'}>{retailStorefront.logoUrl ? <img src={retailStorefront.logoUrl} alt={retailStorefront.logoAlt} className="mx-auto h-9 w-auto sm:h-11" /> : retailStorefront.brandName}</Link>
                     <nav className="ml-auto flex items-center justify-end gap-3 sm:gap-5">
                         <Link href="/shop" aria-label="Search products" className="hidden text-black/70 transition hover:text-black sm:block"><SearchIcon /></Link>
+                        {auth.user ? (
+                            <div ref={menuRef} className="relative">
+                                <button onClick={() => setMenuOpen(open => !open)} aria-label="Account menu" className="grid size-10 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-[#d80621] to-black text-sm font-black text-white transition hover:ring-2 hover:ring-[#d80621]/30">{auth.user.avatar ? <img src={auth.user.avatar} alt={auth.user.name} className="size-full object-cover" /> : initials(auth.user.name)}</button>
+                                {menuOpen && (
+                                    <div className="absolute right-0 top-12 w-56 rounded-2xl bg-white p-2 shadow-2xl ring-1 ring-black/10">
+                                        <div className="border-b border-black/5 px-3 py-2.5">
+                                            <p className="truncate text-sm font-bold">{auth.user.name}</p>
+                                            <p className="truncate text-xs text-black/50">{auth.user.email}</p>
+                                        </div>
+                                        <Link href="/account" onClick={() => setMenuOpen(false)} className="block rounded-xl px-3 py-2.5 text-sm font-bold transition hover:bg-black/5">My account</Link>
+                                        <Link href="/account/orders" onClick={() => setMenuOpen(false)} className="block rounded-xl px-3 py-2.5 text-sm font-bold transition hover:bg-black/5">Orders</Link>
+                                        <Link href="/account/addresses" onClick={() => setMenuOpen(false)} className="block rounded-xl px-3 py-2.5 text-sm font-bold transition hover:bg-black/5">Addresses</Link>
+                                        <button onClick={() => router.post('/account/logout')} className="mt-1 block w-full rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#d80621] transition hover:bg-[#d80621]/5">Sign out</button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link href="/account/login" aria-label="Sign in" className="text-black/70 transition hover:text-black"><UserIcon /></Link>
+                        )}
                         <Link href="/cart" className="relative flex items-center gap-2 text-[15px] font-bold tracking-[0.14em] uppercase transition hover:text-[#d80621]">
                             <BagIcon /><span className="hidden sm:inline">Bag</span>
                             {retailStorefront.cartCount > 0 && <span className="absolute -top-2 -right-2 grid size-4 place-items-center rounded-full bg-[#d80621] text-[8px] text-white">{retailStorefront.cartCount}</span>}
@@ -66,6 +98,14 @@ function SearchIcon() {
     return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-5" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>;
 }
 
+function UserIcon() {
+    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-6" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c1.5-3 4-4.5 7-4.5s5.5 1.5 7 4.5" /></svg>;
+}
+
 function BagIcon() {
     return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-5" aria-hidden="true"><path d="M5 8.5h14l-1 12H6l-1-12Z" /><path d="M9 9V6a3 3 0 0 1 6 0v3" /></svg>;
+}
+
+function initials(name: string) {
+    return name.trim().split(/\s+/).slice(0, 2).map(part => part[0]?.toUpperCase()).join('') || 'U';
 }

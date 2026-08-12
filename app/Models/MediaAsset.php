@@ -55,7 +55,7 @@ class MediaAsset extends Model
         }
 
         if ($this->disk === 'legacy' || str_starts_with($this->path, '/upload')) {
-            return 'https://igicanada.ca/'.ltrim($this->path, '/');
+            return StorefrontAsset::legacyUrl((string) $this->path);
         }
 
         // Public media is served by this application. Keeping the URL relative

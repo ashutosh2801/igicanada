@@ -1,14 +1,16 @@
 import PublicShell from '@/components/PublicShell';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import SeoHead, { type BreadcrumbItem } from '@/components/SeoHead';
+import { groupVariants, sizeKeyOf } from '@/lib/variantOptions';
 import { Link, router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Variant = {
     id: number;
     color: string | null;
     colorCode: string | null;
     sizes: string[];
+    images: { src: string; alt: string }[];
     inStock: boolean;
     stockQuantity: number | null;
     minimumQuantity: number;
@@ -49,7 +51,6 @@ export default function Show({ product, pricing, similarProducts }: Props) {
     const [isAutoplayPaused, setIsAutoplayPaused] = useState(false);
     const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 50 });
     const thumbnailTrack = useRef<HTMLDivElement>(null);
-    const selectedImage = product.images[selectedImageIndex] || product.images[0];
     const category = product.categories[0];
     const breadcrumbs: BreadcrumbItem[] = [
         { label: 'Home', href: '/' },
@@ -58,17 +59,63 @@ export default function Show({ product, pricing, similarProducts }: Props) {
         { label: product.name },
     ];
 
+    const groups = useMemo(() => groupVariants(product.variants), [product.variants]);
+    const hasColors = product.variants.some(variant => variant.color !== null);
+    const needsPicker = groups.length > 1 || groups.some(group => group.variants.length > 1);
+    const initialVariant = product.variants.find(variant => variant.inStock) || product.variants[0];
+    const [colorKey, setColorKey] = useState<string>(initialVariant?.color || 'One size');
+    const [sizeKey, setSizeKey] = useState<string>(initialVariant ? sizeKeyOf(initialVariant) : 'One size');
+    const [quantity, setQuantity] = useState(initialVariant?.minimumQuantity ?? 1);
+    const [isAdding, setIsAdding] = useState(false);
+
+    const activeGroup = groups.find(group => group.name === colorKey) || groups[0];
+    const galleryImages = useMemo(() => activeGroup?.variants.find(variant => variant.images.length > 0)?.images || product.images, [activeGroup, product.images]);
+    const selectedImage = galleryImages[selectedImageIndex] || galleryImages[0];
+    const selected = activeGroup?.variants.find(variant => variant.inStock && sizeKeyOf(variant) === sizeKey)
+        || activeGroup?.variants.find(variant => sizeKeyOf(variant) === sizeKey)
+        || activeGroup?.variants.find(variant => variant.inStock)
+        || activeGroup?.variants[0]
+        || initialVariant;
+    const maximumQuantity = selected ? (selected.stockQuantity ?? selected.minimumQuantity) : 0;
+    const canOrder = Boolean(selected && selected.inStock && maximumQuantity >= selected.minimumQuantity);
+
     useEffect(() => {
-        if (product.images.length <= 1 || isAutoplayPaused) return;
+        setQuantity(current => Math.max(selected?.minimumQuantity ?? 1, Math.min(current, maximumQuantity)));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selected?.id]);
+
+    function chooseColor(name: string) {
+        setColorKey(name);
+        setSelectedImageIndex(0);
+        const group = groups.find(group => group.name === name);
+        const next = group?.variants.find(variant => variant.inStock) || group?.variants[0];
+        if (next) setSizeKey(sizeKeyOf(next));
+    }
+
+    function updateQuantity(value: number) {
+        setQuantity(Math.min(maximumQuantity, Math.max(selected?.minimumQuantity ?? 1, value)));
+    }
+
+    function addToCart() {
+        if (!selected || !canOrder) return;
+        router.post('/cart/items', { variant_id: selected.id, quantity }, {
+            preserveScroll: true,
+            onStart: () => setIsAdding(true),
+            onFinish: () => setIsAdding(false),
+        });
+    }
+
+    useEffect(() => {
+        if (galleryImages.length <= 1 || isAutoplayPaused) return;
 
         const timer = window.setTimeout(() => {
             setIsZoomed(false);
             setZoomOrigin({ x: 50, y: 50 });
-            setSelectedImageIndex((current) => (current + 1) % product.images.length);
+            setSelectedImageIndex((current) => (current + 1) % galleryImages.length);
         }, 5000);
 
         return () => window.clearTimeout(timer);
-    }, [selectedImageIndex, isAutoplayPaused, product.images.length]);
+    }, [selectedImageIndex, isAutoplayPaused, galleryImages.length]);
 
     useEffect(() => {
         const thumbnail = thumbnailTrack.current?.children.item(selectedImageIndex);
@@ -123,16 +170,16 @@ export default function Show({ product, pricing, similarProducts }: Props) {
                         >
                             {selectedImage ? <img src={selectedImage.src} alt={selectedImage.alt} draggable={false} className="h-full w-full select-none object-contain p-6 transition-transform duration-200 ease-out" style={{ transform: isZoomed ? 'scale(2)' : 'scale(1)', transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%` }} /> : <div className="grid h-full place-items-center text-stone-400">Image unavailable</div>}
                         </div>
-                        {product.images.length > 1 && (
+                        {galleryImages.length > 1 && (
                             <div className="mt-4 flex items-center gap-2" onMouseEnter={() => setIsAutoplayPaused(true)} onMouseLeave={() => setIsAutoplayPaused(false)}>
-                                {product.images.length > 5 && <button type="button" onClick={() => slideThumbnails(-1)} aria-label="Show previous thumbnails" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-xl font-bold shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-100">‹</button>}
+                                {galleryImages.length > 5 && <button type="button" onClick={() => slideThumbnails(-1)} aria-label="Show previous thumbnails" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-xl font-bold shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-100">‹</button>}
                                 <div ref={thumbnailTrack} className="flex min-w-0 flex-1 snap-x gap-3 overflow-x-auto scroll-smooth py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                    {product.images.map((image, index) => (
+                                    {galleryImages.map((image, index) => (
                                         <button
                                             key={`${image.src}-${index}`}
                                             type="button"
                                             onClick={() => selectImage(index)}
-                                            aria-label={`View image ${index + 1} of ${product.images.length}`}
+                                            aria-label={`View image ${index + 1} of ${galleryImages.length}`}
                                             aria-pressed={selectedImageIndex === index}
                                             className={'aspect-square w-20 shrink-0 snap-start overflow-hidden rounded-xl bg-white p-2 transition ring-2 sm:w-24 ' + (selectedImageIndex === index ? 'ring-red-600' : 'ring-stone-200 hover:ring-stone-400')}
                                         >
@@ -140,7 +187,7 @@ export default function Show({ product, pricing, similarProducts }: Props) {
                                         </button>
                                     ))}
                                 </div>
-                                {product.images.length > 5 && <button type="button" onClick={() => slideThumbnails(1)} aria-label="Show next thumbnails" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-xl font-bold shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-100">›</button>}
+                                {galleryImages.length > 5 && <button type="button" onClick={() => slideThumbnails(1)} aria-label="Show next thumbnails" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-xl font-bold shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-100">›</button>}
                             </div>
                         )}
                     </section>
@@ -167,8 +214,68 @@ export default function Show({ product, pricing, similarProducts }: Props) {
 
                         {pricing.authorized && <p className="mt-8 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{pricing.tier || 'Standard wholesale'} pricing applied{pricing.discountPercentage !== '0.00' ? ' · ' + pricing.discountPercentage + '% tier discount' : ''}</p>}
 
-                        <div className="mt-7 divide-y divide-stone-200 rounded-2xl bg-white ring-1 ring-stone-200">
-                            {product.variants.map((variant) => <VariantRow key={variant.id} variant={variant} pricingAuthorized={pricing.authorized} />)}
+                        <div className="mt-7 rounded-2xl bg-white ring-1 ring-stone-200">
+                            {!needsPicker ? (
+                                product.variants.map(variant => <VariantRow key={variant.id} variant={variant} pricingAuthorized={pricing.authorized} />)
+                            ) : (
+                                <div className="p-5 sm:p-6">
+                                    {hasColors && groups.length > 1 && (
+                                        <div>
+                                            <p className="text-sm font-bold tracking-wide text-stone-500">Colour</p>
+                                            <div className="mt-3 flex flex-wrap gap-4">
+                                                {groups.map(group => (
+                                                    <button key={group.name} type="button" onClick={() => chooseColor(group.name)} aria-pressed={colorKey === group.name} className="group flex flex-col items-center gap-1.5" title={group.name}>
+                                                        <span className={'size-10 rounded-full ring-offset-2 transition ' + (colorKey === group.name ? 'ring-2 ring-red-600' : 'ring-1 ring-stone-300 group-hover:ring-2 group-hover:ring-stone-400')} style={{ backgroundColor: group.swatch }} />
+                                                        <span className={'text-xs font-bold ' + (colorKey === group.name ? 'text-red-700' : 'text-stone-500 group-hover:text-stone-700')}>{group.name}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {selected && (
+                                        <>
+                                            <div className="mt-6">
+                                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                                    <p className="text-sm font-bold tracking-wide text-stone-500">Size</p>
+                                                    <p className="text-sm text-stone-500">{selected.inStock ? (pricing.authorized ? selected.stockQuantity + ' available' : 'In stock') : 'Out of stock'} · Min. {selected.minimumQuantity}</p>
+                                                </div>
+                                                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                                                    {(activeGroup?.variants ?? []).map(variant => {
+                                                        const key = sizeKeyOf(variant);
+                                                        const isSelected = sizeKey === key;
+                                                        return (
+                                                            <button key={variant.id} type="button" disabled={!variant.inStock} onClick={() => setSizeKey(key)} className={'rounded-xl border p-3 text-left transition ' + (isSelected ? 'border-red-600 bg-red-50 ring-1 ring-red-600' : 'border-stone-200 bg-white hover:border-stone-300') + (variant.inStock ? '' : ' cursor-not-allowed opacity-40')}>
+                                                                <p className="font-bold">{key}</p>
+                                                                {pricing.authorized ? <p className="mt-0.5 text-sm font-bold text-red-600">${variant.accountPrice} CAD</p> : <p className="mt-0.5 text-xs text-stone-400">{variant.inStock ? 'In stock' : 'Out of stock'}</p>}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                            {pricing.authorized ? (
+                                                <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-stone-200 pt-5">
+                                                    <div>
+                                                        <p className="text-xl font-black">{'$' + selected.accountPrice + ' CAD'}</p>
+                                                        {selected.accountPrice !== selected.wholesalePrice && <p className="text-xs text-stone-400 line-through">{'$' + selected.wholesalePrice}</p>}
+                                                    </div>
+                                                    <div className="flex flex-wrap items-end gap-3">
+                                                        <span className="flex overflow-hidden rounded-full ring-1 ring-stone-300">
+                                                            <button type="button" onClick={() => updateQuantity(quantity - 1)} disabled={!canOrder || quantity <= selected.minimumQuantity} aria-label="Decrease quantity" className="h-9 w-9 bg-stone-100 font-bold disabled:cursor-not-allowed disabled:text-stone-300">−</button>
+                                                            <input type="number" min={selected.minimumQuantity} max={maximumQuantity} value={quantity} onChange={(event) => updateQuantity(Number(event.target.value) || selected.minimumQuantity)} disabled={!canOrder} aria-label="Quantity" className="h-9 w-16 appearance-none border-x border-stone-200 bg-white text-center text-sm font-bold outline-none [appearance:textfield] disabled:bg-stone-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                                                            <button type="button" onClick={() => updateQuantity(quantity + 1)} disabled={!canOrder || quantity >= maximumQuantity} aria-label="Increase quantity" className="h-9 w-9 bg-stone-100 font-bold disabled:cursor-not-allowed disabled:text-stone-300">+</button>
+                                                        </span>
+                                                        <button type="button" disabled={!canOrder || isAdding} onClick={addToCart} className="h-9 rounded-full bg-stone-950 px-5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-stone-300">{isAdding ? 'Adding…' : 'Add to cart'}</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="mt-6 border-t border-stone-200 pt-5">
+                                                    <p className="text-sm font-semibold text-red-600">Sign in to view wholesale price and order this size.</p>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </section>
                     {similarProducts.length > 0 && (

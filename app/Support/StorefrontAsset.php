@@ -57,7 +57,32 @@ class StorefrontAsset
 
         $normalized = str_starts_with($path, '/') ? $path : "/upload/{$folder}/{$path}";
 
-        return self::browserSafeAbsoluteUrl('https://igicanada.ca'.$normalized);
+        return self::legacyUrl($normalized);
+    }
+
+    /**
+     * Resolve a legacy /upload/... path to a URL. When `storefronts.legacy_asset_url`
+     * is configured, an absolute URL is returned (production). When it is empty
+     * (local dev with public/upload symlinked to the legacy folder), a relative
+     * URL is returned so the local app serves the image.
+     */
+    public static function legacyUrl(string $path): string
+    {
+        $base = (string) config('storefronts.legacy_asset_url', 'https://igicanada.ca');
+
+        if ($base === '') {
+            return self::encodePath($path);
+        }
+
+        return self::browserSafeAbsoluteUrl(rtrim($base, '/').$path);
+    }
+
+    private static function encodePath(string $path): string
+    {
+        return '/'.implode('/', array_map(
+            fn (string $segment): string => rawurlencode(rawurldecode($segment)),
+            explode('/', ltrim($path, '/')),
+        ));
     }
 
     private static function browserSafeAbsoluteUrl(string $url): string
