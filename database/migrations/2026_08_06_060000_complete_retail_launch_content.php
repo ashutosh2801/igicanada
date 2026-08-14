@@ -47,7 +47,7 @@ return new class extends Migration
             'hero_primary_url' => '/shop',
             'hero_secondary_label' => 'New arrivals',
             'hero_secondary_url' => '/#new-arrivals',
-            'catalogue_eyebrow' => 'The Canadian edit',
+            'catalogue_eyebrow' => null,
             'catalogue_title' => 'Shop by category',
             'catalogue_description' => 'Explore wallets and everyday leather essentials, curated from our shared Canadian catalogue.',
             'new_arrivals_eyebrow' => 'Just in',

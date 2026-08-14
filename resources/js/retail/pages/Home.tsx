@@ -76,8 +76,8 @@ export default function Home({ homepage, products, categories }: Props) {
                     </div>
                 </section>
 
-                {categories.length > 0 && <section className="mx-auto max-w-[90rem] px-5 py-16 sm:px-8 sm:py-24">
-                    <SectionHeading eyebrow={homepage.categoriesEyebrow || 'Explore'} title={homepage.categoriesTitle || 'Shop by category'} href="/shop" />
+                {categories.length > 0 && <section className="mx-auto max-w-[90rem] px-5 py-10 sm:px-8 sm:py-15">
+                    <SectionHeading eyebrow="" title={homepage.categoriesTitle || 'Shop by category'} href="/shop" />
                     {homepage.categoriesDescription && <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-6 text-stone-500">{homepage.categoriesDescription}</p>}
                     <div className="mt-14 grid grid-cols-2 gap-x-7 gap-y-14 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-16 lg:grid-cols-4 lg:gap-x-10 xl:grid-cols-6">
                         {categories.slice(0, 6).map((category) => (
@@ -91,7 +91,7 @@ export default function Home({ homepage, products, categories }: Props) {
                     </div>
                 </section>}
 
-                {homepage.showNewArrivals && <section id="new-arrivals" className="border-y border-black/10 bg-[#f7f7f7] py-16 sm:py-24">
+                {homepage.showNewArrivals && <section id="new-arrivals" className="border-y border-black/10 bg-[#f7f7f7] py-16 sm:py-15">
                     <div className="mx-auto max-w-[90rem] px-5 sm:px-8">
                         <SectionHeading eyebrow={homepage.newArrivalsEyebrow || 'Just in'} title={homepage.newArrivalsTitle} href="/shop" />
                         {homepage.newArrivalsDescription && <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-6 text-stone-500">{homepage.newArrivalsDescription}</p>}
@@ -109,7 +109,7 @@ export default function Home({ homepage, products, categories }: Props) {
                     </div>
                 </section>}
 
-                <section className="mx-auto grid max-w-[90rem] gap-px bg-white px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-2">
+                <section className="mx-auto grid max-w-[90rem] gap-px bg-white px-5 py-16 sm:px-8 sm:py-15 lg:grid-cols-2">
                     <EditorialCard image={products[0]?.image} eyebrow="The craft edit" title="Made to be carried, designed to age beautifully." href={products[0] ? `/products/${products[0].slug}` : '/shop'} />
                     <EditorialCard image={products[1]?.image} eyebrow="Everyday icons" title="Small essentials. Considered details." href={products[1] ? `/products/${products[1].slug}` : '/shop'} dark />
                 </section>
@@ -158,7 +158,7 @@ function HeroBackdrop({ images, fallbackProducts, interval }: { images: { src: s
 
 function SectionHeading({ eyebrow, title, href }: { eyebrow: string; title: string; href: string }) {
     return <div className="relative text-center">
-        <p className="text-[10px] font-bold tracking-[0.28em] text-[#d80621] uppercase">{eyebrow}</p>
+        {eyebrow && <p className="text-[10px] font-bold tracking-[0.28em] text-[#d80621] uppercase">{eyebrow}</p>}
         <h2 className="font-display mt-3 text-3xl font-normal tracking-[-0.025em] sm:text-5xl">{title}</h2>
         <Link href={href} className="mt-4 inline-block text-[10px] font-bold tracking-[0.18em] uppercase underline underline-offset-4 sm:absolute sm:right-0 sm:bottom-1 sm:mt-0">View all</Link>
     </div>;

@@ -43,14 +43,15 @@ export default function RetailShell({ children }: PropsWithChildren) {
             </Head>
             {retailStorefront.announcement && <div className="bg-[#d80621] px-6 py-3 text-center text-[14px] font-semibold tracking-[0.22em] text-white uppercase">{retailStorefront.announcement}</div>}
             <header className="sticky top-0 z-40 border-b border-black/10 bg-white/95 backdrop-blur-xl">
-                <div className="mx-auto grid max-w-[90rem] grid-cols-[1fr_auto_1fr] items-center px-5 py-4 sm:px-8 sm:py-5">
+                <div className="mx-auto flex max-w-[90rem] items-center justify-between gap-4 px-5 py-4 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:gap-0 sm:px-8 sm:py-2">
                     <nav className="hidden items-center gap-7 text-[15px] font-bold tracking-[0.16em] uppercase lg:flex">
                         <Link href="/shop" className="transition hover:text-[#d80621]">Shop</Link>
                         <Link href="/shop?category=wallets" className="transition hover:text-[#d80621]">Wallets</Link>
-                        <Link href="/#new-arrivals" className="transition hover:text-[#d80621]">New arrivals</Link>
+                        <Link href="/shop?category=bags" className="transition hover:text-[#d80621]">Bags</Link>
+                        <Link href="/shop?category=belts" className="transition hover:text-[#d80621]">Belts</Link>
                     </nav>
                     <span className="lg:hidden" aria-hidden="true" />
-                    <Link href="/" className="font-display text-center text-[30px] tracking-[0.08em] text-black uppercase sm:text-[36px]" aria-label={retailStorefront.brandName + ' home'}>{retailStorefront.logoUrl ? <img src={retailStorefront.logoUrl} alt={retailStorefront.logoAlt} className="mx-auto h-9 w-auto sm:h-11" /> : retailStorefront.brandName}</Link>
+                    <Link href="/" className="font-display text-left text-[30px] tracking-[0.08em] text-black uppercase sm:text-center sm:text-[36px]" aria-label={retailStorefront.brandName + ' home'}>{retailStorefront.logoUrl ? <img src={retailStorefront.logoUrl} alt={retailStorefront.logoAlt} className="h-9 w-auto sm:mx-auto sm:h-20" /> : retailStorefront.brandName}</Link>
                     <nav className="ml-auto flex items-center justify-end gap-3 sm:gap-5">
                         <Link href="/shop" aria-label="Search products" className="hidden text-black/70 transition hover:text-black sm:block"><SearchIcon /></Link>
                         {auth.user ? (
@@ -78,7 +79,7 @@ export default function RetailShell({ children }: PropsWithChildren) {
                         </Link>
                     </nav>
                 </div>
-                <nav className="flex justify-start gap-7 overflow-x-auto whitespace-nowrap border-t border-black/5 px-4 py-3 text-[14px] font-bold tracking-[0.16em] uppercase sm:justify-center lg:hidden"><Link href="/shop">Shop</Link><Link href="/shop?category=wallets">Wallets</Link><Link href="/#new-arrivals">New arrivals</Link></nav>
+                <nav className="flex justify-start gap-7 overflow-x-auto whitespace-nowrap border-t border-black/5 px-4 py-3 text-[14px] font-bold tracking-[0.16em] uppercase sm:justify-center lg:hidden"><Link href="/shop">Shop</Link><Link href="/shop?category=wallets">Wallets</Link><Link href="/shop?category=bags">Bags</Link><Link href="/shop?category=belts">Belts</Link></nav>
             </header>
             {flash.status && <div className="border-b border-green-900/10 bg-green-50 px-6 py-3 text-center text-sm font-bold text-green-900">{flash.status}</div>}
             {children}

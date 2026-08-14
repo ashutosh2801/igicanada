@@ -25,7 +25,7 @@ export default function AccountShell({ title, children, sidebar }: PropsWithChil
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <h1 className="font-display text-4xl font-bold tracking-tight">{title}</h1>
                     {auth.user ? (
-                        <button onClick={() => router.post('/account/logout')} className="text-sm font-bold text-red-700">Sign out</button>
+                        null
                     ) : (
                         <div className="flex gap-4 text-sm font-bold">
                             <Link href="/account/login" className="text-leather-700">Sign in</Link>
@@ -37,7 +37,7 @@ export default function AccountShell({ title, children, sidebar }: PropsWithChil
                 {flash?.status && <div className="mb-6 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">{flash.status}</div>}
 
                 <div className="grid gap-8 lg:grid-cols-[15rem_1fr]">
-                    <aside>
+                    <aside className="hidden lg:block">
                         <nav className="grid gap-1 text-sm">
                             {nav.map(item => (
                                 <Link key={item.href} href={item.href} className="rounded-full px-4 py-2 font-bold transition hover:bg-leather-100">{item.label}</Link>
