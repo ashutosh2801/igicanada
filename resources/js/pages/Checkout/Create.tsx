@@ -5,12 +5,14 @@ import { FormEvent, useEffect, useState } from 'react';
 
 type Address = { id: number; address: string; city: string; province: string; country: string; postalCode: string; phone: string };
 type ShippingRate = { code: string; name: string; price: string; transitDays: number | null; deliveryDate: string | null };
+type Tax = { label: string; amount: string; rate: number };
 
 export default function Checkout({ addresses, paypalConfigured, subtotal }: { addresses: Address[]; paypalConfigured: boolean; subtotal: string }) {
     const first = addresses[0];
     const [rates, setRates] = useState<ShippingRate[]>([]);
     const [ratesLoading, setRatesLoading] = useState(false);
     const [ratesError, setRatesError] = useState<string | null>(null);
+    const [tax, setTax] = useState<Tax | null>(null);
     const form = useForm({
         address_id: first?.id || null,
         address: first?.address || '',
@@ -56,6 +58,7 @@ export default function Checkout({ addresses, paypalConfigured, subtotal }: { ad
     useEffect(() => {
         setRates([]);
         setRatesError(null);
+        setTax(null);
         form.setData('shipping_service_code', '');
 
         if (!form.data.country_code || !form.data.postal_code.trim()) return;
@@ -68,12 +71,13 @@ export default function Checkout({ addresses, paypalConfigured, subtotal }: { ad
                 const response = await fetch('/checkout/shipping-rates', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrf },
-                    body: JSON.stringify({ country: form.data.country, country_code: form.data.country_code, postal_code: form.data.postal_code }),
+                    body: JSON.stringify({ country: form.data.country, country_code: form.data.country_code, postal_code: form.data.postal_code, province: form.data.province }),
                     signal: controller.signal,
                 });
                 const payload = await response.json();
                 if (!response.ok) throw new Error(payload.message || 'Shipping rates are unavailable.');
                 setRates(payload.rates || []);
+                setTax(payload.tax ?? null);
             } catch (error) {
                 if (error instanceof DOMException && error.name === 'AbortError') return;
                 setRatesError(error instanceof Error ? error.message : 'Shipping rates are unavailable.');
@@ -86,7 +90,7 @@ export default function Checkout({ addresses, paypalConfigured, subtotal }: { ad
             window.clearTimeout(timer);
             controller.abort();
         };
-    }, [form.data.country, form.data.country_code, form.data.postal_code]);
+    }, [form.data.country, form.data.country_code, form.data.postal_code, form.data.province]);
 
     function submit(event: FormEvent) {
         event.preventDefault();
@@ -121,6 +125,12 @@ export default function Checkout({ addresses, paypalConfigured, subtotal }: { ad
                             {!ratesLoading && !ratesError && rates.length === 0 && <p className="mt-4 text-sm text-stone-600">Enter a supported country and postal / ZIP code to calculate shipping.</p>}
                             {rates.length > 0 && <div className="mt-4 grid gap-3">{rates.map((rate) => <label key={rate.code} className={'flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-4 ' + (form.data.shipping_service_code === rate.code ? 'border-red-600 bg-red-50' : 'border-stone-200 bg-white')}><span className="flex items-start gap-3"><input type="radio" name="shipping_service_code" value={rate.code} checked={form.data.shipping_service_code === rate.code} onChange={() => form.setData('shipping_service_code', rate.code)} className="mt-1 accent-red-600" /><span><strong className="block">{rate.name}</strong><span className="text-xs text-stone-500">{rate.deliveryDate ? `Expected ${rate.deliveryDate}` : rate.transitDays ? `${rate.transitDays} business days` : rate.code}</span></span></span><strong>${rate.price} CAD</strong></label>)}</div>}
                             {form.errors.shipping_service_code && <p className="mt-3 text-sm text-red-700">{form.errors.shipping_service_code}</p>}
+                        </section>
+                        <section className="rounded-2xl border border-stone-200 bg-stone-50 p-5 md:col-span-2">
+                            <div className="flex items-center justify-between gap-4"><span className="text-sm font-semibold">Order subtotal</span><strong>${subtotal} CAD</strong></div>
+                            {form.data.shipping_service_code && rates.find(r => r.code === form.data.shipping_service_code) && <div className="mt-3 flex items-center justify-between gap-4"><span className="text-sm font-semibold">{rates.find(r => r.code === form.data.shipping_service_code)?.name}</span><strong>${rates.find(r => r.code === form.data.shipping_service_code)?.price} CAD</strong></div>}
+                            {tax && Number(tax.amount) > 0 && <div className="mt-3 flex items-center justify-between gap-4"><span className="text-sm font-semibold">{tax.label} ({(tax.rate * 100).toFixed(2)}%)</span><strong>${tax.amount} CAD</strong></div>}
+                            {form.data.shipping_service_code && tax && <div className="mt-4 flex items-center justify-between gap-4 border-t border-stone-300 pt-3 text-base font-black"><span>Total</span><strong>${(parseFloat(subtotal) + (parseFloat(rates.find(r => r.code === form.data.shipping_service_code)?.price ?? '0')) + parseFloat(tax.amount)).toFixed(2)} CAD</strong></div>}
                         </section>
                         <label className="md:col-span-2"><span className="text-sm font-semibold">Order notes</span><textarea value={form.data.notes} onChange={(event) => form.setData('notes', event.target.value)} rows={4} className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3" /></label>
                         <section className="grid gap-3 md:col-span-2 md:grid-cols-2">

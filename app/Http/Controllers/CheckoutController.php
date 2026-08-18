@@ -50,23 +50,35 @@ class CheckoutController extends Controller
 
     public function rates(Request $request, StandardShippingService $shipping): JsonResponse
     {
-        $destination = $request->validate($this->destinationRules());
+        $destination = $this->destinationRules();
+        $data = $request->validate([
+            ...$destination,
+            'province' => ['nullable', 'string', 'max:100'],
+        ]);
 
         try {
             $quote = $shipping->quote(
                 $this->cartSubtotal($request),
-                $destination['country'],
-                $destination['country_code'] ?? null,
+                $data['country'],
+                $data['country_code'] ?? null,
             );
-
-            return response()->json(['rates' => [[
-                ...$quote,
-                'transitDays' => null,
-                'deliveryDate' => null,
-            ]]]);
         } catch (InvalidArgumentException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
         }
+
+        $subtotal = $this->cartSubtotal($request);
+        $shippingTotal = round((float) $quote['price'], 2);
+        $tax = $this->calculateWholesaleTax($subtotal + $shippingTotal, $data['country_code'] ?? '', $data['province'] ?? '');
+
+        return response()->json(['rates' => [[
+            ...$quote,
+            'transitDays' => null,
+            'deliveryDate' => null,
+        ]], 'tax' => [
+            'label' => $tax['label'],
+            'amount' => number_format((float) $tax['amount'], 2, '.', ''),
+            'rate' => $tax['rate'],
+        ]]);
     }
 
     public function store(
@@ -131,8 +143,9 @@ class CheckoutController extends Controller
             } catch (InvalidArgumentException $exception) {
                 throw ValidationException::withMessages(['shipping_service_code' => $exception->getMessage()]);
             }
-            $shippingTotal = round((float) $shippingRate['price'], 2);
+$shippingTotal = round((float) $shippingRate['price'], 2);
             $payingOnline = $data['payment_option'] === 'paypal';
+            $tax = $this->calculateWholesaleTax($subtotal + $shippingTotal, $data['country_code'] ?? '', $data['province'] ?? '');
 
             $order = Order::create([
                 'order_number' => $this->orderNumber(),
@@ -157,8 +170,9 @@ class CheckoutController extends Controller
                 'shipping_service' => $shippingRate['name'],
                 'subtotal' => $subtotal,
                 'shipping_total' => $shippingTotal,
-                'tax_total' => 0,
-                'total' => round($subtotal + $shippingTotal, 2),
+                'tax_total' => $tax['amount'],
+                'tax_breakdown' => $tax,
+                'total' => round($subtotal + $shippingTotal + $tax['amount'], 2),
                 'customer_notes' => $data['notes'] ?? null,
                 'placed_at' => now(),
                 'quoted_at' => $payingOnline ? now() : null,
@@ -210,6 +224,29 @@ class CheckoutController extends Controller
     private function accountPrice(float $price, float $discount): float
     {
         return round($price * (1 - $discount / 100), 2);
+    }
+
+    /**
+     * Flat 13% HST for Canadian orders, 0 otherwise. Mirrors the retail
+     * checkout flat HST rate without province whitelist validation, since
+     * the wholesale address form uses free-text province input.
+     *
+     * @return array{enabled: bool, label: string, jurisdiction: string, rate: float, amount: float, registration_number: ?string}
+     */
+    private function calculateWholesaleTax(float $taxableAmount, string $countryCode, string $province): array
+    {
+        $registered = (bool) config('retail-tax.gst_hst_registered');
+        $isCanada = strtoupper(trim($countryCode)) === 'CA';
+        $rate = ($registered && $isCanada) ? 0.13 : 0.0;
+
+        return [
+            'enabled' => $registered && $isCanada,
+            'label' => 'HST',
+            'jurisdiction' => $isCanada ?strtoupper(trim($province)) : strtoupper(trim($countryCode)),
+            'rate' => $rate,
+            'amount' => round(max(0, $taxableAmount) * $rate, 2),
+            'registration_number' => config('retail-tax.registration_number'),
+        ];
     }
 
     /** @return array<string, array<int, string>> */

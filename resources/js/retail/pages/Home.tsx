@@ -111,7 +111,7 @@ export default function Home({ homepage, products, categories }: Props) {
 
                 <section className="mx-auto grid max-w-[90rem] gap-px bg-white px-5 py-16 sm:px-8 sm:py-15 lg:grid-cols-2">
                     <EditorialCard image={products[0]?.image} eyebrow="The craft edit" title="Made to be carried, designed to age beautifully." href={products[0] ? `/products/${products[0].slug}` : '/shop'} />
-                    <EditorialCard image={products[1]?.image} eyebrow="Everyday icons" title="Small essentials. Considered details." href={products[1] ? `/products/${products[1].slug}` : '/shop'} dark />
+                    <EditorialCard image="/upload/post//New%20Images/New%20Bag/7070/7070-black-front-hang.jpg" eyebrow="Everyday icons" title="Small essentials. Considered details." href="/shop?category=bags" dark />
                 </section>
 
                 <section className="border-y border-black/10 bg-white">
@@ -179,7 +179,7 @@ function ProductCard({ product }: { product: Product }) {
 
 function EditorialCard({ image, eyebrow, title, href, dark = false }: { image?: string | null; eyebrow: string; title: string; href: string; dark?: boolean }) {
     return <Link href={href} className={`group relative isolate min-h-[32rem] overflow-hidden ${dark ? 'bg-black' : 'bg-[#d80621]'}`}>
-        {image && <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover object-center opacity-80 mix-blend-multiply transition duration-1000 group-hover:scale-105" />}
+        {image && <img src={image} alt="" className={`absolute inset-0 h-full w-full object-cover object-center transition duration-1000 group-hover:scale-105 ${dark ? 'opacity-70' : 'opacity-80 mix-blend-multiply'}`} />}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         <div className="relative flex min-h-[32rem] items-end p-8 text-white sm:p-12">
             <div><p className="text-[10px] font-bold tracking-[0.25em] uppercase">{eyebrow}</p><h2 className="font-display mt-3 max-w-lg text-4xl leading-tight sm:text-5xl">{title}</h2><span className="mt-6 inline-block border-b border-white pb-1 text-[10px] font-bold tracking-[0.2em] uppercase">Shop now</span></div>

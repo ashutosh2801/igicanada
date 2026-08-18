@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Order;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -20,6 +21,13 @@ class OrderSubmitted extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        $order = $this->order->loadMissing('user.resellerProfile', 'items');
+
+        $pdf = Pdf::loadView('pdf.invoice', [
+            'order' => $order,
+            'company' => config('commerce.company'),
+        ])->setPaper('letter')->output();
+
         return (new MailMessage)
             ->subject("Order {$this->order->order_number} received")
             ->greeting("Hello {$this->order->user->name},")
@@ -30,6 +38,9 @@ class OrderSubmitted extends Notification
             ->line('Standard Shipping ('.$this->order->shipping_service.'): $'.$this->order->shipping_total.' '.$this->order->currency)
             ->line('Order total: $'.$this->order->total.' '.$this->order->currency)
             ->action('View order', route('orders.show', $this->order))
+            ->attachData($pdf, "IGI-Canada-{$this->order->order_number}.pdf", [
+                'mime' => 'application/pdf',
+            ])
             ->line('Thank you for choosing IGI Canada.');
     }
 }

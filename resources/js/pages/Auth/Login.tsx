@@ -40,6 +40,7 @@ export default function Login({ status }: Props) {
                     </button>
                 </form>
                 <p className="mt-6 text-sm leading-6 text-stone-600">Migrated from the previous website? Use <Link href="/forgot-password" className="font-semibold text-amber-800 hover:underline">Forgot password</Link> before your first sign in.</p>
+                <p className="mt-3 text-sm leading-6 text-stone-600">New to wholesale? <Link href="/wholesale/apply" className="font-semibold text-amber-800 hover:underline">Create an account</Link> to apply for a wholesale account.</p>
             </AuthShell>
         </>
     );

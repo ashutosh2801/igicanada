@@ -14,7 +14,7 @@ export default function AuthShell({ title, intro, children }: { title: string; i
                 <p className="text-sm text-stone-400">Existing wholesale accounts: reset your password once to securely activate the new account.</p>
             </aside>
             <main className="flex items-center justify-center px-6 py-16">
-                <div className="w-full max-w-md">
+                <div className="w-full max-w-lg">
                     <h1 className="text-4xl font-black tracking-tight">{title}</h1>
                     <p className="mt-3 leading-7 text-stone-600">{intro}</p>
                     <div className="mt-9">{children}</div>
