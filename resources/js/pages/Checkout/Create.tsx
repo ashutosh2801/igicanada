@@ -28,7 +28,10 @@ export default function Checkout({ addresses, paypalConfigured, subtotal }: { ad
     });
 
     useEffect(() => {
-        if (!form.data.address_id) return;
+        if (!form.data.address_id) {
+            form.setData({ ...form.data, address: '', city: '', province: '', country: 'Canada', country_code: 'CA', postal_code: '', phone: '' });
+            return;
+        }
         const selected = addresses.find((address) => address.id === Number(form.data.address_id));
         if (selected) form.setData({
             ...form.data,

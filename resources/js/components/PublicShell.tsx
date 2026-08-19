@@ -79,12 +79,12 @@ export default function PublicShell({ children }: PropsWithChildren) {
                     <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                         <Link href={storefront.accountNavigation.url} className="hidden rounded-full px-4 py-2.5 text-sm font-bold transition hover:bg-red-600 hover:text-white sm:inline-flex">{storefront.accountNavigation.label}</Link>
                         {storefront.cartNavigation.url ? (
-                            <Link href={storefront.cartNavigation.url} className="relative grid size-11 place-items-center rounded-full bg-black text-white" aria-label={storefront.cartNavigation.available ? `Cart with ${storefront.cartCount} items` : 'Sign in to use the wholesale cart'}>
+                            <Link href={storefront.cartNavigation.url} data-cart-target className="relative grid size-11 place-items-center rounded-full bg-black text-white" aria-label={storefront.cartNavigation.available ? `Cart with ${storefront.cartCount} items` : 'Sign in to use the wholesale cart'}>
                                 <CartIcon />
                                 {storefront.cartCount > 0 && <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-black leading-5 text-white">{storefront.cartCount}</span>}
                             </Link>
                         ) : (
-                            <span className="grid size-11 cursor-not-allowed place-items-center rounded-full bg-black/35 text-white" aria-label="Wholesale cart is available to approved wholesale accounts" title="Wholesale cart is available to approved wholesale accounts">
+                            <span data-cart-target className="grid size-11 cursor-not-allowed place-items-center rounded-full bg-black/35 text-white" aria-label="Wholesale cart is available to approved wholesale accounts" title="Wholesale cart is available to approved wholesale accounts">
                                 <CartIcon />
                             </span>
                         )}

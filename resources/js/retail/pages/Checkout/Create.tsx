@@ -15,7 +15,10 @@ export default function Checkout({ subtotal, paypalConfigured, paymentMethods, d
 
     function applyAddress(id: string) {
         setSelectedAddressId(id);
-        if (!id) return;
+        if (!id) {
+            form.setData(data => ({ ...data, name: '', email: data.email, phone: '', address: '', city: '', province: '', postal_code: '' }));
+            return;
+        }
         const address = addresses.find(a => a.id === id);
         if (!address) return;
         form.setData(data => ({

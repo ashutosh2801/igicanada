@@ -73,7 +73,7 @@ export default function RetailShell({ children }: PropsWithChildren) {
                         ) : (
                             <Link href="/account/login" aria-label="Sign in" className="text-black/70 transition hover:text-black"><UserIcon /></Link>
                         )}
-                        <Link href="/cart" className="relative flex items-center gap-2 text-[15px] font-bold tracking-[0.14em] uppercase transition hover:text-[#d80621]">
+                        <Link href="/cart" data-cart-target className="relative flex items-center gap-2 text-[15px] font-bold tracking-[0.14em] uppercase transition hover:text-[#d80621]">
                             <BagIcon /><span className="hidden sm:inline">Bag</span>
                             {retailStorefront.cartCount > 0 && <span className="absolute -top-2 -right-2 grid size-4 place-items-center rounded-full bg-[#d80621] text-[8px] text-white">{retailStorefront.cartCount}</span>}
                         </Link>

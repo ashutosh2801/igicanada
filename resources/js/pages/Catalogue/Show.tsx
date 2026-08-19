@@ -1,6 +1,7 @@
 import PublicShell from '@/components/PublicShell';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import SeoHead, { type BreadcrumbItem } from '@/components/SeoHead';
+import { flyToCart } from '@/lib/flyToCart';
 import { groupVariants, sizeKeyOf } from '@/lib/variantOptions';
 import { Link, router } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -51,6 +52,7 @@ export default function Show({ product, pricing, similarProducts }: Props) {
     const [isAutoplayPaused, setIsAutoplayPaused] = useState(false);
     const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 50 });
     const thumbnailTrack = useRef<HTMLDivElement>(null);
+    const galleryRef = useRef<HTMLDivElement>(null);
     const category = product.categories[0];
     const breadcrumbs: BreadcrumbItem[] = [
         { label: 'Home', href: '/' },
@@ -98,6 +100,7 @@ export default function Show({ product, pricing, similarProducts }: Props) {
 
     function addToCart() {
         if (!selected || !canOrder) return;
+        flyToCart(galleryRef.current);
         router.post('/cart/items', { variant_id: selected.id, quantity }, {
             preserveScroll: true,
             onStart: () => setIsAdding(true),
@@ -150,6 +153,7 @@ export default function Show({ product, pricing, similarProducts }: Props) {
                     <div className="lg:col-span-2"><Breadcrumbs items={breadcrumbs} /></div>
                     <section>
                         <div
+                            ref={galleryRef}
                             className={'aspect-square overflow-hidden rounded-3xl bg-white ring-1 ring-stone-200 ' + (selectedImage ? (isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in') : '')}
                             onMouseEnter={() => {
                                 setIsAutoplayPaused(true);
@@ -312,6 +316,7 @@ function VariantRow({ variant, pricingAuthorized }: { variant: Variant; pricingA
     const canOrder = variant.inStock && maximumQuantity >= variant.minimumQuantity;
     const [quantity, setQuantity] = useState(variant.minimumQuantity);
     const [isAdding, setIsAdding] = useState(false);
+    const rowRef = useRef<HTMLDivElement>(null);
 
     function updateQuantity(value: number) {
         setQuantity(Math.min(maximumQuantity, Math.max(variant.minimumQuantity, value)));
@@ -319,6 +324,7 @@ function VariantRow({ variant, pricingAuthorized }: { variant: Variant; pricingA
 
     function addToCart() {
         if (!canOrder) return;
+        flyToCart(rowRef.current);
         router.post('/cart/items', { variant_id: variant.id, quantity }, {
             preserveScroll: true,
             onStart: () => setIsAdding(true),
@@ -327,7 +333,7 @@ function VariantRow({ variant, pricingAuthorized }: { variant: Variant; pricingA
     }
 
     return (
-        <div className="flex flex-col justify-between gap-5 p-5 sm:flex-row sm:items-center">
+        <div ref={rowRef} className="flex flex-col justify-between gap-5 p-5 sm:flex-row sm:items-center">
             <div>
                 <div className="flex items-center gap-2.5">
                     {variant.colorCode && <span className="size-5 shrink-0 rounded-full ring-1 ring-black/15 ring-offset-2" style={{ backgroundColor: variant.colorCode }} aria-hidden="true" />}

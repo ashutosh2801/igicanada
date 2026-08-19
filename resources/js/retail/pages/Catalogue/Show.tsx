@@ -1,6 +1,7 @@
 import RetailShell from '../../components/RetailShell';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import SeoHead, { type BreadcrumbItem } from '@/components/SeoHead';
+import { flyToCart } from '@/lib/flyToCart';
 import { groupVariants, sizeKeyOf } from '@/lib/variantOptions';
 import { Link, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -14,6 +15,7 @@ export default function ProductShow({ product }: Props) {
     const firstAvailable = product.variants.find(variant => variant.inStock) || product.variants[0];
     const [activeImage, setActiveImage] = useState(0);
     const thumbnailRail = useRef<HTMLDivElement>(null);
+    const galleryRef = useRef<HTMLDivElement>(null);
 
     const groups = useMemo(() => groupVariants(product.variants), [product.variants]);
 
@@ -59,6 +61,7 @@ export default function ProductShow({ product }: Props) {
     }, [activeImage]);
 
     function addToBag() {
+        flyToCart(galleryRef.current);
         form.transform(data => ({ ...data, variant_id: selected.id }));
         form.post('/cart/items', { preserveScroll: true });
     }
@@ -107,7 +110,7 @@ export default function ProductShow({ product }: Props) {
                 <Breadcrumbs items={breadcrumbs} />
                 <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-12">
                     <section className="min-w-0" aria-label="Product images">
-                        <div className="group relative aspect-square overflow-hidden rounded-[2rem] bg-white ring-1 ring-leather-900/10">
+                        <div ref={galleryRef} className="group relative aspect-square overflow-hidden rounded-[2rem] bg-white ring-1 ring-leather-900/10">
                             {galleryImages[activeImage] ? <img src={galleryImages[activeImage].src} alt={galleryImages[activeImage].alt} className="h-full w-full object-contain p-8" /> : <div className="grid h-full place-items-center text-sm font-bold tracking-widest text-leather-900/30 uppercase">Product image</div>}
                             {galleryImages.length > 1 && <>
                                 <button type="button" onClick={() => showImage(activeImage - 1)} aria-label="Previous product image" className="absolute top-1/2 left-4 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-2xl text-black shadow-lg ring-1 ring-black/10 transition hover:bg-black hover:text-white">‹</button>
