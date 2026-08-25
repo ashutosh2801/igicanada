@@ -24,9 +24,10 @@ class Login extends BaseLogin
     protected function getSalesChannelFormComponent(): Select
     {
         return Select::make('sales_channel')
-            ->label('Which website are you logging in for?')
+            ->label('Website')
+            ->hiddenLabel()
             ->helperText('Admin data will be scoped to the selected website.')
-            ->options(AdminStorefront::options())
+            ->options(AdminStorefront::websiteOptions())
             ->default(config('storefronts.default_channel'))
             ->required();
     }

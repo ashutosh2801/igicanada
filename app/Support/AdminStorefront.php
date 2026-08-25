@@ -18,6 +18,16 @@ class AdminStorefront
         ];
     }
 
+    /** @return array<string, string> */
+    public static function websiteOptions(): array
+    {
+        return array_filter(
+            self::options(),
+            static fn (string $channel): bool => $channel !== 'all',
+            ARRAY_FILTER_USE_KEY,
+        );
+    }
+
     public static function current(): string
     {
         $channel = session()->get(self::SESSION_KEY, 'all');

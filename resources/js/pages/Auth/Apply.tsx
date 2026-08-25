@@ -127,7 +127,7 @@ export default function Apply({ signedInAccount }: Props) {
         return (
             <>
                 <Head title="Apply for a wholesale account" />
-                <AuthShell title="Apply for a wholesale account" intro="This application creates a new wholesale login for your business.">
+                <AuthShell title="Apply for a wholesale account" intro="This application creates a new wholesale login for your business." image="/register-left.jpg">
                     <div className="rounded-2xl border-2 border-red-600 bg-red-50 p-6">
                         <p className="text-sm font-black tracking-wider text-red-700 uppercase">Already signed in</p>
                         <p className="mt-3 leading-7 text-stone-700">
@@ -146,7 +146,7 @@ export default function Apply({ signedInAccount }: Props) {
     return (
         <>
             <Head title="Apply for a wholesale account" />
-            <AuthShell title="Apply for a wholesale account" intro="Tell us about your business. IGI Canada will review the application before protected pricing is enabled.">
+            <AuthShell title="Apply for a wholesale account" intro="Tell us about your business. IGI Canada will review the application before protected pricing is enabled." image="/register-left.jpg">
                 <form onSubmit={submit} className="grid gap-5 md:grid-cols-2">
                     {field('name', 'Contact name', 'text', 'name')}
                     {field('email', 'Business email', 'email', 'email')}

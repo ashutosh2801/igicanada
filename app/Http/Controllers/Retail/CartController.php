@@ -31,7 +31,7 @@ class CartController extends Controller
 
                 return [
                     'id' => $item->id,
-                    'product' => $item->variant->product->retail_name ?: $item->variant->product->name,
+                    'product' => $item->variant->product->name,
                     'slug' => $item->variant->product->slug,
                     'color' => $item->variant->color,
                     'colorCode' => $item->variant->color_code,

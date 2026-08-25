@@ -76,7 +76,12 @@ class StorefrontHomepageTest extends TestCase
             ->where('storefront.accountNavigation.url', '/account')
             ->where('storefront.cartNavigation.url', '/cart')
             ->where('storefront.cartNavigation.available', true)
-            ->where('storefront.cartCount', 4));
+            ->where('storefront.cartCount', 4)
+            ->where('storefront.cartSummary.items.0.product', 'Wholesale Wallet')
+            ->where('storefront.cartSummary.items.0.quantity', 4)
+            ->where('storefront.cartSummary.items.0.unitPrice', '10.00')
+            ->where('storefront.cartSummary.items.0.lineTotal', '40.00')
+            ->where('storefront.cartSummary.subtotal', '40.00'));
     }
 
     public function test_homepage_shows_latest_active_wholesale_products_as_new_arrivals(): void

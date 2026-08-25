@@ -18,6 +18,16 @@ class AdminStorefrontSelectionTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_login_only_offers_individual_websites(): void
+    {
+        $this->get('/admin/login')
+            ->assertSuccessful()
+            ->assertDontSeeText('Which website are you logging in for?')
+            ->assertDontSeeText('All Stores')
+            ->assertSeeText('IGI Canada · Wholesale')
+            ->assertSeeText('Leather Wallets · Retail');
+    }
+
     public function test_admin_selects_a_store_on_first_panel_visit_and_choice_is_remembered(): void
     {
         $admin = $this->admin();
@@ -50,6 +60,9 @@ class AdminStorefrontSelectionTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin')
             ->assertSuccessful()
+            ->assertSee('name="sales_channel"', false)
+            ->assertDontSeeText('Which website are you logging in for?')
+            ->assertDontSeeText('All Stores')
             ->assertSeeText('IGI Canada · Wholesale');
 
         $this->assertSame('wholesale', session(AdminStorefront::SESSION_KEY));

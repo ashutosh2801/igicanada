@@ -1,6 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { PropsWithChildren, useEffect, useRef, useState } from 'react';
 
+type CartSummaryItem = { id: number; product: string; slug: string; option: string; image: string | null; quantity: number; unitPrice: string; lineTotal: string };
 type SharedProps = {
     seoDefaults: { baseUrl: string };
     flash: { status: string | null };
@@ -11,6 +12,7 @@ type SharedProps = {
         logoAlt: string;
         announcement: string | null;
         cartCount: number;
+        cartSummary: { items: CartSummaryItem[]; subtotal: string };
         legalNavigation: { label: string; url: string }[];
         footer: { description: string | null; address: string | null; phone: string | null; email: string | null; copyright: string | null };
     };
@@ -20,7 +22,9 @@ export default function RetailShell({ children }: PropsWithChildren) {
     const page = usePage<SharedProps>();
     const { flash, retailStorefront, seoDefaults, auth } = page.props;
     const [menuOpen, setMenuOpen] = useState(false);
+    const [cartOpen, setCartOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const cartRef = useRef<HTMLDivElement>(null);
     const path = page.url.split('?')[0];
     const privatePage = /^\/(cart|checkout|orders)(\/|$)/.test(path);
 
@@ -29,9 +33,25 @@ export default function RetailShell({ children }: PropsWithChildren) {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setMenuOpen(false);
             }
+            if (cartRef.current && !cartRef.current.contains(event.target as Node)) {
+                setCartOpen(false);
+            }
         }
+
+        function closeWithKeyboard(event: KeyboardEvent) {
+            if (event.key === 'Escape') {
+                setMenuOpen(false);
+                setCartOpen(false);
+            }
+        }
+
         document.addEventListener('mousedown', close);
-        return () => document.removeEventListener('mousedown', close);
+        document.addEventListener('keydown', closeWithKeyboard);
+
+        return () => {
+            document.removeEventListener('mousedown', close);
+            document.removeEventListener('keydown', closeWithKeyboard);
+        };
     }, []);
 
     return (
@@ -56,7 +76,7 @@ export default function RetailShell({ children }: PropsWithChildren) {
                         <Link href="/shop" aria-label="Search products" className="hidden text-black/70 transition hover:text-black sm:block"><SearchIcon /></Link>
                         {auth.user ? (
                             <div ref={menuRef} className="relative">
-                                <button onClick={() => setMenuOpen(open => !open)} aria-label="Account menu" className="grid size-10 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-[#d80621] to-black text-sm font-black text-white transition hover:ring-2 hover:ring-[#d80621]/30">{auth.user.avatar ? <img src={auth.user.avatar} alt={auth.user.name} className="size-full object-cover" /> : initials(auth.user.name)}</button>
+                                <button onClick={() => { setMenuOpen(open => !open); setCartOpen(false); }} aria-label="Account menu" className="grid size-10 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-[#d80621] to-black text-sm font-black text-white transition hover:ring-2 hover:ring-[#d80621]/30">{auth.user.avatar ? <img src={auth.user.avatar} alt={auth.user.name} className="size-full object-cover" /> : initials(auth.user.name)}</button>
                                 {menuOpen && (
                                     <div className="absolute right-0 top-12 w-56 rounded-2xl bg-white p-2 shadow-2xl ring-1 ring-black/10">
                                         <div className="border-b border-black/5 px-3 py-2.5">
@@ -73,10 +93,65 @@ export default function RetailShell({ children }: PropsWithChildren) {
                         ) : (
                             <Link href="/account/login" aria-label="Sign in" className="text-black/70 transition hover:text-black"><UserIcon /></Link>
                         )}
-                        <Link href="/cart" data-cart-target className="relative flex items-center gap-2 text-[15px] font-bold tracking-[0.14em] uppercase transition hover:text-[#d80621]">
-                            <BagIcon /><span className="hidden sm:inline">Bag</span>
-                            {retailStorefront.cartCount > 0 && <span className="absolute -top-2 -right-2 grid size-4 place-items-center rounded-full bg-[#d80621] text-[8px] text-white">{retailStorefront.cartCount}</span>}
-                        </Link>
+                        {retailStorefront.cartCount > 0 ? (
+                            <div ref={cartRef} className="relative">
+                                <button
+                                    type="button"
+                                    data-cart-target
+                                    onClick={() => { setCartOpen(open => !open); setMenuOpen(false); }}
+                                    className="relative flex items-center gap-2 text-[15px] font-bold tracking-[0.14em] uppercase transition hover:text-[#d80621]"
+                                    aria-label={`Bag with ${retailStorefront.cartCount} items`}
+                                    aria-expanded={cartOpen}
+                                    aria-controls="retail-header-cart-summary"
+                                >
+                                    <BagIcon /><span className="hidden sm:inline">Bag</span>
+                                    <span className="absolute -top-2 -right-2 grid size-4 place-items-center rounded-full bg-[#d80621] text-[8px] text-white">{retailStorefront.cartCount}</span>
+                                </button>
+
+                                {cartOpen && (
+                                    <div id="retail-header-cart-summary" className="absolute right-0 top-10 z-[60] w-[min(24rem,calc(100vw-2.5rem))] overflow-hidden rounded-3xl bg-white text-left tracking-normal text-black normal-case shadow-2xl ring-1 ring-black/10">
+                                        <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
+                                            <div>
+                                                <p className="font-display text-xl font-bold">Bag summary</p>
+                                                <p className="text-xs font-normal text-black/50">{retailStorefront.cartCount} {retailStorefront.cartCount === 1 ? 'item' : 'items'}</p>
+                                            </div>
+                                            <Link href="/cart" onClick={() => setCartOpen(false)} className="text-xs font-bold text-[#d80621]">View bag</Link>
+                                        </div>
+
+                                        <div className="max-h-80 divide-y divide-black/5 overflow-y-auto px-5">
+                                            {retailStorefront.cartSummary.items.map(item => (
+                                                <article key={item.id} className="grid grid-cols-[3.5rem_1fr_auto] gap-3 py-4">
+                                                    <Link href={`/products/${item.slug}`} onClick={() => setCartOpen(false)} className="aspect-square overflow-hidden rounded-xl bg-leather-50">
+                                                        {item.image && <img src={item.image} alt="" className="h-full w-full object-contain p-1" />}
+                                                    </Link>
+                                                    <div className="min-w-0">
+                                                        <Link href={`/products/${item.slug}`} onClick={() => setCartOpen(false)} className="font-display block truncate text-base font-bold">{item.product}</Link>
+                                                        <p className="mt-1 truncate text-xs font-normal text-black/50">{item.option}</p>
+                                                        <p className="mt-1 text-xs font-normal text-black/50">Qty {item.quantity} × ${item.unitPrice}</p>
+                                                    </div>
+                                                    <p className="text-sm font-bold">${item.lineTotal}</p>
+                                                </article>
+                                            ))}
+                                        </div>
+
+                                        <div className="border-t border-black/10 bg-leather-50 p-5">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="font-normal text-black/60">Subtotal</span>
+                                                <strong>${retailStorefront.cartSummary.subtotal} CAD</strong>
+                                            </div>
+                                            <div className="mt-4 grid grid-cols-2 gap-3">
+                                                <button type="button" onClick={() => setCartOpen(false)} className="rounded-full border border-leather-900/20 bg-white px-3 py-3 text-center text-xs font-bold sm:text-sm">Continue shopping</button>
+                                                <Link href="/checkout" onClick={() => setCartOpen(false)} className="rounded-full bg-leather-900 px-3 py-3 text-center text-xs font-bold text-white sm:text-sm">Go to checkout</Link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link href="/cart" data-cart-target className="relative flex items-center gap-2 text-[15px] font-bold tracking-[0.14em] uppercase transition hover:text-[#d80621]">
+                                <BagIcon /><span className="hidden sm:inline">Bag</span>
+                            </Link>
+                        )}
                     </nav>
                 </div>
                 <nav className="flex justify-start gap-7 overflow-x-auto whitespace-nowrap border-t border-black/5 px-4 py-3 text-[14px] font-bold tracking-[0.16em] uppercase sm:justify-center lg:hidden"><Link href="/shop">Shop</Link><Link href="/shop?category=wallets">Wallets</Link><Link href="/shop?category=bags">Bags</Link><Link href="/shop?category=belts">Belts</Link></nav>

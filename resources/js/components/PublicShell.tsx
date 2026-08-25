@@ -1,8 +1,9 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { FormEvent, PropsWithChildren, useState } from 'react';
+import { FormEvent, PropsWithChildren, useEffect, useRef, useState } from 'react';
 
 type NavigationItem = { label: string; url: string; opens_new_tab: boolean };
 type CategoryItem = { name: string; slug: string; url: string; children: CategoryItem[] };
+type CartSummaryItem = { id: number; product: string; slug: string; option: string; image: string | null; quantity: number; unitPrice: string; lineTotal: string };
 type SharedProps = {
     seoDefaults: { baseUrl: string };
     storefront: {
@@ -19,6 +20,7 @@ type SharedProps = {
         accountNavigation: { label: string; url: string };
         cartNavigation: { url: string | null; available: boolean };
         cartCount: number;
+        cartSummary: { items: CartSummaryItem[]; subtotal: string };
         seo: {
             title: string;
             description: string | null;
@@ -40,6 +42,26 @@ export default function PublicShell({ children }: PropsWithChildren) {
     const path = page.url.split('?')[0];
     const privatePage = /^\/(account|cart|checkout|orders|login|forgot-password|reset-password|wholesale\/application-received)(\/|$)/.test(path);
     const [query, setQuery] = useState('');
+    const [cartOpen, setCartOpen] = useState(false);
+    const cartRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function closeCart(event: MouseEvent) {
+            if (cartRef.current && !cartRef.current.contains(event.target as Node)) setCartOpen(false);
+        }
+
+        function closeCartWithKeyboard(event: KeyboardEvent) {
+            if (event.key === 'Escape') setCartOpen(false);
+        }
+
+        document.addEventListener('mousedown', closeCart);
+        document.addEventListener('keydown', closeCartWithKeyboard);
+
+        return () => {
+            document.removeEventListener('mousedown', closeCart);
+            document.removeEventListener('keydown', closeCartWithKeyboard);
+        };
+    }, []);
 
     function search(event: FormEvent) {
         event.preventDefault();
@@ -64,9 +86,9 @@ export default function PublicShell({ children }: PropsWithChildren) {
             </Head>
             {storefront.announcement && <div className="bg-red-600 px-6 py-2.5 text-center text-[11px] font-bold tracking-[0.2em] text-white uppercase">{storefront.announcement}</div>}
             <header className="sticky top-0 z-40 bg-white shadow-sm">
-                <div className="mx-auto flex max-w-[90rem] items-center gap-4 px-5 py-4 sm:gap-6 sm:px-8">
+                <div className="mx-auto flex max-w-[90rem] items-center gap-4 px-5 py-2 sm:gap-6 sm:px-8">
                     <Link href="/" className="flex shrink-0 items-center" aria-label={storefront.brandName + ' homepage'}>
-                        {storefront.logoUrl ? <img src={storefront.logoUrl} alt={storefront.logoAlt} className="h-10 w-auto max-w-40 object-contain sm:h-12 sm:max-w-48" /> : <span className="text-xl font-black tracking-[-0.04em] sm:text-2xl">IGI <span className="text-red-600">CANADA</span></span>}
+                        {storefront.logoUrl ? <img src={storefront.logoUrl} alt={storefront.logoAlt} className="h-10 w-auto max-w-40 object-contain sm:h-18 sm:max-w-48" /> : <span className="text-xl font-black tracking-[-0.04em] sm:text-2xl">IGI <span className="text-red-600">CANADA</span></span>}
                     </Link>
                     <form onSubmit={search} role="search" className="ml-auto hidden max-w-2xl flex-1 md:flex">
                         <label htmlFor="global-search" className="sr-only">Search products, categories and pages</label>
@@ -79,10 +101,65 @@ export default function PublicShell({ children }: PropsWithChildren) {
                     <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                         <Link href={storefront.accountNavigation.url} className="hidden rounded-full px-4 py-2.5 text-sm font-bold transition hover:bg-red-600 hover:text-white sm:inline-flex">{storefront.accountNavigation.label}</Link>
                         {storefront.cartNavigation.url ? (
-                            <Link href={storefront.cartNavigation.url} data-cart-target className="relative grid size-11 place-items-center rounded-full bg-black text-white" aria-label={storefront.cartNavigation.available ? `Cart with ${storefront.cartCount} items` : 'Sign in to use the wholesale cart'}>
-                                <CartIcon />
-                                {storefront.cartCount > 0 && <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-black leading-5 text-white">{storefront.cartCount}</span>}
-                            </Link>
+                            storefront.cartNavigation.available && storefront.cartCount > 0 ? (
+                                <div ref={cartRef} className="relative">
+                                    <button
+                                        type="button"
+                                        data-cart-target
+                                        onClick={() => setCartOpen(open => !open)}
+                                        className="relative grid size-11 place-items-center rounded-full bg-black text-white"
+                                        aria-label={`Cart with ${storefront.cartCount} items`}
+                                        aria-expanded={cartOpen}
+                                        aria-controls="header-cart-summary"
+                                    >
+                                        <CartIcon />
+                                        <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-black leading-5 text-white">{storefront.cartCount}</span>
+                                    </button>
+
+                                    {cartOpen && (
+                                        <div id="header-cart-summary" className="absolute right-0 top-14 z-[60] w-[min(24rem,calc(100vw-2.5rem))] overflow-hidden rounded-2xl bg-white text-black shadow-2xl ring-1 ring-black/10">
+                                            <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
+                                                <div>
+                                                    <p className="font-black">Cart summary</p>
+                                                    <p className="text-xs text-stone-500">{storefront.cartCount} {storefront.cartCount === 1 ? 'item' : 'items'}</p>
+                                                </div>
+                                                <Link href="/cart" onClick={() => setCartOpen(false)} className="text-xs font-bold text-red-600">View cart</Link>
+                                            </div>
+
+                                            <div className="max-h-80 divide-y divide-stone-100 overflow-y-auto px-5">
+                                                {storefront.cartSummary.items.map(item => (
+                                                    <article key={item.id} className="grid grid-cols-[3.5rem_1fr_auto] gap-3 py-4">
+                                                        <Link href={`/catalogue/${item.slug}`} onClick={() => setCartOpen(false)} className="aspect-square overflow-hidden rounded-lg bg-stone-50">
+                                                            {item.image && <img src={item.image} alt="" className="h-full w-full object-contain p-1" />}
+                                                        </Link>
+                                                        <div className="min-w-0">
+                                                            <Link href={`/catalogue/${item.slug}`} onClick={() => setCartOpen(false)} className="block truncate text-sm font-bold">{item.product}</Link>
+                                                            <p className="mt-1 truncate text-xs text-stone-500">{item.option}</p>
+                                                            <p className="mt-1 text-xs text-stone-500">Qty {item.quantity} × ${item.unitPrice}</p>
+                                                        </div>
+                                                        <p className="text-sm font-black">${item.lineTotal}</p>
+                                                    </article>
+                                                ))}
+                                            </div>
+
+                                            <div className="border-t border-stone-200 bg-stone-50 p-5">
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-stone-600">Subtotal</span>
+                                                    <strong>${storefront.cartSummary.subtotal} CAD</strong>
+                                                </div>
+                                                <div className="mt-4 grid grid-cols-2 gap-3">
+                                                    <button type="button" onClick={() => setCartOpen(false)} className="rounded-xl border border-stone-300 bg-white px-3 py-3 text-center text-sm font-bold">Continue shopping</button>
+                                                    <Link href="/checkout" onClick={() => setCartOpen(false)} className="rounded-xl bg-red-600 px-3 py-3 text-center text-sm font-bold text-white">Go to checkout</Link>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <Link href={storefront.cartNavigation.url} data-cart-target className="relative grid size-11 place-items-center rounded-full bg-black text-white" aria-label={storefront.cartNavigation.available ? 'Cart' : 'Sign in to use the wholesale cart'}>
+                                    <CartIcon />
+                                </Link>
+                            )
                         ) : (
                             <span data-cart-target className="grid size-11 cursor-not-allowed place-items-center rounded-full bg-black/35 text-white" aria-label="Wholesale cart is available to approved wholesale accounts" title="Wholesale cart is available to approved wholesale accounts">
                                 <CartIcon />

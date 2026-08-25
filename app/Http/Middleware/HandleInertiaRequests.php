@@ -50,6 +50,7 @@ class HandleInertiaRequests extends Middleware
     {
         if (app(StorefrontContext::class)->isRetail()) {
             $settings = HomepageSetting::query()->forChannel('retail')->first();
+            $retailCart = app(RetailCartService::class)->summary($request);
 
             return [
                 ...parent::share($request),
@@ -73,7 +74,11 @@ class HandleInertiaRequests extends Middleware
                     'logoUrl' => StorefrontAsset::uploaded($settings?->logo_path),
                     'logoAlt' => $settings?->logo_alt ?? config('storefronts.retail.name'),
                     'announcement' => $settings?->announcement_text,
-                    'cartCount' => app(RetailCartService::class)->count($request),
+                    'cartCount' => $retailCart['count'],
+                    'cartSummary' => [
+                        'items' => $retailCart['items'],
+                        'subtotal' => $retailCart['subtotal'],
+                    ],
                     'footer' => [
                         'description' => $settings?->footer_description,
                         'address' => $settings?->footer_address,
@@ -110,9 +115,28 @@ class HandleInertiaRequests extends Middleware
             ->get(['id', 'parent_id', 'name', 'slug'])
             ->groupBy(fn (Category $category) => (int) ($category->parent_id ?? 0));
         $user = $request->user();
-        $cartCount = $user?->isApprovedWholesale()
-            ? (int) $user->cart?->items()->sum('quantity')
-            : 0;
+        $cart = $user?->isApprovedWholesale()
+            ? $user->cart()->with('items.variant.product.primaryMedia')->first()
+            : null;
+        $cartCount = (int) ($cart?->items->sum('quantity') ?? 0);
+        $discount = (float) ($user?->priceTier?->discount_percentage ?? 0);
+        $cartSubtotal = 0;
+        $cartItems = $cart?->items->map(function ($item) use ($discount, &$cartSubtotal): array {
+            $unitPrice = round((float) $item->variant->wholesale_price * (1 - $discount / 100), 2);
+            $lineTotal = round($unitPrice * $item->quantity, 2);
+            $cartSubtotal += $lineTotal;
+
+            return [
+                'id' => $item->id,
+                'product' => $item->variant->product->name,
+                'slug' => $item->variant->product->slug,
+                'option' => $item->variant->optionLabel(),
+                'image' => $item->variant->product->primaryImageUrl(),
+                'quantity' => $item->quantity,
+                'unitPrice' => number_format($unitPrice, 2, '.', ''),
+                'lineTotal' => number_format($lineTotal, 2, '.', ''),
+            ];
+        })->values()->all() ?? [];
         $accountNavigation = match (true) {
             $user?->account_type === 'admin' && $user->approval_status === 'approved' => [
                 'label' => 'Admin panel',
@@ -177,6 +201,10 @@ class HandleInertiaRequests extends Middleware
                     'available' => $user?->isApprovedWholesale() ?? false,
                 ],
                 'cartCount' => $cartCount,
+                'cartSummary' => [
+                    'items' => $cartItems,
+                    'subtotal' => number_format($cartSubtotal, 2, '.', ''),
+                ],
                 'seo' => [
                     'title' => $settings?->default_meta_title ?? 'IGI Canada Wholesale Leather Goods',
                     'description' => $settings?->default_meta_description,

@@ -95,7 +95,7 @@ class HomeController extends Controller
             ],
             'products' => $products->map(fn (Product $product) => [
                 'id' => $product->id,
-                'name' => $product->retail_name ?: $product->name,
+                'name' => $product->name,
                 'slug' => $product->slug,
                 'image' => $product->primaryImageUrl(),
                 'price' => $product->minimum_retail_price !== null

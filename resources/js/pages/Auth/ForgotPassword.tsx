@@ -13,7 +13,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
     return (
         <>
             <Head title="Reset password" />
-            <AuthShell title="Reset your password" intro="Enter the email used on your existing IGI Canada account. We’ll send a secure reset link.">
+            <AuthShell title="Reset your password" intro={'Enter the email used on your existing IGI Canada account. We\u2019ll send a secure reset link.'} image="/login-left.jpg">
                 {status && <div className="mb-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">{status}</div>}
                 <form onSubmit={submit} className="space-y-5">
                     <label className="block text-sm font-semibold">

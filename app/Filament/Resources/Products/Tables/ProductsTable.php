@@ -17,9 +17,9 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -71,21 +71,11 @@ class ProductsTable
                     ->checkFileExistence(false)
                     ->toggleable(),
                 TextColumn::make('name')
-                    ->label(fn (): string => AdminStorefront::current() === 'all' ? 'Wholesale name' : 'Product name')
+                    ->label('Product name')
                     ->width('13.5rem')
                     ->sortable()
                     ->searchable()
-                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                     ->toggleable(),
-                TextColumn::make('retail_name')
-                    ->label(fn (): string => AdminStorefront::current() === 'all' ? 'Retail name' : 'Product name')
-                    ->width('13.5rem')
-                    ->sortable()
-                    ->searchable()
-                    ->placeholder('Retail name not set')
-                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
-                    ->toggleable()
-                    ->toggledHiddenByDefault(fn (): bool => AdminStorefront::current() !== 'retail'),
                 TextColumn::make('categories.name')
                     ->label('Categories')
                     ->badge()

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\MediaAsset;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,11 +21,10 @@ class CatalogueController extends Controller
         $products = $this->retailProducts()
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search): void {
                 $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('retail_name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%");
             }))
             ->when($category !== '', fn ($query) => $query->whereHas('categories', fn ($query) => $query->where('slug', $category)))
-            ->orderByRaw('coalesce(retail_name, name)')
+            ->orderBy('name')
             ->paginate(24)
             ->withQueryString()
             ->through(fn (Product $product): array => $this->card($product));
@@ -62,11 +62,11 @@ class CatalogueController extends Controller
 
         return Inertia::render('Catalogue/Show', [
             'product' => [
-                'name' => $product->retail_name ?: $product->name,
+                'name' => $product->name,
                 'slug' => $product->slug,
                 'sku' => $product->sku,
-                'description' => trim((string) ($product->retail_description ?: $product->description)),
-                'seoDescription' => str(strip_tags((string) ($product->retail_description ?: $product->description)))->squish()->limit(160)->toString(),
+                'description' => trim((string) $product->description),
+                'seoDescription' => str(strip_tags((string) $product->description))->squish()->limit(160)->toString(),
                 'categories' => $product->categories->map->only(['name', 'slug']),
                 'images' => $this->images($product),
                 'variants' => $product->variants->map(fn ($variant) => [
@@ -96,7 +96,7 @@ class CatalogueController extends Controller
         ]);
     }
 
-    private function variantImageAssets(Product $product): \Illuminate\Support\Collection
+    private function variantImageAssets(Product $product): Collection
     {
         $ids = $product->variants
             ->pluck('image_ids')
@@ -119,7 +119,7 @@ class CatalogueController extends Controller
     private function retailProducts()
     {
         return Product::query()
-            ->select(['id', 'sku', 'name', 'retail_name', 'slug', 'primary_image_path', 'primary_media_asset_id'])
+            ->select(['id', 'sku', 'name', 'slug', 'primary_image_path', 'primary_media_asset_id'])
             ->where('is_active', true)
             ->whereIn('visibility', ['retail', 'both'])
             ->whereHas('variants', fn ($query) => $query
@@ -140,7 +140,7 @@ class CatalogueController extends Controller
         return [
             'id' => $product->id,
             'sku' => $product->sku,
-            'name' => $product->retail_name ?: $product->name,
+            'name' => $product->name,
             'slug' => $product->slug,
             'image' => $product->primaryImageUrl(),
             'price' => $product->minimum_retail_price !== null

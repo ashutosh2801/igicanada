@@ -25,7 +25,8 @@ class RetailCommerceTest extends TestCase
             ->assertSuccessful()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Catalogue/Show')
-                ->where('product.name', 'Retail Slim Wallet')
+                ->where('product.name', 'Shared Slim Wallet')
+                ->where('product.description', '<p>Shared product description.</p>')
                 ->where('product.variants.0.price', '49.99'));
 
         $this->post('https://leatherwallets.ca/cart/items', [
@@ -41,7 +42,12 @@ class RetailCommerceTest extends TestCase
                 ->where('items.0.quantity', 2)
                 ->where('items.0.unitPrice', '49.99')
                 ->where('subtotal', '99.98')
-                ->where('retailStorefront.cartCount', 2));
+                ->where('retailStorefront.cartCount', 2)
+                ->where('retailStorefront.cartSummary.items.0.product', 'Shared Slim Wallet')
+                ->where('retailStorefront.cartSummary.items.0.quantity', 2)
+                ->where('retailStorefront.cartSummary.items.0.unitPrice', '49.99')
+                ->where('retailStorefront.cartSummary.items.0.lineTotal', '99.98')
+                ->where('retailStorefront.cartSummary.subtotal', '99.98'));
     }
 
     public function test_guest_checkout_creates_a_retail_order_snapshot_and_reduces_stock(): void
@@ -163,6 +169,8 @@ class RetailCommerceTest extends TestCase
         $product = Product::create([
             'name' => 'Shared Slim Wallet',
             'retail_name' => 'Retail Slim Wallet',
+            'description' => '<p>Shared product description.</p>',
+            'retail_description' => '<p>Legacy retail description.</p>',
             'slug' => 'slim-wallet',
             'visibility' => 'both',
             'is_active' => true,

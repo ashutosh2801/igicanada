@@ -50,7 +50,7 @@ class MultiStorefrontTest extends TestCase
                 ->component('Home')
                 ->where('salesChannel', 'retail')
                 ->has('products', 1)
-                ->where('products.0.name', 'Slim Leather Wallet')
+                ->where('products.0.name', 'Shared Wallet Name')
                 ->where('products.0.price', '49.99'));
     }
 

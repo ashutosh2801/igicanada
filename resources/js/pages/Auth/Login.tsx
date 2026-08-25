@@ -15,7 +15,7 @@ export default function Login({ status }: Props) {
     return (
         <>
             <Head title="Wholesale account sign in" />
-            <AuthShell title="Welcome back" intro="Sign in to manage your wholesale account and view approved pricing.">
+            <AuthShell title="Welcome back" intro="Sign in to manage your wholesale account and view approved pricing." image="/login-left.jpg">
                 {status && <div className="mb-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">{status}</div>}
                 <form onSubmit={submit} className="space-y-5">
                     <label className="block text-sm font-semibold">

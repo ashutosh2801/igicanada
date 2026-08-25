@@ -12,6 +12,7 @@ use Filament\Forms\Components\ModalTableSelect;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TableSelect;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Utilities\Get;
@@ -27,31 +28,15 @@ class ProductForm
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->label(fn (): string => AdminStorefront::current() === 'all' ? 'Wholesale product name' : 'Product name')
-                    ->required(fn (Get $get): bool => AdminStorefront::current() === 'wholesale'
-                        || (AdminStorefront::current() === 'all' && $get('visibility') !== 'retail'))
-                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
-                    ->dehydratedWhenHidden(),
-                TextInput::make('retail_name')
-                    ->label(fn (): string => AdminStorefront::current() === 'all' ? 'Retail product name' : 'Product name')
-                    ->required(fn (Get $get): bool => AdminStorefront::current() === 'retail'
-                        || (AdminStorefront::current() === 'all' && in_array($get('visibility'), ['retail', 'both'], true)))
-                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
-                    ->dehydratedWhenHidden(),
+                    ->label('Product name')
+                    ->required(),
                 TextInput::make('slug')
                     ->required()
                     ->unique(ignoreRecord: true),
                 RichEditor::make('description')
-                    ->label('Wholesale description')
+                    ->label('Product description')
                     ->columnSpanFull()
-                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
-                    ->dehydratedWhenHidden(),
-                RichEditor::make('retail_description')
-                    ->label('Retail description')
-                    ->helperText('Optional. The retail storefront can use different customer-facing copy.')
-                    ->columnSpanFull()
-                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
-                    ->dehydratedWhenHidden(),
+                    ->helperText('The same name, slug and description are shown on both websites.'),
                 Select::make('categories')
                     ->relationship(
                         'categories',
@@ -155,7 +140,7 @@ class ProductForm
                                 ->mapWithKeys(fn (MediaAsset $asset): array => [(string) $asset->id => self::selectedImageThumbnail($asset)])
                                 ->all())
                             ->tableConfiguration(MediaAssetsPickerTable::class)
-                            ->tableSelect(fn (\Filament\Forms\Components\TableSelect $select): \Filament\Forms\Components\TableSelect => $select->relationshipName('mediaAssets'))
+                            ->tableSelect(fn (TableSelect $select): TableSelect => $select->relationshipName('mediaAssets'))
                             ->helperText('Optional. These images show on the product page when this colour is selected.')
                             ->selectAction(fn (Action $action): Action => $action
                                 ->label('Open media library and select colour images')

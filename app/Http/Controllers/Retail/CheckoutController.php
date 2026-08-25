@@ -92,7 +92,7 @@ class CheckoutController extends Controller
             $product = $variant->product;
 
             return [
-                'name' => $product->retail_name ?: $product->name,
+                'name' => $product->name,
                 'option' => $variant->optionLabel(),
                 'image' => $product->primaryImageUrl(),
                 'quantity' => $item->quantity,
@@ -216,7 +216,7 @@ class CheckoutController extends Controller
                 $unitPrice = (float) $variant->retail_price;
                 $order->items()->create([
                     'product_variant_id' => $variant->id,
-                    'product_name' => $variant->product->retail_name ?: $variant->product->name,
+                    'product_name' => $variant->product->name,
                     'sku' => $variant->sku ?: $variant->product->sku,
                     'option' => $variant->optionLabel(),
                     'quantity' => $item->quantity,
@@ -283,7 +283,7 @@ class CheckoutController extends Controller
             $unitPrice = (float) $variant->retail_price;
 
             return [
-                'name' => $variant->product->retail_name ?: $variant->product->name,
+                'name' => $variant->product->name,
                 'option' => $variant->optionLabel(),
                 'quantity' => $item->quantity,
                 'unit_price' => number_format($unitPrice, 2, '.', ''),

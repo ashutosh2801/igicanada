@@ -52,17 +52,17 @@ class AdminContextualFieldsTest extends TestCase
         AdminStorefront::select('retail');
 
         Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
-            ->assertFormFieldDoesNotExist('name')
-            ->assertFormFieldExists('retail_name')
-            ->assertFormFieldExists('retail_description')
-            ->assertFormFieldDoesNotExist('description')
+            ->assertFormFieldExists('name')
+            ->assertFormFieldExists('description')
+            ->assertFormFieldDoesNotExist('retail_name')
+            ->assertFormFieldDoesNotExist('retail_description')
             ->assertFormFieldDoesNotExist('visibility')
-            ->fillForm(['retail_name' => 'Updated retail wallet'])
+            ->fillForm(['name' => 'Updated shared wallet'])
             ->call('save')
             ->assertHasNoFormErrors();
 
-        $this->assertSame('Shared wallet', $product->fresh()->name);
-        $this->assertSame('Updated retail wallet', $product->fresh()->retail_name);
+        $this->assertSame('Updated shared wallet', $product->fresh()->name);
+        $this->assertSame('Retail wallet', $product->fresh()->retail_name);
         $this->assertSame('<p>Wholesale copy</p>', $product->fresh()->description);
         $this->assertSame('20.00', $variant->fresh()->wholesale_price);
         $this->assertTrue($variant->fresh()->is_available_wholesale);
@@ -81,17 +81,17 @@ class AdminContextualFieldsTest extends TestCase
         Livewire::test(EditProduct::class, ['record' => $product->getRouteKey()])
             ->assertFormFieldExists('name')
             ->assertFormFieldExists('description')
-            ->assertFormFieldExists('retail_name')
-            ->assertFormFieldExists('retail_description')
+            ->assertFormFieldDoesNotExist('retail_name')
+            ->assertFormFieldDoesNotExist('retail_description')
             ->assertFormFieldExists('visibility');
 
         AdminStorefront::select('retail');
 
         Livewire::test(CreateProduct::class)
-            ->assertFormFieldDoesNotExist('name')
-            ->assertFormFieldExists('retail_name')
+            ->assertFormFieldExists('name')
+            ->assertFormFieldDoesNotExist('retail_name')
             ->fillForm([
-                'retail_name' => 'Retail-only card holder',
+                'name' => 'Retail-only card holder',
                 'slug' => 'retail-only-card-holder',
                 'is_active' => true,
             ])
@@ -100,7 +100,6 @@ class AdminContextualFieldsTest extends TestCase
 
         $this->assertDatabaseHas('products', [
             'name' => 'Retail-only card holder',
-            'retail_name' => 'Retail-only card holder',
             'slug' => 'retail-only-card-holder',
             'visibility' => 'retail',
         ]);
@@ -154,8 +153,7 @@ class AdminContextualFieldsTest extends TestCase
         Livewire::test(ListProducts::class)
             ->assertCanSeeTableRecords([$retail])
             ->assertCanNotSeeTableRecords([$wholesale])
-            ->assertTableColumnHidden('name')
-            ->assertTableColumnVisible('retail_name')
+            ->assertTableColumnVisible('name')
             ->assertTableColumnHidden('minimum_wholesale_price')
             ->assertTableColumnVisible('minimum_retail_price')
             ->assertTableColumnHidden('visibility');
@@ -166,7 +164,6 @@ class AdminContextualFieldsTest extends TestCase
             ->assertCanSeeTableRecords([$wholesale])
             ->assertCanNotSeeTableRecords([$retail])
             ->assertTableColumnVisible('name')
-            ->assertTableColumnHidden('retail_name')
             ->assertTableColumnVisible('minimum_wholesale_price')
             ->assertTableColumnHidden('minimum_retail_price')
             ->assertTableColumnHidden('visibility');
@@ -182,8 +179,7 @@ class AdminContextualFieldsTest extends TestCase
 
         $defaultColumns = collect($listing->instance()->tableColumns)->keyBy('name');
         $this->assertSame('13.5rem', $listing->instance()->getTable()->getColumn('name')->getWidth());
-        $this->assertSame('13.5rem', $listing->instance()->getTable()->getColumn('retail_name')->getWidth());
-        foreach (['retail_name', 'visibility', 'retail_ready_variants_count', 'minimum_retail_price', 'minimum_wholesale_price', 'available_stock_quantity', 'is_active', 'legacy_id', 'slug', 'created_at', 'updated_at'] as $column) {
+        foreach (['visibility', 'retail_ready_variants_count', 'minimum_retail_price', 'minimum_wholesale_price', 'available_stock_quantity', 'is_active', 'legacy_id', 'slug', 'created_at', 'updated_at'] as $column) {
             $this->assertFalse($defaultColumns[$column]['isToggled'], "Expected {$column} to be hidden by default.");
         }
 
