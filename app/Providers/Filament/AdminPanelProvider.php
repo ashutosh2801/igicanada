@@ -2,9 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\Pages\Login;
+use App\Filament\Pages\StorefrontBranding;
 use App\Filament\Resources\Categories\CategoryResource;
 use App\Filament\Resources\ContactEnquiries\ContactEnquiryResource;
 use App\Filament\Resources\ContentPages\ContentPageResource;
+use App\Filament\Resources\EmailTemplates\EmailTemplateResource;
 use App\Filament\Resources\HomepageSettings\HomepageSettingResource;
 use App\Filament\Resources\MediaAssets\MediaAssetResource;
 use App\Filament\Resources\MediaFolders\MediaFolderResource;
@@ -46,7 +49,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->domain(config('storefronts.admin_domain'))
-            ->login(\App\Filament\Auth\Pages\Login::class)
+            ->login(Login::class)
             ->sidebarCollapsibleOnDesktop()
             ->userMenu(position: UserMenuPosition::Topbar)
             ->colors([
@@ -84,8 +87,9 @@ class AdminPanelProvider extends PanelProvider
                     ->group(NavigationGroup::make('Appearance')->icon(Heroicon::OutlinedPaintBrush)->collapsible()->items($groupItems([
                         ...CategoryResource::getNavigationItems(),
                         ...HomepageSettingResource::getNavigationItems(),
-                        ...\App\Filament\Pages\StorefrontBranding::getNavigationItems(),
+                        ...StorefrontBranding::getNavigationItems(),
                         ...NavigationItemResource::getNavigationItems(),
+                        ...EmailTemplateResource::getNavigationItems(),
                     ])))
                     ->group(NavigationGroup::make('Media')->icon(Heroicon::OutlinedPhoto)->collapsible()->items($groupItems([
                         ...MediaAssetResource::getNavigationItems(),

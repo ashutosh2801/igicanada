@@ -67,6 +67,7 @@ class HomeController extends Controller
                 ->withCount(['variants' => fn ($query) => $query->where('is_active', true)])
                 ->withSum(['variants as stock_quantity' => fn ($query) => $query->where('is_active', true)], 'stock_quantity')
                 ->withMin(['variants as minimum_wholesale_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_price')
+                ->withMin(['variants as minimum_wholesale_compare_at_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_compare_at_price')
                 ->orderByDesc('published_at')
                 ->orderByDesc('id')
                 ->limit(min(max((int) $settings->new_arrivals_count, 4), 12))
@@ -112,6 +113,9 @@ class HomeController extends Controller
                     : null,
                 'accountPrice' => $canViewPricing && $product->minimum_wholesale_price !== null
                     ? number_format((float) $product->minimum_wholesale_price * (1 - $discount / 100), 2, '.', '')
+                    : null,
+                'compareAtPrice' => $canViewPricing && $product->minimum_wholesale_compare_at_price !== null
+                    ? number_format((float) $product->minimum_wholesale_compare_at_price, 2, '.', '')
                     : null,
             ]),
             'pricing' => [

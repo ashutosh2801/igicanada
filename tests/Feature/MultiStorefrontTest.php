@@ -59,6 +59,37 @@ class MultiStorefrontTest extends TestCase
         $this->get('https://leatherwallets.ca/catalogue')->assertNotFound();
     }
 
+    public function test_retail_catalogue_shows_sale_price_and_original_price(): void
+    {
+        $product = Product::create([
+            'name' => 'Shared Wallet Name',
+            'slug' => 'slim-leather-wallet',
+            'visibility' => 'both',
+            'is_active' => true,
+            'published_at' => now(),
+        ]);
+        $product->variants()->create([
+            'retail_price' => 39.99,
+            'retail_compare_at_price' => 59.99,
+            'stock_quantity' => 12,
+            'is_available_retail' => true,
+            'is_active' => true,
+        ]);
+
+        $this->get('https://leatherwallets.ca/shop')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Catalogue/Index')
+                ->where('products.data.0.price', '39.99')
+                ->where('products.data.0.compareAtPrice', '59.99'));
+
+        $this->get('https://leatherwallets.ca/products/slim-leather-wallet')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('product.variants.0.price', '39.99')
+                ->where('product.variants.0.compareAtPrice', '59.99'));
+    }
+
     public function test_retail_homepage_content_and_brand_are_managed_separately(): void
     {
         HomepageSetting::query()->forChannel('retail')->firstOrFail()->update([

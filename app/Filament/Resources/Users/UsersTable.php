@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Users;
 
 use App\Models\User;
+use App\Notifications\AccountApproved;
+use App\Notifications\AccountCancelled;
 use App\Support\AdminStorefront;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -37,6 +39,7 @@ class UsersTable
                     ->color(fn (string $state) => match ($state) {
                         'approved' => 'success',
                         'pending' => 'warning',
+                        'rejected' => 'danger',
                         default => 'danger',
                     })
                     ->visible(fn (): bool => AdminStorefront::showsWholesaleFields()),
@@ -54,6 +57,7 @@ class UsersTable
                     'pending' => 'Pending review',
                     'approved' => 'Approved',
                     'suspended' => 'Suspended',
+                    'rejected' => 'Rejected',
                 ])->visible(fn (): bool => AdminStorefront::showsWholesaleFields()),
             ])
             ->recordActions([
@@ -63,10 +67,29 @@ class UsersTable
                     ->disabled(fn (User $record) => ! $record->hasVerifiedEmail())
                     ->tooltip(fn (User $record) => $record->hasVerifiedEmail() ? null : 'The business must verify its email before approval.')
                     ->visible(fn (User $record) => $record->account_type === 'wholesale' && $record->approval_status !== 'approved')
-                    ->action(fn (User $record) => $record->update([
-                        'approval_status' => 'approved',
-                        'approved_at' => now(),
-                    ])),
+                    ->action(function (User $record): void {
+                        $record->update([
+                            'approval_status' => 'approved',
+                            'approved_at' => now(),
+                        ]);
+
+                        $record->notify(new AccountApproved($record));
+                    }),
+                Action::make('reject')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->label('Cancel')
+                    ->modalHeading('Cancel wholesale application')
+                    ->modalDescription(fn (User $record) => "This will cancel {$record->name}'s application and send a cancellation email to {$record->email}.")
+                    ->visible(fn (User $record) => $record->account_type === 'wholesale' && $record->approval_status === 'pending')
+                    ->action(function (User $record): void {
+                        $record->update([
+                            'approval_status' => 'rejected',
+                            'approved_at' => null,
+                        ]);
+
+                        $record->notify(new AccountCancelled($record));
+                    }),
                 Action::make('suspend')
                     ->color('danger')
                     ->requiresConfirmation()

@@ -36,6 +36,7 @@ class CatalogueController extends Controller
             ->withCount('variants')
             ->withSum(['variants as stock_quantity' => fn ($query) => $query->where('is_active', true)], 'stock_quantity')
             ->withMin(['variants as minimum_wholesale_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_price')
+            ->withMin(['variants as minimum_wholesale_compare_at_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_compare_at_price')
             ->with('primaryMedia:id,disk,path')
             ->orderBy('name')
             ->paginate(24)
@@ -107,6 +108,9 @@ class CatalogueController extends Controller
                         'minimumQuantity' => $variant->wholesale_minimum_quantity,
                         'wholesalePrice' => $canViewPricing ? number_format($basePrice, 2, '.', '') : null,
                         'accountPrice' => $canViewPricing ? number_format($basePrice * (1 - $discount / 100), 2, '.', '') : null,
+                        'compareAtPrice' => $canViewPricing && $variant->wholesale_compare_at_price !== null
+                            ? number_format((float) $variant->wholesale_compare_at_price, 2, '.', '')
+                            : null,
                     ];
                 }),
             ],
@@ -175,6 +179,7 @@ class CatalogueController extends Controller
             ->withCount('variants')
             ->withSum(['variants as stock_quantity' => fn ($query) => $query->where('is_active', true)], 'stock_quantity')
             ->withMin(['variants as minimum_wholesale_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_price')
+            ->withMin(['variants as minimum_wholesale_compare_at_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_compare_at_price')
             ->with('primaryMedia:id,disk,path');
     }
 
@@ -194,6 +199,9 @@ class CatalogueController extends Controller
                 : null,
             'accountPrice' => $canViewPricing && $product->minimum_wholesale_price !== null
                 ? number_format((float) $product->minimum_wholesale_price * (1 - $discount / 100), 2, '.', '')
+                : null,
+            'compareAtPrice' => $canViewPricing && $product->minimum_wholesale_compare_at_price !== null
+                ? number_format((float) $product->minimum_wholesale_compare_at_price, 2, '.', '')
                 : null,
         ];
     }

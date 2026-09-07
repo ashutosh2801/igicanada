@@ -32,6 +32,11 @@ class ProductResource extends Resource
         return AdminStorefront::applyProductVisibility(parent::getEloquentQuery());
     }
 
+    public static function getRecordRouteBindingEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ProductForm::configure($schema);

@@ -215,4 +215,61 @@ class CatalogueTest extends TestCase
             ->where('products.total', 0));
         $this->get('/catalogue/retail-archive')->assertNotFound();
     }
+
+    public function test_approved_reseller_sees_original_price_when_compare_at_price_is_set(): void
+    {
+        $tier = PriceTier::create(['name' => 'Level 1', 'discount_percentage' => 10, 'is_active' => true]);
+        $user = User::factory()->create([
+            'account_type' => 'wholesale',
+            'approval_status' => 'approved',
+            'price_tier_id' => $tier->id,
+        ]);
+        $product = Product::create([
+            'sku' => 'W100', 'name' => 'Cowhide Wallet', 'slug' => 'cowhide-wallet',
+            'visibility' => 'wholesale', 'is_active' => true,
+        ]);
+        $product->variants()->create([
+            'wholesale_price' => 10,
+            'wholesale_compare_at_price' => 15,
+            'stock_quantity' => 5,
+            'wholesale_minimum_quantity' => 2,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)->get('/catalogue/cowhide-wallet')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('pricing.authorized', true)
+                ->where('product.variants.0.wholesalePrice', '10.00')
+                ->where('product.variants.0.accountPrice', '9.00')
+                ->where('product.variants.0.compareAtPrice', '15.00'));
+
+        $this->actingAs($user)->get('/catalogue')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('products.data.0.wholesalePrice', '10.00')
+                ->where('products.data.0.accountPrice', '9.00')
+                ->where('products.data.0.compareAtPrice', '15.00'));
+    }
+
+    public function test_guest_does_not_see_compare_at_price_on_wholesale(): void
+    {
+        $product = Product::create([
+            'sku' => 'W100', 'name' => 'Cowhide Wallet', 'slug' => 'cowhide-wallet',
+            'visibility' => 'wholesale', 'is_active' => true,
+        ]);
+        $product->variants()->create([
+            'wholesale_price' => 10,
+            'wholesale_compare_at_price' => 15,
+            'stock_quantity' => 5,
+            'wholesale_minimum_quantity' => 2,
+            'is_active' => true,
+        ]);
+
+        $this->get('/catalogue/cowhide-wallet')->assertInertia(fn (Assert $page) => $page
+            ->where('product.variants.0.compareAtPrice', null));
+
+        $this->get('/catalogue')->assertInertia(fn (Assert $page) => $page
+            ->where('products.data.0.compareAtPrice', null));
+    }
 }

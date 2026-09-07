@@ -34,6 +34,9 @@ class HomeController extends Controller
             ->withMin(['variants as minimum_retail_price' => fn ($query) => $query
                 ->where('is_active', true)
                 ->where('is_available_retail', true)], 'retail_price')
+            ->withMin(['variants as minimum_retail_compare_at_price' => fn ($query) => $query
+                ->where('is_active', true)
+                ->where('is_available_retail', true)], 'retail_compare_at_price')
             ->withSum(['variants as stock_quantity' => fn ($query) => $query
                 ->where('is_active', true)
                 ->where('is_available_retail', true)], 'stock_quantity')
@@ -100,6 +103,9 @@ class HomeController extends Controller
                 'image' => $product->primaryImageUrl(),
                 'price' => $product->minimum_retail_price !== null
                     ? number_format((float) $product->minimum_retail_price, 2, '.', '')
+                    : null,
+                'compareAtPrice' => $product->minimum_retail_compare_at_price !== null
+                    ? number_format((float) $product->minimum_retail_compare_at_price, 2, '.', '')
                     : null,
                 'inStock' => (int) $product->stock_quantity > 0,
             ]),

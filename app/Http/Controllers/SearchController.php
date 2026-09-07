@@ -28,6 +28,7 @@ class SearchController extends Controller
                 ->orWhere('sku', 'like', "%{$query}%")
                 ->orWhere('description', 'like', "%{$query}%"))
             ->withMin(['variants as minimum_wholesale_price' => fn ($builder) => $builder->where('is_active', true)], 'wholesale_price')
+            ->withMin(['variants as minimum_wholesale_compare_at_price' => fn ($builder) => $builder->where('is_active', true)], 'wholesale_compare_at_price')
             ->orderBy('name')
             ->limit(24)
             ->get()
@@ -39,6 +40,9 @@ class SearchController extends Controller
                 'image' => StorefrontAsset::legacy($product->primary_image_path),
                 'accountPrice' => $canViewPricing && $product->minimum_wholesale_price !== null
                     ? number_format((float) $product->minimum_wholesale_price * (1 - $discount / 100), 2, '.', '')
+                    : null,
+                'compareAtPrice' => $canViewPricing && $product->minimum_wholesale_compare_at_price !== null
+                    ? number_format((float) $product->minimum_wholesale_compare_at_price, 2, '.', '')
                     : null,
             ]) : collect();
 

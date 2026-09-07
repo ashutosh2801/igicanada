@@ -56,6 +56,7 @@ class UserResource extends Resource
                 'pending' => 'Pending review',
                 'approved' => 'Approved',
                 'suspended' => 'Suspended',
+                'rejected' => 'Rejected',
             ])->required()
                 ->visible(fn (?User $record): bool => self::showsWholesaleFields($record))
                 ->dehydratedWhenHidden(),

@@ -59,9 +59,11 @@ class AuthenticatedSessionController extends Controller
             $request->session()->regenerateToken();
 
             throw ValidationException::withMessages([
-                'email' => $user->approval_status === 'pending'
-                    ? 'Your wholesale account application is still awaiting approval.'
-                    : 'This account is currently suspended. Please contact IGI Canada.',
+                'email' => match ($user->approval_status) {
+                    'pending' => 'Your wholesale account application is still awaiting approval.',
+                    'rejected' => 'Your wholesale account application was not accepted. Please contact IGI Canada.',
+                    default => 'This account is currently suspended. Please contact IGI Canada.',
+                },
             ]);
         }
 

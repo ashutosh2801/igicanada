@@ -4,7 +4,7 @@ import SeoHead, { type BreadcrumbItem } from '@/components/SeoHead';
 import { Link, router } from '@inertiajs/react';
 import { FormEvent, useState } from 'react';
 
-type Product = { id: number; sku: string | null; name: string; slug: string; image: string | null; price: string | null; inStock: boolean };
+type Product = { id: number; sku: string | null; name: string; slug: string; image: string | null; price: string | null; compareAtPrice: string | null; inStock: boolean };
 type Category = { name: string; slug: string };
 type PageLink = { url: string | null; label: string; active: boolean };
 type Props = {
@@ -51,7 +51,7 @@ export default function Catalogue({ products, categories, filters }: Props) {
                         </Link>
                         <p className="mt-4 text-xs font-semibold text-stone-500">{product.sku || 'Leather collection'}</p>
                         <h2 className="font-display mt-1 text-xl font-bold"><Link href={'/products/' + product.slug}>{product.name}</Link></h2>
-                        <p className="mt-2 font-bold text-leather-700">{product.price ? `From $${product.price} CAD` : 'Price coming soon'}</p>
+                        <p className="mt-2 font-bold text-leather-700">{product.price ? <span className="inline-flex items-baseline gap-2">From ${product.price} CAD{product.compareAtPrice && <span className="text-xs font-medium text-stone-400 line-through">${product.compareAtPrice}</span>}</span> : 'Price coming soon'}</p>
                     </article>)}
                 </div> : <div className="mt-12 rounded-3xl border border-dashed border-leather-900/25 bg-white/50 p-14 text-center"><p className="font-display text-2xl font-bold">No products found</p><p className="mt-2 text-stone-600">Try another search or category.</p></div>}
 

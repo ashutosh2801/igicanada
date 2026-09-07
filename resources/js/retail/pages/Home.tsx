@@ -9,6 +9,7 @@ type Product = {
     slug: string;
     image: string | null;
     price: string | null;
+    compareAtPrice: string | null;
     inStock: boolean;
 };
 
@@ -172,7 +173,7 @@ function ProductCard({ product }: { product: Product }) {
         </Link>
         <div className="mt-4 text-center">
             <h3 className="min-h-10 text-sm leading-5"><Link href={`/products/${product.slug}`}>{product.name}</Link></h3>
-            <p className="mt-2 text-xs font-semibold">{product.price ? `$${product.price} CAD` : 'Price coming soon'}</p>
+            <p className="mt-2 text-xs font-semibold">{product.price ? <span className="inline-flex items-baseline gap-2">${product.price} CAD{product.compareAtPrice && <span className="text-stone-400 line-through">${product.compareAtPrice}</span>}</span> : 'Price coming soon'}</p>
         </div>
     </article>;
 }

@@ -22,7 +22,7 @@ type Homepage = {
     newArrivalsDescription: string | null;
 };
 type Category = { name: string; slug: string; description: string; image: string | null; products: number };
-type NewArrival = { id: number; sku: string | null; name: string; slug: string; image: string | null; variants: number; inStock: boolean; wholesalePrice: string | null; accountPrice: string | null };
+type NewArrival = { id: number; sku: string | null; name: string; slug: string; image: string | null; variants: number; inStock: boolean; wholesalePrice: string | null; accountPrice: string | null; compareAtPrice: string | null };
 type Props = { homepage: Homepage; categories: Category[]; newArrivals: NewArrival[]; catalogue: { categories: number; products: number; variants: number }; pricing: { authorized: boolean; tier: string | null } };
 
 export default function Home({ homepage, categories, newArrivals, catalogue, pricing }: Props) {
@@ -117,7 +117,7 @@ export default function Home({ homepage, categories, newArrivals, catalogue, pri
                                             <span className={`mt-1 size-2.5 shrink-0 rounded-full ${product.inStock ? 'bg-red-600' : 'bg-black/20'}`} title={product.inStock ? 'In stock' : 'Out of stock'} />
                                         </div>
                                         {pricing.authorized ? (
-                                            product.accountPrice ? <div className="mt-3 flex items-baseline gap-2"><p className="font-black text-red-600">From ${product.accountPrice} CAD</p>{product.accountPrice !== product.wholesalePrice && <p className="text-xs text-black/40 line-through">${product.wholesalePrice}</p>}</div> : <p className="mt-3 text-sm font-semibold text-black/50">Contact for wholesale pricing</p>
+                                            product.accountPrice ? <div className="mt-3 flex items-baseline gap-2"><p className="font-black text-red-600">From ${product.accountPrice} CAD</p>{product.compareAtPrice && <p className="text-xs text-black/40 line-through">${product.compareAtPrice}</p>}{!product.compareAtPrice && product.accountPrice !== product.wholesalePrice && <p className="text-xs text-black/40 line-through">${product.wholesalePrice}</p>}</div> : <p className="mt-3 text-sm font-semibold text-black/50">Contact for wholesale pricing</p>
                                         ) : <p className="mt-3 text-sm font-bold text-red-600">Sign in to view wholesale price</p>}
                                     </article>
                                 ))}

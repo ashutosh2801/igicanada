@@ -169,6 +169,13 @@ class ProductForm
                         TextInput::make('wholesale_price')->numeric()->prefix('$')
                             ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                             ->dehydratedWhenHidden(),
+                        TextInput::make('wholesale_compare_at_price')
+                            ->label('Wholesale original price')
+                            ->numeric()
+                            ->prefix('$')
+                            ->helperText('Optional. Shown struck-through as the original price next to the sale price.')
+                            ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                            ->dehydratedWhenHidden(),
                         TextInput::make('wholesale_minimum_quantity')->numeric()->default(1)->minValue(1)
                             ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                             ->dehydratedWhenHidden(),
