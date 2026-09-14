@@ -101,7 +101,7 @@ class AdminContextualFieldsTest extends TestCase
         $this->assertDatabaseHas('products', [
             'name' => 'Retail-only card holder',
             'slug' => 'retail-only-card-holder',
-            'visibility' => 'retail',
+            'visibility' => 'both',
         ]);
     }
 

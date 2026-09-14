@@ -110,6 +110,10 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::STYLES_AFTER,
+                fn () => view('filament.styles.sidebar-white'),
+            )
+            ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
                 fn () => view('filament.styles.shipping-rates'),
                 ListStandardShippingRates::class,
             )

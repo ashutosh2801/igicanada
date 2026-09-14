@@ -6,7 +6,7 @@ import { groupVariants, sizeKeyOf } from '@/lib/variantOptions';
 import { Link, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-type Variant = { id: number; label: string; color: string | null; colorCode: string | null; sizes: string[]; images: { src: string; alt: string }[]; price: string; compareAtPrice: string | null; stockQuantity: number; inStock: boolean };
+type Variant = { id: number; label: string; color: string | null; colorCode: string | null; sizes: string[]; images: { src: string; alt: string }[]; price: string | null; compareAtPrice: string | null; stockQuantity: number; inStock: boolean };
 type Props = { product: { name: string; slug: string; sku: string | null; description: string; seoDescription: string; categories: { name: string; slug: string }[]; images: { src: string; alt: string }[]; variants: Variant[] } };
 
 type VariantGroup = { name: string; swatch: string; variants: Variant[] };
@@ -47,7 +47,7 @@ export default function ProductShow({ product }: Props) {
         ...(category ? [{ label: category.name, href: `/shop?category=${encodeURIComponent(category.slug)}` }] : []),
         { label: product.name },
     ];
-    const prices = product.variants.map(variant => Number(variant.price)).filter(Number.isFinite);
+    const prices = product.variants.map(variant => variant.price ? Number(variant.price) : NaN).filter(Number.isFinite);
 
     useEffect(() => {
         const rail = thumbnailRail.current;
@@ -131,7 +131,7 @@ export default function ProductShow({ product }: Props) {
                         <p className="text-xs font-bold tracking-[0.2em] text-leather-700 uppercase">{product.categories.map(category => category.name).join(' · ') || 'Leather collection'}</p>
                         <h1 className="font-display mt-4 text-4xl leading-tight font-bold tracking-tight sm:text-5xl">{product.name}</h1>
                         {product.sku && <p className="mt-3 text-sm text-stone-500">SKU {product.sku}</p>}
-                        <div className="mt-6 flex items-baseline gap-3"><p className="text-2xl font-bold text-leather-700">${selected.price} CAD</p>{selected.compareAtPrice && <p className="text-sm text-stone-400 line-through">${selected.compareAtPrice}</p>}</div>
+                        <div className="mt-6 flex items-baseline gap-3">{selected.price ? <><p className="text-2xl font-bold text-leather-700">${selected.price} CAD</p>{selected.compareAtPrice && <p className="text-sm text-stone-400 line-through">${selected.compareAtPrice}</p>}</> : <p className="text-2xl font-bold text-leather-700">Price coming soon</p>}</div>
 
                         {needsPicker && <div className="mt-8 space-y-7">
                             {hasColors && groups.length > 1 && <div>
@@ -157,7 +157,7 @@ export default function ProductShow({ product }: Props) {
 
                         <div className="mt-8 flex gap-3">
                             <input type="number" min="1" max={selected.stockQuantity} value={form.data.quantity} onChange={event => form.setData('quantity', Number(event.target.value))} className="w-20 rounded-full bg-white px-4 py-3 text-center font-bold ring-1 ring-leather-900/15 outline-none focus:ring-2 focus:ring-leather-700" />
-                            <button type="button" onClick={addToBag} disabled={!selected.inStock || form.processing} className="flex-1 rounded-full bg-leather-900 px-6 py-3 font-bold text-white transition hover:bg-leather-700 disabled:cursor-not-allowed disabled:opacity-50">{selected.inStock ? (form.processing ? 'Adding…' : 'Add to bag') : 'Sold out'}</button>
+                            <button type="button" onClick={addToBag} disabled={!selected.inStock || !selected.price || form.processing} className="flex-1 rounded-full bg-leather-900 px-6 py-3 font-bold text-white transition hover:bg-leather-700 disabled:cursor-not-allowed disabled:opacity-50">{!selected.price ? 'Price coming soon' : (selected.inStock ? (form.processing ? 'Adding…' : 'Add to bag') : 'Sold out')}</button>
                         </div>
                         {form.errors.quantity && <p className="mt-3 text-sm font-bold text-red-700">{form.errors.quantity}</p>}
                         <p className="mt-4 text-xs text-stone-500">{selected.inStock ? `${selected.stockQuantity} available` : 'Currently unavailable'} · Secure checkout</p>

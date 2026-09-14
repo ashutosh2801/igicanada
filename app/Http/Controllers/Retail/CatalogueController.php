@@ -53,7 +53,6 @@ class CatalogueController extends Controller
             'variants' => fn ($query) => $query
                 ->where('is_active', true)
                 ->where('is_available_retail', true)
-                ->whereNotNull('retail_price')
                 ->orderBy('id'),
         ]);
         abort_if($product->variants->isEmpty(), 404);
@@ -85,7 +84,9 @@ class CatalogueController extends Controller
                             'alt' => $asset->alt_text ?: $asset->title ?: $product->name,
                         ])
                         ->all(),
-                    'price' => number_format((float) $variant->retail_price, 2, '.', ''),
+                    'price' => $variant->retail_price !== null
+                        ? number_format((float) $variant->retail_price, 2, '.', '')
+                        : null,
                     'compareAtPrice' => $variant->retail_compare_at_price !== null
                         ? number_format((float) $variant->retail_compare_at_price, 2, '.', '')
                         : null,
@@ -124,8 +125,7 @@ class CatalogueController extends Controller
             ->whereIn('visibility', ['retail', 'both'])
             ->whereHas('variants', fn ($query) => $query
                 ->where('is_active', true)
-                ->where('is_available_retail', true)
-                ->whereNotNull('retail_price'))
+                ->where('is_available_retail', true))
             ->withSum(['variants as stock_quantity' => fn ($query) => $query
                 ->where('is_active', true)
                 ->where('is_available_retail', true)], 'stock_quantity')

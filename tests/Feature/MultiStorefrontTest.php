@@ -59,6 +59,42 @@ class MultiStorefrontTest extends TestCase
         $this->get('https://leatherwallets.ca/catalogue')->assertNotFound();
     }
 
+    public function test_product_without_retail_price_is_still_visible_on_both_websites(): void
+    {
+        $product = Product::create([
+            'name' => 'Priced Later Wallet',
+            'slug' => 'priced-later-wallet',
+            'visibility' => 'both',
+            'is_active' => true,
+            'published_at' => now(),
+        ]);
+        $product->variants()->create([
+            'wholesale_price' => 25,
+            'stock_quantity' => 10,
+            'is_available_wholesale' => true,
+            'is_available_retail' => true,
+            'is_active' => true,
+        ]);
+
+        $this->get('https://leatherwallets.ca/shop')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('products.data.0.name', 'Priced Later Wallet')
+                ->where('products.data.0.price', null));
+
+        $this->get('https://leatherwallets.ca/products/priced-later-wallet')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('product.variants.0.price', null));
+
+        $this->get('https://igicanada.ca/catalogue')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('products.data.0.name', 'Priced Later Wallet')
+                ->where('products.data.0.accountPrice', null)
+                ->where('products.total', 1));
+    }
+
     public function test_retail_catalogue_shows_sale_price_and_original_price(): void
     {
         $product = Product::create([

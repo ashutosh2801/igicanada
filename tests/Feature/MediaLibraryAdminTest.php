@@ -94,7 +94,7 @@ class MediaLibraryAdminTest extends TestCase
         );
     }
 
-    public function test_new_admin_products_default_to_wholesale_with_a_channel_visibility_field(): void
+    public function test_new_admin_products_default_to_both_websites_with_a_channel_visibility_field(): void
     {
         $admin = User::factory()->create([
             'account_type' => 'admin',
@@ -106,19 +106,38 @@ class MediaLibraryAdminTest extends TestCase
 
         Livewire::test(CreateProduct::class)
             ->assertFormFieldDoesNotExist('legacy_id')
+            ->assertFormFieldDoesNotExist('published_at')
             ->assertFormFieldExists('visibility')
             ->fillForm([
-                'name' => 'Wholesale Only Product',
-                'slug' => 'wholesale-only-product',
+                'name' => 'Shared Product',
+                'slug' => 'shared-product',
                 'is_active' => true,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('products', [
-            'slug' => 'wholesale-only-product',
-            'visibility' => 'wholesale',
+            'slug' => 'shared-product',
+            'visibility' => 'both',
         ]);
+
+        $this->assertNotNull(Product::query()->where('slug', 'shared-product')->value('published_at'));
+    }
+
+    public function test_typing_the_product_name_auto_fills_the_slug(): void
+    {
+        $admin = User::factory()->create([
+            'account_type' => 'admin',
+            'approval_status' => 'approved',
+            'email_verified_at' => now(),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(CreateProduct::class)
+            ->fillForm([
+                'name' => 'Vintage Brown Wallet',
+            ])
+            ->assertSet('data.slug', 'vintage-brown-wallet');
     }
 
     public function test_admin_can_auto_upload_unfiled_images_inside_the_media_picker(): void

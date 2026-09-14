@@ -15,7 +15,10 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TableSelect;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\HtmlString;
@@ -29,7 +32,14 @@ class ProductForm
             ->components([
                 TextInput::make('name')
                     ->label('Product name')
-                    ->required(),
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, Get $get, ?string $state, ?string $old): void {
+                        $slug = (string) $get('slug');
+                        if (blank($slug) || $slug === Str::slug((string) $old)) {
+                            $set('slug', Str::slug((string) $state));
+                        }
+                    }),
                 TextInput::make('slug')
                     ->required()
                     ->unique(ignoreRecord: true),
@@ -37,15 +47,27 @@ class ProductForm
                     ->label('Product description')
                     ->columnSpanFull()
                     ->helperText('The same name, slug and description are shown on both websites.'),
-                Select::make('categories')
-                    ->relationship(
-                        'categories',
-                        'name',
-                        modifyQueryUsing: fn ($query) => AdminStorefront::applyVisibility($query),
-                    )
-                    ->multiple()
-                    ->preload()
-                    ->searchable(),
+                Grid::make(3)
+                    ->columnSpanFull()
+                    ->schema([
+                        Select::make('categories')
+                            ->relationship(
+                                'categories',
+                                'name',
+                                modifyQueryUsing: fn ($query) => AdminStorefront::applyVisibility($query),
+                            )
+                            ->multiple()
+                            ->preload()
+                            ->searchable(),
+                        TextInput::make('sku')
+                            ->label('SKU')
+                            ->default(fn (Get $get): ?string => filled($get('name'))
+                                ? 'SKU-'.strtoupper(Str::slug($get('name'), '-'))
+                                : null)
+                            ->placeholder('SKU-'.strtoupper(Str::slug('Product name', '-'))),
+                        TextInput::make('weight_kg')
+                            ->numeric(),
+                    ]),
                 ModalTableSelect::make('primary_media_asset_id')
                     ->label('Primary image')
                     ->relationship('primaryMedia', 'title')
@@ -98,14 +120,6 @@ class ProductForm
                     ->placeholder('No gallery images selected')
                     ->columnSpanFull()
                     ->helperText('Open the Media Library popup to view thumbnails and select multiple images.'),
-                TextInput::make('sku')
-                    ->label('SKU')
-                    ->default(fn (Get $get): ?string => filled($get('name'))
-                        ? 'SKU-'.strtoupper(Str::slug($get('name'), '-'))
-                        : null)
-                    ->placeholder('SKU-'.strtoupper(Str::slug('Product name', '-'))),
-                TextInput::make('weight_kg')
-                    ->numeric(),
                 Select::make('visibility')
                     ->options([
                         'wholesale' => 'Wholesale only',
@@ -116,93 +130,106 @@ class ProductForm
                     ->live()
                     ->visible(fn (): bool => AdminStorefront::current() === 'all')
                     ->dehydratedWhenHidden()
-                    ->default(fn (): string => AdminStorefront::current() === 'retail' ? 'retail' : 'wholesale'),
+                    ->default('both'),
                 Toggle::make('is_active')
                     ->default(true),
-                DateTimePicker::make('published_at'),
-                Repeater::make('variants')
-                    ->relationship()
+                DateTimePicker::make('published_at')
+                    ->label('Published at')
+                    ->default(now())
+                    ->visible(fn (string $operation): bool => $operation === 'edit')
+                    ->dehydratedWhenHidden(),
+                Section::make('Variants')
+                    ->icon('heroicon-o-swatch')
+                    ->description('Add colour variants, sizes, and pricing for each website. Variants with a price show on the storefronts.')
+                    ->collapsible()
+                    ->collapsed()
+                    ->columns(1)
+                    ->columnSpanFull()
                     ->schema([
-                        TextInput::make('color')
-                            ->label('Color label')
-                            ->placeholder('e.g. Vintage Brown')
-                            ->maxLength(100),
-                        ColorPicker::make('color_code')
-                            ->label('Color code')
-                            ->hex(),
-                        ModalTableSelect::make('image_ids')
-                            ->label('Colour images')
-                            ->multiple()
-                            ->placeholder('No colour images selected')
-                            ->getOptionLabelsUsing(fn (array $values): array => MediaAsset::query()
-                                ->whereIn('id', $values)
-                                ->get()
-                                ->mapWithKeys(fn (MediaAsset $asset): array => [(string) $asset->id => self::selectedImageThumbnail($asset)])
-                                ->all())
-                            ->tableConfiguration(MediaAssetsPickerTable::class)
-                            ->tableSelect(fn (TableSelect $select): TableSelect => $select->relationshipName('mediaAssets'))
-                            ->helperText('Optional. These images show on the product page when this colour is selected.')
-                            ->selectAction(fn (Action $action): Action => $action
-                                ->label('Open media library and select colour images')
-                                ->icon('heroicon-o-photo')
-                                ->button()
-                                ->color('primary')
-                                ->modalIcon('heroicon-o-photo')
-                                ->modalIconColor('primary')
-                                ->modalHeading('Select colour images')
-                                ->modalDescription('Search the media library, tick the images for this colour, then click Use selected images.')
-                                ->modalSubmitActionLabel('Use selected images')
-                                ->modalWidth(Width::ScreenTwoExtraLarge)
-                                ->extraModalWindowAttributes(['class' => 'media-library-popup'])
-                                ->stickyModalHeader()
-                                ->stickyModalFooter()
-                                ->closeModalByClickingAway(false)
-                                ->slideOver(false)),
-                        Select::make('sizes')
-                            ->label('Available sizes')
-                            ->multiple()
-                            ->searchable()
-                            ->preload()
-                            ->native(false)
-                            ->options(self::sizeOptions())
-                            ->helperText('Select one or more sizes. Each selection appears here immediately.'),
-                        TextInput::make('wholesale_price')->numeric()->prefix('$')
-                            ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
-                            ->dehydratedWhenHidden(),
-                        TextInput::make('wholesale_compare_at_price')
-                            ->label('Wholesale original price')
-                            ->numeric()
-                            ->prefix('$')
-                            ->helperText('Optional. Shown struck-through as the original price next to the sale price.')
-                            ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
-                            ->dehydratedWhenHidden(),
-                        TextInput::make('wholesale_minimum_quantity')->numeric()->default(1)->minValue(1)
-                            ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
-                            ->dehydratedWhenHidden(),
-                        Toggle::make('is_available_wholesale')
-                            ->label('Wholesale')
-                            ->default(true)
-                            ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
-                            ->dehydratedWhenHidden(),
-                        TextInput::make('retail_price')->numeric()->prefix('$')
-                            ->visible(fn (): bool => AdminStorefront::showsRetailFields())
-                            ->dehydratedWhenHidden(),
-                        TextInput::make('retail_compare_at_price')
-                            ->label('Retail compare-at price')
-                            ->numeric()
-                            ->prefix('$')
-                            ->visible(fn (): bool => AdminStorefront::showsRetailFields())
-                            ->dehydratedWhenHidden(),
-                        Toggle::make('is_available_retail')
-                            ->label('Retail')
-                            ->default(false)
-                            ->visible(fn (): bool => AdminStorefront::showsRetailFields())
-                            ->dehydratedWhenHidden(),
-                        TextInput::make('stock_quantity')->numeric()->default(0),
-                        Toggle::make('is_active')->default(true),
-                    ])
-                    ->columns(4)
-                    ->columnSpanFull(),
+                        Repeater::make('variants')
+                            ->relationship()
+                            ->schema([
+                                TextInput::make('color')
+                                    ->label('Color label')
+                                    ->placeholder('e.g. Vintage Brown')
+                                    ->maxLength(100),
+                                ColorPicker::make('color_code')
+                                    ->label('Color code')
+                                    ->hex(),
+                                ModalTableSelect::make('image_ids')
+                                    ->label('Colour images')
+                                    ->multiple()
+                                    ->placeholder('No colour images selected')
+                                    ->getOptionLabelsUsing(fn (array $values): array => MediaAsset::query()
+                                        ->whereIn('id', $values)
+                                        ->get()
+                                        ->mapWithKeys(fn (MediaAsset $asset): array => [(string) $asset->id => self::selectedImageThumbnail($asset)])
+                                        ->all())
+                                    ->tableConfiguration(MediaAssetsPickerTable::class)
+                                    ->tableSelect(fn (TableSelect $select): TableSelect => $select->relationshipName('mediaAssets'))
+                                    ->helperText('Optional. These images show on the product page when this colour is selected.')
+                                    ->selectAction(fn (Action $action): Action => $action
+                                        ->label('Open media library and select colour images')
+                                        ->icon('heroicon-o-photo')
+                                        ->button()
+                                        ->color('primary')
+                                        ->modalIcon('heroicon-o-photo')
+                                        ->modalIconColor('primary')
+                                        ->modalHeading('Select colour images')
+                                        ->modalDescription('Search the media library, tick the images for this colour, then click Use selected images.')
+                                        ->modalSubmitActionLabel('Use selected images')
+                                        ->modalWidth(Width::ScreenTwoExtraLarge)
+                                        ->extraModalWindowAttributes(['class' => 'media-library-popup'])
+                                        ->stickyModalHeader()
+                                        ->stickyModalFooter()
+                                        ->closeModalByClickingAway(false)
+                                        ->slideOver(false)),
+                                Select::make('sizes')
+                                    ->label('Available sizes')
+                                    ->multiple()
+                                    ->searchable()
+                                    ->preload()
+                                    ->native(false)
+                                    ->options(self::sizeOptions())
+                                    ->helperText('Select one or more sizes. Each selection appears here immediately.'),
+                                TextInput::make('wholesale_price')->numeric()->prefix('$')
+                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                    ->dehydratedWhenHidden(),
+                                TextInput::make('wholesale_compare_at_price')
+                                    ->label('Wholesale original price')
+                                    ->numeric()
+                                    ->prefix('$')
+                                    ->helperText('Optional. Shown struck-through as the original price next to the sale price.')
+                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                    ->dehydratedWhenHidden(),
+                                TextInput::make('wholesale_minimum_quantity')->numeric()->default(1)->minValue(1)
+                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                    ->dehydratedWhenHidden(),
+                                Toggle::make('is_available_wholesale')
+                                    ->label('Wholesale')
+                                    ->default(true)
+                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                    ->dehydratedWhenHidden(),
+                                TextInput::make('retail_price')->numeric()->prefix('$')
+                                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                                    ->dehydratedWhenHidden(),
+                                TextInput::make('retail_compare_at_price')
+                                    ->label('Retail compare-at price')
+                                    ->numeric()
+                                    ->prefix('$')
+                                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                                    ->dehydratedWhenHidden(),
+                                Toggle::make('is_available_retail')
+                                    ->label('Retail')
+                                    ->default(true)
+                                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                                    ->dehydratedWhenHidden(),
+                                TextInput::make('stock_quantity')->numeric()->default(0),
+                                Toggle::make('is_active')->default(true),
+                            ])
+                            ->columns(4)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 

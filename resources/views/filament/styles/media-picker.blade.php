@@ -19,6 +19,21 @@
         background: transparent !important;
     }
 
+    .primary-image-thumbnail-select,
+    .product-images-thumbnail-select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--gray-200);
+        border-radius: 0.75rem;
+        background: #ffffff;
+    }
+
+    .dark .primary-image-thumbnail-select,
+    .dark .product-images-thumbnail-select {
+        border-color: color-mix(in srgb, white 10%, var(--gray-900));
+        background: color-mix(in srgb, white 4%, var(--gray-900));
+    }
+
     .media-library-popup {
         height: min(92vh, 64rem);
         max-height: calc(100vh - 2rem);

@@ -28,8 +28,7 @@ class HomeController extends Controller
             ->whereIn('visibility', ['retail', 'both'])
             ->whereHas('variants', fn ($query) => $query
                 ->where('is_active', true)
-                ->where('is_available_retail', true)
-                ->whereNotNull('retail_price'))
+                ->where('is_available_retail', true))
             ->with('primaryMedia')
             ->withMin(['variants as minimum_retail_price' => fn ($query) => $query
                 ->where('is_active', true)
