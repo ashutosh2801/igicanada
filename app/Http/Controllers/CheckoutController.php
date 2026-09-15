@@ -143,7 +143,7 @@ class CheckoutController extends Controller
             } catch (InvalidArgumentException $exception) {
                 throw ValidationException::withMessages(['shipping_service_code' => $exception->getMessage()]);
             }
-$shippingTotal = round((float) $shippingRate['price'], 2);
+            $shippingTotal = round((float) $shippingRate['price'], 2);
             $payingOnline = $data['payment_option'] === 'paypal';
             $tax = $this->calculateWholesaleTax($subtotal + $shippingTotal, $data['country_code'] ?? '', $data['province'] ?? '');
 
@@ -242,7 +242,7 @@ $shippingTotal = round((float) $shippingRate['price'], 2);
         return [
             'enabled' => $registered && $isCanada,
             'label' => 'HST',
-            'jurisdiction' => $isCanada ?strtoupper(trim($province)) : strtoupper(trim($countryCode)),
+            'jurisdiction' => $isCanada ? strtoupper(trim($province)) : strtoupper(trim($countryCode)),
             'rate' => $rate,
             'amount' => round(max(0, $taxableAmount) * $rate, 2),
             'registration_number' => config('retail-tax.registration_number'),

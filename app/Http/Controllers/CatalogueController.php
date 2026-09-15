@@ -18,26 +18,37 @@ class CatalogueController extends Controller
      */
     public function __invoke(Request $request): Response
     {
+        return $this->renderCatalogue($request);
+    }
+
+    public function clearance(Request $request): Response
+    {
+        return $this->renderCatalogue($request, fn (Builder $query) => $query->whereHas(
+            'variants',
+            fn (Builder $query) => $query
+                ->where('is_active', true)
+                ->whereNotNull('wholesale_price')
+                ->whereNotNull('wholesale_compare_at_price'),
+        ), [
+            'clearance' => true,
+        ]);
+    }
+
+    private function renderCatalogue(Request $request, ?callable $scope = null, array $extra = []): Response
+    {
         $search = trim((string) $request->string('q'));
         $category = trim((string) $request->string('category'));
         $user = $request->user()?->loadMissing('priceTier');
         $canViewPricing = $user?->isApprovedWholesale() ?? false;
         $discount = $canViewPricing ? (float) ($user->priceTier?->discount_percentage ?? 0) : 0;
 
-        $products = Product::query()
-            ->select(['id', 'sku', 'name', 'slug', 'primary_image_path', 'primary_media_asset_id'])
-            ->where('is_active', true)
-            ->whereIn('visibility', ['wholesale', 'both'])
+        $products = $this->productCardQuery()
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search): void {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%");
             }))
             ->when($category !== '', fn ($query) => $query->whereHas('categories', fn ($query) => $query->where('slug', $category)))
-            ->withCount('variants')
-            ->withSum(['variants as stock_quantity' => fn ($query) => $query->where('is_active', true)], 'stock_quantity')
-            ->withMin(['variants as minimum_wholesale_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_price')
-            ->withMin(['variants as minimum_wholesale_compare_at_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_compare_at_price')
-            ->with('primaryMedia:id,disk,path')
+            ->when($scope !== null, $scope)
             ->orderBy('name')
             ->paginate(24)
             ->withQueryString()
@@ -55,6 +66,7 @@ class CatalogueController extends Controller
                 'authorized' => $canViewPricing,
                 'tier' => $canViewPricing ? $user->priceTier?->name : null,
             ],
+            ...$extra,
         ]);
     }
 

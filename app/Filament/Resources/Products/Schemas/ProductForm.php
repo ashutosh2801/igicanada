@@ -7,7 +7,6 @@ use App\Models\MediaAsset;
 use App\Support\AdminStorefront;
 use Filament\Actions\Action;
 use Filament\Forms\Components\ColorPicker;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\ModalTableSelect;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
@@ -133,11 +132,6 @@ class ProductForm
                     ->default('both'),
                 Toggle::make('is_active')
                     ->default(true),
-                DateTimePicker::make('published_at')
-                    ->label('Published at')
-                    ->default(now())
-                    ->visible(fn (string $operation): bool => $operation === 'edit')
-                    ->dehydratedWhenHidden(),
                 Section::make('Variants')
                     ->icon('heroicon-o-swatch')
                     ->description('Add colour variants, sizes, and pricing for each website. Variants with a price show on the storefronts.')

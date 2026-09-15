@@ -252,6 +252,64 @@ class CatalogueTest extends TestCase
                 ->where('products.data.0.compareAtPrice', '15.00'));
     }
 
+    public function test_clearance_lists_only_products_with_both_wholesale_prices(): void
+    {
+        $clearanceProduct = Product::create([
+            'sku' => 'W101', 'name' => 'Clearance Wallet', 'slug' => 'clearance-wallet',
+            'visibility' => 'wholesale', 'is_active' => true,
+        ]);
+        $clearanceProduct->variants()->create([
+            'wholesale_price' => 10,
+            'wholesale_compare_at_price' => 15,
+            'stock_quantity' => 5,
+            'wholesale_minimum_quantity' => 2,
+            'is_active' => true,
+        ]);
+
+        $fullPriceProduct = Product::create([
+            'sku' => 'W102', 'name' => 'Regular Wallet', 'slug' => 'regular-wallet',
+            'visibility' => 'wholesale', 'is_active' => true,
+        ]);
+        $fullPriceProduct->variants()->create([
+            'wholesale_price' => 20,
+            'stock_quantity' => 5,
+            'wholesale_minimum_quantity' => 2,
+            'is_active' => true,
+        ]);
+
+        Product::create([
+            'sku' => 'W103', 'name' => 'Legacy Retail Only', 'slug' => 'legacy-retail-only',
+            'visibility' => 'retail', 'is_active' => true,
+        ]);
+
+        $this->actingAs(User::factory()->create([
+            'account_type' => 'wholesale',
+            'approval_status' => 'approved',
+        ]))->get('/clearance')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Catalogue/Index')
+                ->where('clearance', true)
+                ->where('products.total', 1)
+                ->where('products.data.0.name', 'Clearance Wallet')
+                ->where('products.data.0.compareAtPrice', '15.00'));
+
+        $this->get('/catalogue')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->missing('clearance')
+                ->where('products.total', 2));
+    }
+
+    public function test_wholesale_header_navigation_includes_a_clearance_menu_item(): void
+    {
+        $this->get('/clearance')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('storefront.headerNavigation.0.label', 'Clearance')
+                ->where('storefront.headerNavigation.0.url', '/clearance'));
+    }
+
     public function test_guest_does_not_see_compare_at_price_on_wholesale(): void
     {
         $product = Product::create([

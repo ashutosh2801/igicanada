@@ -31,6 +31,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -52,6 +53,7 @@ class AdminPanelProvider extends PanelProvider
             ->login(Login::class)
             ->sidebarCollapsibleOnDesktop()
             ->userMenu(position: UserMenuPosition::Topbar)
+            ->maxContentWidth(Width::Full)
             ->colors([
                 'primary' => Color::Red,
                 'danger' => Color::Red,

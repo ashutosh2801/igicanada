@@ -173,13 +173,11 @@ class AdminContextualFieldsTest extends TestCase
         $listing = Livewire::test(ListProducts::class)
             ->assertCanSeeTableRecords([$wholesale, $retail])
             ->assertTableColumnVisible('name')
-            ->assertTableColumnVisible('variants_count')
-            ->assertTableColumnVisible('weight_kg')
-            ->assertTableColumnVisible('published_at');
+            ->assertTableColumnVisible('variants_count');
 
         $defaultColumns = collect($listing->instance()->tableColumns)->keyBy('name');
-        $this->assertSame('13.5rem', $listing->instance()->getTable()->getColumn('name')->getWidth());
-        foreach (['visibility', 'retail_ready_variants_count', 'minimum_retail_price', 'minimum_wholesale_price', 'available_stock_quantity', 'is_active', 'legacy_id', 'slug', 'created_at', 'updated_at'] as $column) {
+        $this->assertSame('14rem', $listing->instance()->getTable()->getColumn('name')->getWidth());
+        foreach (['visibility', 'retail_ready_variants_count', 'minimum_retail_price', 'minimum_wholesale_price', 'available_stock_quantity', 'is_active', 'legacy_id', 'slug', 'created_at', 'updated_at', 'weight_kg', 'published_at'] as $column) {
             $this->assertFalse($defaultColumns[$column]['isToggled'], "Expected {$column} to be hidden by default.");
         }
 
@@ -299,6 +297,61 @@ class AdminContextualFieldsTest extends TestCase
         );
         $this->assertSame([$wholesaleMenu->id], NavigationItemResource::getEloquentQuery()->whereKey([$wholesaleMenu->id, $retailMenu->id])->pluck('id')->all());
         $this->assertTrue(StandardShippingRateResource::getEloquentQuery()->get()->every(fn ($rate): bool => $rate->sales_channel === 'wholesale'));
+    }
+
+    public function test_product_list_switches_visibility_per_product_row(): void
+    {
+        $this->actingAs($this->admin());
+
+        $product = Product::create([
+            'name' => 'Switchable wallet',
+            'slug' => 'switchable-wallet',
+            'visibility' => 'both',
+            'is_active' => true,
+        ]);
+
+        Livewire::test(ListProducts::class)
+            ->callTableAction('changeVisibility', $product, ['visibility' => 'retail'])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame('retail', $product->fresh()->visibility);
+
+        Livewire::test(ListProducts::class)
+            ->callTableAction('changeVisibility', $product, ['visibility' => 'wholesale'])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame('wholesale', $product->fresh()->visibility);
+
+        Livewire::test(ListProducts::class)
+            ->callTableAction('changeVisibility', $product, ['visibility' => 'both'])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame('both', $product->fresh()->visibility);
+    }
+
+    public function test_product_list_bulk_action_sets_visibility_for_selected_products(): void
+    {
+        $this->actingAs($this->admin());
+
+        $wholesaleOnly = Product::create([
+            'name' => 'Wholesale belt',
+            'slug' => 'wholesale-belt',
+            'visibility' => 'wholesale',
+            'is_active' => true,
+        ]);
+        $retailOnly = Product::create([
+            'name' => 'Retail card holder',
+            'slug' => 'retail-card-holder',
+            'visibility' => 'retail',
+            'is_active' => true,
+        ]);
+
+        Livewire::test(ListProducts::class)
+            ->callTableBulkAction('setVisibility', [$wholesaleOnly, $retailOnly], ['visibility' => 'both'])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame('both', $wholesaleOnly->fresh()->visibility);
+        $this->assertSame('both', $retailOnly->fresh()->visibility);
     }
 
     private function admin(): User

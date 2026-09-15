@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\VerifyWholesaleEmail;
+use App\Support\StorefrontAsset;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -83,7 +84,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
 
     public function avatarUrl(): ?string
     {
-        return blank($this->avatar) ? null : \App\Support\StorefrontAsset::uploaded($this->avatar);
+        return blank($this->avatar) ? null : StorefrontAsset::uploaded($this->avatar);
     }
 
     public function isApprovedWholesale(): bool

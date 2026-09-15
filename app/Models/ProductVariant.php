@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\MediaAsset;
-use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -22,6 +20,7 @@ class ProductVariant extends Model
             'retail_price' => 'decimal:2',
             'retail_compare_at_price' => 'decimal:2',
             'wholesale_price' => 'decimal:2',
+            'wholesale_compare_at_price' => 'decimal:2',
             'sizes' => 'array',
             'image_ids' => 'array',
         ];

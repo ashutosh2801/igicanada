@@ -147,6 +147,42 @@ class ProductsBulkUpdateTest extends TestCase
         $this->assertSame(8, $rows[1]->fresh()->stock_quantity);
     }
 
+    public function test_bulk_edit_selected_updates_compare_at_min_quantity_and_availability(): void
+    {
+        $this->actingAs($this->admin());
+
+        $a = $this->product('A', 'a');
+        $row = $a->variants->first();
+
+        Livewire::test(ListProducts::class)
+            ->callTableBulkAction('editSelected', [$a], [
+                'variants' => [
+                    [
+                        'id' => $row->getKey(),
+                        'wholesale_price' => 11,
+                        'wholesale_compare_at_price' => 15,
+                        'wholesale_minimum_quantity' => 6,
+                        'is_available_wholesale' => false,
+                        'retail_price' => 22,
+                        'retail_compare_at_price' => 29,
+                        'is_available_retail' => false,
+                        'stock_quantity' => 7,
+                    ],
+                ],
+            ])
+            ->assertHasNoFormErrors();
+
+        $fresh = $row->fresh();
+        $this->assertSame('11.00', $fresh->wholesale_price);
+        $this->assertSame('15.00', $fresh->wholesale_compare_at_price);
+        $this->assertSame(6, $fresh->wholesale_minimum_quantity);
+        $this->assertFalse((bool) $fresh->is_available_wholesale);
+        $this->assertSame('22.00', $fresh->retail_price);
+        $this->assertSame('29.00', $fresh->retail_compare_at_price);
+        $this->assertFalse((bool) $fresh->is_available_retail);
+        $this->assertSame(7, $fresh->stock_quantity);
+    }
+
     public function test_bulk_edit_selected_only_updates_fields_visible_in_current_storefront(): void
     {
         $this->actingAs($this->admin());

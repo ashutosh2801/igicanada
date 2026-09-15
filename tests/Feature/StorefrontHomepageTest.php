@@ -47,12 +47,15 @@ class StorefrontHomepageTest extends TestCase
             ->where('homepage.heroSliderInterval', 7)
             ->where('homepage.catalogueTitle', 'Featured wholesale ranges')
             ->where('categories.0.name', 'Wallets')
-            ->where('storefront.headerNavigation.0.label', 'New arrivals'));
+            ->where('storefront.headerNavigation.0.label', 'Clearance')
+            ->where('storefront.headerNavigation.0.url', '/clearance')
+            ->where('storefront.headerNavigation.1.label', 'New arrivals'));
     }
 
     public function test_header_cart_count_is_shared_for_approved_reseller(): void
     {
         $user = User::factory()->create([
+            'name' => 'Ashutosh Gupta',
             'account_type' => 'wholesale',
             'approval_status' => 'approved',
         ]);
@@ -72,7 +75,7 @@ class StorefrontHomepageTest extends TestCase
         $cart->items()->create(['product_variant_id' => $variant->id, 'quantity' => 4]);
 
         $this->actingAs($user)->get('/')->assertInertia(fn (Assert $page) => $page
-            ->where('storefront.accountNavigation.label', 'Account')
+            ->where('storefront.accountNavigation.label', 'Ashutosh')
             ->where('storefront.accountNavigation.url', '/account')
             ->where('storefront.cartNavigation.url', '/cart')
             ->where('storefront.cartNavigation.available', true)
@@ -169,14 +172,16 @@ class StorefrontHomepageTest extends TestCase
             ->where('storefront.cartNavigation.url', '/login'));
 
         $admin = User::factory()->create([
+            'name' => 'Admin Person',
             'account_type' => 'admin',
             'approval_status' => 'approved',
         ]);
 
         $this->actingAs($admin)->get('/')->assertInertia(fn (Assert $page) => $page
-            ->where('storefront.accountNavigation.label', 'Admin panel')
-            ->where('storefront.accountNavigation.url', '/admin')
-            ->where('storefront.cartNavigation.url', null)
+            ->where('storefront.accountNavigation.label', 'Wholesale login')
+            ->where('storefront.accountNavigation.url', '/login')
+            ->where('auth.user', null)
+            ->where('storefront.cartNavigation.url', '/login')
             ->where('storefront.cartNavigation.available', false));
 
         $pending = User::factory()->create([
@@ -188,6 +193,18 @@ class StorefrontHomepageTest extends TestCase
             ->where('storefront.accountNavigation.label', 'Account status')
             ->where('storefront.accountNavigation.url', '/account/status')
             ->where('storefront.cartNavigation.url', null));
+
+        $customer = User::factory()->create([
+            'name' => 'Maria Silva',
+            'account_type' => 'wholesale',
+            'approval_status' => 'approved',
+        ]);
+
+        $this->actingAs($customer)->get('/')->assertInertia(fn (Assert $page) => $page
+            ->where('storefront.accountNavigation.label', 'Maria')
+            ->where('storefront.accountNavigation.url', '/account')
+            ->where('auth.user.name', 'Maria Silva')
+            ->where('auth.user.account_type', 'wholesale'));
     }
 
     public function test_global_search_finds_wholesale_content_and_excludes_retail_archive(): void

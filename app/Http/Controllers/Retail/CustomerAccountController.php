@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -154,7 +155,7 @@ class CustomerAccountController extends Controller
             ]);
 
             if ($old && str_starts_with($old, 'avatars/')) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($old);
+                Storage::disk('public')->delete($old);
             }
         }
 

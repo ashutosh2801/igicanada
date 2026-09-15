@@ -7,14 +7,17 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\RetailProductActivationService;
 use App\Support\AdminStorefront;
+use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\IconColumn;
@@ -72,7 +75,9 @@ class ProductsTable
                     ->toggleable(),
                 TextColumn::make('name')
                     ->label('Product name')
-                    ->width('13.5rem')
+                    ->width('14rem')
+                    ->wrap()
+                    ->limit(60)
                     ->sortable()
                     ->searchable()
                     ->toggleable(),
@@ -140,7 +145,8 @@ class ProductsTable
                     ->label('Weight kg')
                     ->numeric()
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 IconColumn::make('is_active')
                     ->label('Is active')
                     ->boolean()
@@ -150,7 +156,8 @@ class ProductsTable
                     ->label('Published at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
                 TextColumn::make('legacy_id')
                     ->label('Legacy ID')
                     ->numeric()
@@ -260,6 +267,28 @@ class ProductsTable
                     ),
             ])
             ->recordActions([
+                Action::make('changeVisibility')
+                    ->label('Websites')
+                    ->icon('heroicon-o-globe-alt')
+                    ->color('primary')
+                    ->modalHeading(fn (Product $record): string => "Websites for {$record->name}")
+                    ->modalDescription('Switch this product between the wholesale and retail storefronts, or show it on both. New products default to both websites.')
+                    ->schema([
+                        Radio::make('visibility')
+                            ->label('Where should this product be shown?')
+                            ->options(self::visibilityOptions())
+                            ->default(fn (Product $record): string => $record->visibility)
+                            ->required(),
+                    ])
+                    ->action(function (Product $record, array $data): void {
+                        $record->update(['visibility' => $data['visibility']]);
+
+                        Notification::make()
+                            ->title('Website updated')
+                            ->body($record->name.' is now shown on '.self::visibilityLabel($data['visibility']).'.')
+                            ->success()
+                            ->send();
+                    }),
                 EditAction::make(),
             ])
             ->toolbarActions([
@@ -463,12 +492,43 @@ class ProductsTable
                                         ->step('any')
                                         ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                                         ->dehydratedWhenHidden(),
+                                    TextInput::make('wholesale_compare_at_price')
+                                        ->label('Wholesale original price')
+                                        ->numeric()
+                                        ->prefix('$')
+                                        ->minValue(0)
+                                        ->step('any')
+                                        ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                        ->dehydratedWhenHidden(),
+                                    TextInput::make('wholesale_minimum_quantity')
+                                        ->label('Min qty')
+                                        ->numeric()
+                                        ->integer()
+                                        ->minValue(1)
+                                        ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                        ->dehydratedWhenHidden(),
+                                    Toggle::make('is_available_wholesale')
+                                        ->label('Wholesale')
+                                        ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                        ->dehydratedWhenHidden(),
                                     TextInput::make('retail_price')
                                         ->label('Retail price')
                                         ->numeric()
                                         ->prefix('$')
                                         ->minValue(0)
                                         ->step('any')
+                                        ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                                        ->dehydratedWhenHidden(),
+                                    TextInput::make('retail_compare_at_price')
+                                        ->label('Retail compare-at price')
+                                        ->numeric()
+                                        ->prefix('$')
+                                        ->minValue(0)
+                                        ->step('any')
+                                        ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                                        ->dehydratedWhenHidden(),
+                                    Toggle::make('is_available_retail')
+                                        ->label('Retail')
                                         ->visible(fn (): bool => AdminStorefront::showsRetailFields())
                                         ->dehydratedWhenHidden(),
                                     TextInput::make('stock_quantity')
@@ -482,7 +542,12 @@ class ProductsTable
                                         'id' => $variant->getKey(),
                                         'label' => trim($product->name.($variant->color ? ' · '.$variant->color : '')),
                                         'wholesale_price' => $variant->wholesale_price,
+                                        'wholesale_compare_at_price' => $variant->wholesale_compare_at_price,
+                                        'wholesale_minimum_quantity' => $variant->wholesale_minimum_quantity,
+                                        'is_available_wholesale' => (bool) $variant->is_available_wholesale,
                                         'retail_price' => $variant->retail_price,
+                                        'retail_compare_at_price' => $variant->retail_compare_at_price,
+                                        'is_available_retail' => (bool) $variant->is_available_retail,
                                         'stock_quantity' => $variant->stock_quantity,
                                     ])->all())
                                     ->all())
@@ -507,10 +572,21 @@ class ProductsTable
 
                                 if (AdminStorefront::showsWholesaleFields()) {
                                     $variant->wholesale_price = $row['wholesale_price'];
+                                    $variant->wholesale_compare_at_price = filled($row['wholesale_compare_at_price'] ?? null)
+                                        ? $row['wholesale_compare_at_price']
+                                        : null;
+                                    $variant->wholesale_minimum_quantity = filled($row['wholesale_minimum_quantity'] ?? null)
+                                        ? $row['wholesale_minimum_quantity']
+                                        : $variant->wholesale_minimum_quantity;
+                                    $variant->is_available_wholesale = $row['is_available_wholesale'] ?? $variant->is_available_wholesale;
                                 }
 
                                 if (AdminStorefront::showsRetailFields()) {
                                     $variant->retail_price = $row['retail_price'];
+                                    $variant->retail_compare_at_price = filled($row['retail_compare_at_price'] ?? null)
+                                        ? $row['retail_compare_at_price']
+                                        : null;
+                                    $variant->is_available_retail = $row['is_available_retail'] ?? $variant->is_available_retail;
                                 }
 
                                 $variant->stock_quantity = $row['stock_quantity'];
@@ -525,8 +601,46 @@ class ProductsTable
                                 ->send();
                         })
                         ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('setVisibility')
+                        ->label('Change websites')
+                        ->icon('heroicon-o-globe-alt')
+                        ->color('primary')
+                        ->modalHeading('Change websites for selected products')
+                        ->modalDescription('Set every selected product to one storefront or both. New products default to both websites.')
+                        ->schema([
+                            Radio::make('visibility')
+                                ->label('Where should these products be shown?')
+                                ->options(self::visibilityOptions())
+                                ->default('both')
+                                ->required(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $records->each(fn (Product $product): ?bool => $product->update(['visibility' => $data['visibility']]));
+
+                            Notification::make()
+                                ->title('Websites updated')
+                                ->body($records->count().' products are now shown on '.self::visibilityLabel($data['visibility']).'.')
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /** @return array<string, string> */
+    private static function visibilityOptions(): array
+    {
+        return [
+            'wholesale' => 'Wholesale only',
+            'retail' => 'Retail only',
+            'both' => 'Retail and wholesale',
+        ];
+    }
+
+    private static function visibilityLabel(string $visibility): string
+    {
+        return self::visibilityOptions()[$visibility] ?? $visibility;
     }
 }

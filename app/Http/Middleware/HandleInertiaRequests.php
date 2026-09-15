@@ -115,6 +115,11 @@ class HandleInertiaRequests extends Middleware
             ->get(['id', 'parent_id', 'name', 'slug'])
             ->groupBy(fn (Category $category) => (int) ($category->parent_id ?? 0));
         $user = $request->user();
+
+        if ($user?->account_type === 'admin') {
+            $user = null;
+        }
+
         $cart = $user?->isApprovedWholesale()
             ? $user->cart()->with('items.variant.product.primaryMedia')->first()
             : null;
@@ -137,13 +142,12 @@ class HandleInertiaRequests extends Middleware
                 'lineTotal' => number_format($lineTotal, 2, '.', ''),
             ];
         })->values()->all() ?? [];
+        $firstName = $user?->isApprovedWholesale()
+            ? trim((string) str((string) $user->name)->before(' '))
+            : null;
         $accountNavigation = match (true) {
-            $user?->account_type === 'admin' && $user->approval_status === 'approved' => [
-                'label' => 'Admin panel',
-                'url' => '/admin',
-            ],
             $user?->isApprovedWholesale() => [
-                'label' => 'Account',
+                'label' => $firstName !== '' ? $firstName : 'Account',
                 'url' => route('account.dashboard', [], false),
             ],
             $user !== null => [
@@ -161,7 +165,7 @@ class HandleInertiaRequests extends Middleware
             'salesChannel' => app(StorefrontContext::class)->channel,
             'seoDefaults' => $this->seoDefaults($settings, 'wholesale'),
             'auth' => [
-                'user' => $request->user()?->only([
+                'user' => $user?->only([
                     'id',
                     'name',
                     'email',
@@ -180,9 +184,12 @@ class HandleInertiaRequests extends Middleware
                 'showCategoryMenu' => $settings?->show_category_menu ?? true,
                 'categoryMenuLabel' => $settings?->category_menu_label ?? 'All categories',
                 'categoryNavigation' => $this->categoryTree($categoriesByParent),
-                'headerNavigation' => ($navigation->get('header') ?? collect())->map->only([
-                    'label', 'url', 'opens_new_tab',
-                ])->values(),
+                'headerNavigation' => collect([
+                    ['label' => 'Clearance', 'url' => route('clearance', [], false), 'opens_new_tab' => false],
+                ])->concat($navigation->get('header') ?? collect())
+                    ->map(fn ($item): array => is_array($item) ? $item : $item->only([
+                        'label', 'url', 'opens_new_tab',
+                    ]))->values(),
                 'footerNavigation' => ($navigation->get('footer') ?? collect())->map->only([
                     'label', 'url', 'opens_new_tab',
                 ])->values(),

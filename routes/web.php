@@ -98,6 +98,7 @@ Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 
 Route::get('/catalogue', CatalogueController::class)->name('catalogue.index');
+Route::get('/clearance', [CatalogueController::class, 'clearance'])->name('clearance');
 Route::get('/catalogue/{product:slug}', [CatalogueController::class, 'show'])->name('catalogue.show');
 Route::get('/search', SearchController::class)->middleware('throttle:30,1')->name('search');
 Route::get('/contact', [ContactController::class, 'create'])->name('contact.create');
