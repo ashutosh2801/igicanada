@@ -10,7 +10,7 @@ class EnsureApprovedReseller
 {
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless($request->user()?->isApprovedWholesale(), 403, 'An approved wholesale account is required.');
+        abort_unless($request->user('web')?->isApprovedWholesale(), 403, 'An approved wholesale account is required.');
 
         return $next($request);
     }

@@ -33,7 +33,7 @@ use Inertia\Inertia;
 Route::domain(config('storefronts.admin_domain'))
     ->prefix('admin/storefront')
     ->name('admin.storefront.')
-    ->middleware('auth')
+    ->middleware('auth:admin')
     ->group(function (): void {
         Route::get('/select', [StorefrontSelectionController::class, 'create'])->name('select');
         Route::post('/select', [StorefrontSelectionController::class, 'store'])->name('store');
@@ -111,7 +111,7 @@ Route::get('/wholesale/verify-email/{id}/{hash}', [ResellerApplicationController
     ->middleware(['signed', 'throttle:6,1'])
     ->name('verification.verify');
 
-Route::middleware('guest')->group(function (): void {
+Route::middleware('guest:web')->group(function (): void {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:6,1');
     Route::get('/forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
@@ -122,11 +122,11 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/wholesale/resend-verification', [ResellerApplicationController::class, 'resend'])->middleware('throttle:3,1')->name('verification.send');
 });
 
-Route::middleware('auth')->group(function (): void {
+Route::middleware('auth:web')->group(function (): void {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/orders/{order}/invoice', InvoiceController::class)->name('orders.invoice');
     Route::get('/account/status', function () {
-        $user = request()->user();
+        $user = auth('web')->user();
 
         return Inertia::render('Account/Status', ['account' => [
             'name' => $user->name,
@@ -137,9 +137,9 @@ Route::middleware('auth')->group(function (): void {
     })->name('account.status');
 });
 
-Route::middleware(['auth', 'approved.wholesale'])->group(function (): void {
+Route::middleware(['auth:web', 'approved.wholesale'])->group(function (): void {
     Route::get('/account', function () {
-        $user = request()->user()->load('priceTier', 'resellerProfile');
+        $user = auth('web')->user()->load('priceTier', 'resellerProfile');
 
         return Inertia::render('Account/Dashboard', ['account' => [
             'name' => $user->name,

@@ -27,7 +27,7 @@ class MediaPickerUploader extends Component
 
     public function uploadImages(): void
     {
-        abort_unless(auth()->user()?->canAccessPanel(Filament::getPanel('admin')), 403);
+        abort_unless(Filament::auth()->user()?->canAccessPanel(Filament::getPanel('admin')), 403);
 
         $this->validate([
             'uploads' => ['required', 'array', 'min:1', 'max:20'],

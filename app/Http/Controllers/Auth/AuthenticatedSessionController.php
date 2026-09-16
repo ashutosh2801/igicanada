@@ -24,17 +24,17 @@ class AuthenticatedSessionController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt(['email' => strtolower($credentials['email']), 'password' => $credentials['password']], $request->boolean('remember'))) {
+        if (! Auth::guard('web')->attempt(['email' => strtolower($credentials['email']), 'password' => $credentials['password']], $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'email' => 'These credentials do not match our records. Legacy wholesale accounts should use “Forgot password” before their first sign in.',
             ]);
         }
 
         $request->session()->regenerate();
-        $user = $request->user();
+        $user = $request->user('web');
 
         if ($user->account_type !== 'wholesale') {
-            Auth::logout();
+            Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
@@ -44,7 +44,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         if (! $user->hasVerifiedEmail()) {
-            Auth::logout();
+            Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
@@ -54,7 +54,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         if ($user->approval_status !== 'approved') {
-            Auth::logout();
+            Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
@@ -72,7 +72,7 @@ class AuthenticatedSessionController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
-        Auth::logout();
+        Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

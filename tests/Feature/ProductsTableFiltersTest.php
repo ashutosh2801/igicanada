@@ -47,7 +47,7 @@ class ProductsTableFiltersTest extends TestCase
 
     public function test_category_filter_limits_records(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $leather = Category::create(['name' => 'Leather', 'slug' => 'leather']);
         $canvas = Category::create(['name' => 'Canvas', 'slug' => 'canvas']);
@@ -65,7 +65,7 @@ class ProductsTableFiltersTest extends TestCase
 
     public function test_stock_status_filter_limits_records(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $inStock = $this->product('In stock', 'in-stock', ['stock_quantity' => 25]);
         $lowStock = $this->product('Low stock', 'low-stock', ['stock_quantity' => 4]);
@@ -90,7 +90,7 @@ class ProductsTableFiltersTest extends TestCase
 
     public function test_price_range_filter_limits_records(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $cheap = $this->product('Cheap', 'cheap', ['wholesale_price' => 10]);
         $mid = $this->product('Mid', 'mid', ['wholesale_price' => 30]);
@@ -104,7 +104,7 @@ class ProductsTableFiltersTest extends TestCase
 
     public function test_published_and_has_variants_filters(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $published = $this->product('Published', 'published', attributes: ['published_at' => now()]);
         $unpublished = $this->product('Unpublished', 'unpublished', attributes: ['published_at' => null]);

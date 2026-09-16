@@ -5,6 +5,7 @@ namespace App\Filament\Auth\Pages;
 use App\Support\AdminStorefront;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Auth\Pages\Login as BaseLogin;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
 
@@ -41,7 +42,7 @@ class Login extends BaseLogin
 
             AdminStorefront::select($channel);
 
-            auth()->user()?->forceFill(['admin_sales_channel' => $channel])->saveQuietly();
+            Filament::auth()->user()?->forceFill(['admin_sales_channel' => $channel])->saveQuietly();
         }
 
         return $response;

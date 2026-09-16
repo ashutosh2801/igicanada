@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -119,5 +121,50 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->actingAs($user)->get('/account')->assertForbidden();
+    }
+
+    public function test_admin_login_does_not_block_the_storefront_login_page(): void
+    {
+        $admin = User::factory()->create([
+            'account_type' => 'admin',
+            'approval_status' => 'approved',
+            'admin_sales_channel' => 'all',
+        ]);
+
+        Auth::guard('admin')->setUser($admin);
+        $this->get('/admin')->assertSuccessful();
+        $this->assertSame('admin', auth()->getDefaultDriver());
+
+        $this->get('/login')->assertSuccessful();
+        $this->get('/forgot-password')->assertSuccessful();
+    }
+
+    public function test_admin_and_wholesale_storefront_logins_coexist_in_the_same_session(): void
+    {
+        $admin = User::factory()->create([
+            'account_type' => 'admin',
+            'approval_status' => 'approved',
+            'admin_sales_channel' => 'all',
+        ]);
+        $customer = User::factory()->create([
+            'account_type' => 'wholesale',
+            'approval_status' => 'approved',
+        ]);
+
+        $this->actingAs($customer)->get('/catalogue')->assertInertia(fn (Assert $page) => $page
+            ->component('Catalogue/Index')
+            ->where('auth.user.id', $customer->id));
+
+        Auth::guard('admin')->setUser($admin);
+        $this->get('/admin')->assertSuccessful();
+
+        Auth::shouldUse('web');
+
+        $this->assertSame($customer->id, auth()->id());
+        $this->assertSame($admin->id, auth('admin')->id());
+
+        $this->get('/catalogue')->assertInertia(fn (Assert $page) => $page
+            ->component('Catalogue/Index')
+            ->where('auth.user.id', $customer->id));
     }
 }

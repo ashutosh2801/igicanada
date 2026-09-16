@@ -26,7 +26,7 @@ class AdminContextualFieldsTest extends TestCase
 
     public function test_product_fields_follow_the_selected_website_and_preserve_hidden_channel_data(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $product = Product::create([
             'name' => 'Shared wallet',
@@ -107,7 +107,7 @@ class AdminContextualFieldsTest extends TestCase
 
     public function test_homepage_fields_follow_the_homepage_website(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
         AdminStorefront::select('all');
 
         $retail = HomepageSetting::query()->where('sales_channel', 'retail')->firstOrFail();
@@ -131,7 +131,7 @@ class AdminContextualFieldsTest extends TestCase
 
     public function test_product_listing_columns_and_records_follow_the_selected_website(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $wholesale = Product::create([
             'name' => 'Wholesale belt',
@@ -177,8 +177,12 @@ class AdminContextualFieldsTest extends TestCase
 
         $defaultColumns = collect($listing->instance()->tableColumns)->keyBy('name');
         $this->assertSame('14rem', $listing->instance()->getTable()->getColumn('name')->getWidth());
-        foreach (['visibility', 'retail_ready_variants_count', 'minimum_retail_price', 'minimum_wholesale_price', 'available_stock_quantity', 'is_active', 'legacy_id', 'slug', 'created_at', 'updated_at', 'weight_kg', 'published_at'] as $column) {
+        foreach (['visibility', 'retail_ready_variants_count', 'minimum_retail_price', 'minimum_wholesale_price', 'is_active', 'legacy_id', 'slug', 'created_at', 'updated_at', 'published_at'] as $column) {
             $this->assertFalse($defaultColumns[$column]['isToggled'], "Expected {$column} to be hidden by default.");
+        }
+
+        foreach (['sku', 'primary_image_url', 'name', 'categories.name', 'variants_count', 'available_stock_quantity', 'weight_kg'] as $column) {
+            $this->assertTrue($defaultColumns[$column]['isToggled'], "Expected {$column} to be visible by default.");
         }
 
         $this->get('/admin/products')
@@ -189,7 +193,7 @@ class AdminContextualFieldsTest extends TestCase
 
     public function test_product_category_show_more_keeps_extra_categories_in_the_page(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
         AdminStorefront::select('all');
 
         $product = Product::create([
@@ -217,7 +221,7 @@ class AdminContextualFieldsTest extends TestCase
 
     public function test_customer_fields_follow_the_customer_and_selected_website(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
         AdminStorefront::select('all');
 
         $retail = User::factory()->create([
@@ -301,7 +305,7 @@ class AdminContextualFieldsTest extends TestCase
 
     public function test_product_list_switches_visibility_per_product_row(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $product = Product::create([
             'name' => 'Switchable wallet',
@@ -331,7 +335,7 @@ class AdminContextualFieldsTest extends TestCase
 
     public function test_product_list_bulk_action_sets_visibility_for_selected_products(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $wholesaleOnly = Product::create([
             'name' => 'Wholesale belt',

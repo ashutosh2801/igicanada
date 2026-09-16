@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Support\AdminStorefront;
 use Closure;
+use Filament\Facades\Filament;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -15,7 +16,7 @@ class EnsureAdminStorefrontSelected
             return $next($request);
         }
 
-        $remembered = $request->user()?->admin_sales_channel;
+        $remembered = Filament::auth()->user()?->admin_sales_channel;
 
         if (array_key_exists((string) $remembered, AdminStorefront::options())) {
             AdminStorefront::select($remembered);

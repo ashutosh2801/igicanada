@@ -11,6 +11,9 @@ class ListProducts extends ListRecords
 {
     protected static string $resource = ProductResource::class;
 
+    /** @var array<int|string, mixed> */
+    public array $pendingStockUpdates = [];
+
     public function getTableColumnsSessionKey(): string
     {
         // Reset the old column preferences once so the curated defaults apply to existing admins.

@@ -42,7 +42,7 @@ class CustomersAdminTest extends TestCase
             'admin_sales_channel' => 'all',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get('/admin/users')
             ->assertSuccessful()
             ->assertSee('Customers')
@@ -57,7 +57,7 @@ class CustomersAdminTest extends TestCase
             'admin_sales_channel' => 'all',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get("/admin/users/{$admin->id}/edit")
             ->assertNotFound();
     }
@@ -86,7 +86,7 @@ class CustomersAdminTest extends TestCase
             'sales_channel' => 'wholesale',
         ]);
 
-        $this->actingAs($admin);
+        $this->actingAs($admin, 'admin');
 
         Livewire::test(ListUsers::class)
             ->callTableAction('approve', $applicant)
@@ -130,7 +130,7 @@ class CustomersAdminTest extends TestCase
             'sales_channel' => 'wholesale',
         ]);
 
-        $this->actingAs($admin);
+        $this->actingAs($admin, 'admin');
 
         Livewire::test(ListUsers::class)
             ->callTableAction('reject', $applicant)
@@ -198,7 +198,7 @@ class CustomersAdminTest extends TestCase
             'sales_channel' => 'retail',
         ]);
 
-        $this->actingAs($admin);
+        $this->actingAs($admin, 'admin');
 
         Livewire::test(ListUsers::class)
             ->callTableAction('approve', $applicant)

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Products\Tables;
 
 use App\Filament\Tables\Columns\DirectImageColumn;
+use App\Filament\Tables\Columns\StockColumn;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\RetailProductActivationService;
@@ -136,17 +137,22 @@ class ProductsTable
                     ->visible(fn (): bool => AdminStorefront::showsRetailFields())
                     ->toggleable()
                     ->toggledHiddenByDefault(),
-                TextColumn::make('available_stock_quantity')
+                StockColumn::make('available_stock_quantity')
                     ->label('Stock')
-                    ->numeric()
+                    ->width('6rem')
+                    ->rules(['integer', 'min:0'])
                     ->toggleable()
-                    ->toggledHiddenByDefault(),
+                    ->updateStateUsing(function (Product $record, mixed $state): void {
+                        $qty = max(0, (int) $state);
+                        $record->variants()
+                            ->where('is_active', true)
+                            ->update(['stock_quantity' => $qty]);
+                    }),
                 TextColumn::make('weight_kg')
                     ->label('Weight kg')
                     ->numeric()
                     ->sortable()
-                    ->toggleable()
-                    ->toggledHiddenByDefault(),
+                    ->toggleable(),
                 IconColumn::make('is_active')
                     ->label('Is active')
                     ->boolean()
@@ -292,6 +298,35 @@ class ProductsTable
                 EditAction::make(),
             ])
             ->toolbarActions([
+                Action::make('saveStockUpdates')
+                    ->label('Save stock')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->disabled(fn (HasTable $livewire): bool => blank($livewire->pendingStockUpdates))
+                    ->action(function (HasTable $livewire): void {
+                        $updated = 0;
+
+                        foreach ($livewire->pendingStockUpdates as $productId => $quantity) {
+                            $product = Product::query()->find((int) $productId);
+
+                            if (! $product) {
+                                continue;
+                            }
+
+                            $product->variants()
+                                ->where('is_active', true)
+                                ->update(['stock_quantity' => max(0, (int) $quantity)]);
+                            $updated++;
+                        }
+
+                        $livewire->pendingStockUpdates = [];
+
+                        Notification::make()
+                            ->title('Stock saved')
+                            ->body("Updated stock for {$updated} product(s).")
+                            ->success()
+                            ->send();
+                    }),
                 BulkActionGroup::make([
                     BulkAction::make('enableRetail')
                         ->label('Enable for retail')

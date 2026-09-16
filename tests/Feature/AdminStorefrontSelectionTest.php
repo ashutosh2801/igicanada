@@ -34,7 +34,7 @@ class AdminStorefrontSelectionTest extends TestCase
     {
         $admin = $this->admin();
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get('/admin')
             ->assertRedirect(route('admin.storefront.select'));
 
@@ -59,7 +59,7 @@ class AdminStorefrontSelectionTest extends TestCase
     {
         $admin = $this->admin('wholesale');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get('/admin')
             ->assertSuccessful()
             ->assertSee('name="sales_channel"', false)
@@ -72,7 +72,7 @@ class AdminStorefrontSelectionTest extends TestCase
 
     public function test_selected_store_filters_shared_admin_resources(): void
     {
-        $this->actingAs($this->admin('retail'))
+        $this->actingAs($this->admin('retail'), 'admin')
             ->withSession([AdminStorefront::SESSION_KEY => 'retail']);
 
         $retailProduct = $this->product('retail-product', 'retail');
@@ -99,7 +99,7 @@ class AdminStorefrontSelectionTest extends TestCase
 
     public function test_invalid_store_selection_is_rejected(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $this->post(route('admin.storefront.store'), ['sales_channel' => 'unknown'])
             ->assertSessionHasErrors('sales_channel');
@@ -122,7 +122,7 @@ class AdminStorefrontSelectionTest extends TestCase
     {
         $admin = $this->admin('all');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession([AdminStorefront::SESSION_KEY => 'all'])
             ->get('/admin/email-templates')
             ->assertSuccessful()
@@ -162,7 +162,7 @@ class AdminStorefrontSelectionTest extends TestCase
         $admin = $this->admin('wholesale');
         $product = $this->product('shared-product', 'both');
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->withSession([AdminStorefront::SESSION_KEY => 'wholesale'])
             ->from('/admin/products/'.$product->id.'/edit')
             ->post(route('admin.storefront.store'), ['sales_channel' => 'retail'])

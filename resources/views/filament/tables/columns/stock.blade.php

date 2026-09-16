@@ -1,0 +1,48 @@
+@php
+    $state = $getState();
+    $recordKey = $getRecordKey();
+    $columnName = $getName();
+@endphp
+
+<div
+    x-data="{
+        value: @js((string) ($state ?? '')),
+        savedValue: @js((string) ($state ?? '')),
+        isLoading: false,
+        error: undefined,
+        async save() {
+            if (this.value === this.savedValue || this.isLoading) return
+            this.isLoading = true
+            const res = await $wire.updateTableColumnState('{{ $columnName }}', '{{ $recordKey }}', this.value)
+            this.error = res?.error ?? undefined
+            if (!this.error) this.savedValue = this.value
+            this.isLoading = false
+        },
+    }"
+    x-init="$watch('value', (v) => { if (v !== this.savedValue) this.error = undefined })"
+    wire:ignore.self
+    class="flex items-center gap-1"
+>
+    <input
+        type="number"
+        x-model="value"
+        x-on:blur="save()"
+        x-on:keydown.enter.prevent="save()"
+        min="0"
+        step="1"
+        inputmode="numeric"
+        wire:loading.attr="disabled"
+        class="fi-input w-14 text-right tabular-nums"
+        aria-label="{{ __($getLabel()) }}"
+    />
+    <button
+        type="button"
+        x-on:click="save()"
+        x-show="value !== savedValue"
+        x-transition
+        class="fi-btn fi-btn-size-xs inline-flex items-center justify-center gap-1 rounded-lg bg-primary-500 px-2 py-1 text-sm font-semibold text-white shadow-sm hover:bg-primary-600 focus:outline-none"
+    >
+        <x-heroicon-s-check class="h-3 w-3" />
+    </button>
+    <span x-show="isLoading" x-cloak class="inline-block h-3 w-3 animate-spin rounded-full border border-current border-t-transparent text-primary-500"></span>
+</div>

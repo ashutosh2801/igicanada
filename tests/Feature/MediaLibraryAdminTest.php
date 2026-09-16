@@ -51,11 +51,11 @@ class MediaLibraryAdminTest extends TestCase
         ]);
         $product->mediaAssets()->attach($asset);
 
-        $this->actingAs($admin)->get('/admin/media-assets')->assertSuccessful()->assertSee('Media library');
-        $this->actingAs($admin)->get('/admin/media-assets/create')->assertSuccessful()->assertSee('Image');
-        $this->actingAs($admin)->get("/admin/media-assets/{$asset->id}/edit")->assertSuccessful()->assertSee('Product image');
-        $this->actingAs($admin)->get('/admin/media-folders')->assertSuccessful()->assertSee('Products');
-        $this->actingAs($admin)->get("/admin/products/{$product->id}/edit")
+        $this->actingAs($admin, 'admin')->get('/admin/media-assets')->assertSuccessful()->assertSee('Media library');
+        $this->actingAs($admin, 'admin')->get('/admin/media-assets/create')->assertSuccessful()->assertSee('Image');
+        $this->actingAs($admin, 'admin')->get("/admin/media-assets/{$asset->id}/edit")->assertSuccessful()->assertSee('Product image');
+        $this->actingAs($admin, 'admin')->get('/admin/media-folders')->assertSuccessful()->assertSee('Products');
+        $this->actingAs($admin, 'admin')->get("/admin/products/{$product->id}/edit")
             ->assertSuccessful()
             ->assertSee('Primary image')
             ->assertSee('primary-image-thumbnail-select', false)
@@ -102,7 +102,7 @@ class MediaLibraryAdminTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
-        $this->actingAs($admin);
+        $this->actingAs($admin, 'admin');
 
         Livewire::test(CreateProduct::class)
             ->assertFormFieldDoesNotExist('legacy_id')
@@ -132,7 +132,7 @@ class MediaLibraryAdminTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
-        Livewire::actingAs($admin)
+        Livewire::actingAs($admin, 'admin')
             ->test(CreateProduct::class)
             ->fillForm([
                 'name' => 'Vintage Brown Wallet',
@@ -148,7 +148,7 @@ class MediaLibraryAdminTest extends TestCase
             'approval_status' => 'approved',
             'email_verified_at' => now(),
         ]);
-        Livewire::actingAs($admin)
+        Livewire::actingAs($admin, 'admin')
             ->test(MediaPickerUploader::class)
             ->set('uploads', [UploadedFile::fake()->image('brown-belt.jpg')])
             ->assertHasNoErrors()

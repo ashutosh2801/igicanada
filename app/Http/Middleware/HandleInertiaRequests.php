@@ -114,7 +114,7 @@ class HandleInertiaRequests extends Middleware
             ->orderBy('name')
             ->get(['id', 'parent_id', 'name', 'slug'])
             ->groupBy(fn (Category $category) => (int) ($category->parent_id ?? 0));
-        $user = $request->user();
+        $user = $request->user('web');
 
         if ($user?->account_type === 'admin') {
             $user = null;
@@ -149,6 +149,12 @@ class HandleInertiaRequests extends Middleware
             $user?->isApprovedWholesale() => [
                 'label' => $firstName !== '' ? $firstName : 'Account',
                 'url' => route('account.dashboard', [], false),
+                'items' => [
+                    ['label' => 'Orders', 'url' => route('orders.index', [], false)],
+                    ['label' => 'Addresses', 'url' => route('account.addresses.index', [], false)],
+                    ['label' => 'Profile', 'url' => route('account.dashboard', [], false)],
+                    ['label' => 'Logout', 'url' => route('logout', [], false), 'method' => 'post'],
+                ],
             ],
             $user !== null => [
                 'label' => 'Account status',
@@ -185,6 +191,7 @@ class HandleInertiaRequests extends Middleware
                 'categoryMenuLabel' => $settings?->category_menu_label ?? 'All categories',
                 'categoryNavigation' => $this->categoryTree($categoriesByParent),
                 'headerNavigation' => collect([
+                    ['label' => 'Products', 'url' => route('catalogue.index', [], false), 'opens_new_tab' => false],
                     ['label' => 'Clearance', 'url' => route('clearance', [], false), 'opens_new_tab' => false],
                 ])->concat($navigation->get('header') ?? collect())
                     ->map(fn ($item): array => is_array($item) ? $item : $item->only([

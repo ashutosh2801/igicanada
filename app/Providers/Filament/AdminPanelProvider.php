@@ -51,6 +51,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->domain(config('storefronts.admin_domain'))
             ->login(Login::class)
+            ->authGuard('admin')
             ->sidebarCollapsibleOnDesktop()
             ->userMenu(position: UserMenuPosition::Topbar)
             ->maxContentWidth(Width::Full)

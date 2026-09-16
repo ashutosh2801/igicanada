@@ -301,13 +301,15 @@ class CatalogueTest extends TestCase
                 ->where('products.total', 2));
     }
 
-    public function test_wholesale_header_navigation_includes_a_clearance_menu_item(): void
+    public function test_wholesale_header_navigation_includes_products_before_clearance(): void
     {
         $this->get('/clearance')
             ->assertSuccessful()
             ->assertInertia(fn (Assert $page) => $page
-                ->where('storefront.headerNavigation.0.label', 'Clearance')
-                ->where('storefront.headerNavigation.0.url', '/clearance'));
+                ->where('storefront.headerNavigation.0.label', 'Products')
+                ->where('storefront.headerNavigation.0.url', '/catalogue')
+                ->where('storefront.headerNavigation.1.label', 'Clearance')
+                ->where('storefront.headerNavigation.1.url', '/clearance'));
     }
 
     public function test_guest_does_not_see_compare_at_price_on_wholesale(): void

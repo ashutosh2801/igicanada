@@ -2,6 +2,8 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { FormEvent, PropsWithChildren, useEffect, useRef, useState } from 'react';
 
 type NavigationItem = { label: string; url: string; opens_new_tab: boolean };
+type AccountMenuItem = { label: string; url: string; method?: 'post' };
+type AccountNavigation = { label: string; url: string; items?: AccountMenuItem[] };
 type CategoryItem = { name: string; slug: string; url: string; children: CategoryItem[] };
 type CartSummaryItem = { id: number; product: string; slug: string; option: string; image: string | null; quantity: number; unitPrice: string; lineTotal: string };
 type SharedProps = {
@@ -17,7 +19,7 @@ type SharedProps = {
         headerNavigation: NavigationItem[];
         footerNavigation: NavigationItem[];
         footer: { description: string | null; address: string | null; phone: string | null; email: string | null; copyright: string | null };
-        accountNavigation: { label: string; url: string };
+        accountNavigation: AccountNavigation;
         cartNavigation: { url: string | null; available: boolean };
         cartCount: number;
         cartSummary: { items: CartSummaryItem[]; subtotal: string };
@@ -99,7 +101,7 @@ export default function PublicShell({ children }: PropsWithChildren) {
                         </div>
                     </form>
                     <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-                        <Link href={storefront.accountNavigation.url} className="hidden rounded-full px-4 py-2.5 text-sm font-bold transition hover:bg-red-600 hover:text-white sm:inline-flex">{storefront.accountNavigation.label}</Link>
+                        <AccountDropdown nav={storefront.accountNavigation} className="hidden sm:block" menuClassName="sm:right-0" />
                         {storefront.cartNavigation.url ? (
                             storefront.cartNavigation.available && storefront.cartCount > 0 ? (
                                 <div ref={cartRef} className="relative">
@@ -191,7 +193,7 @@ export default function PublicShell({ children }: PropsWithChildren) {
                         <div className="flex items-center gap-5 overflow-x-auto text-sm font-bold">
                             {storefront.showCategoryMenu && <details className="group shrink-0"><summary className="flex cursor-pointer list-none items-center gap-2 text-red-500"><span>{storefront.categoryMenuLabel}</span><ChevronDown /></summary><div className="fixed inset-x-0 z-50 mt-3 max-h-[68vh] overflow-y-auto border-b-4 border-red-600 bg-white p-5 text-black shadow-2xl"><div className="grid gap-2">{storefront.categoryNavigation.map(category => <MobileCategory key={category.slug} category={category} />)}</div></div></details>}
                             {storefront.headerNavigation.map(item => <a key={item.label + item.url} href={item.url} className="shrink-0">{item.label}</a>)}
-                            <Link href={storefront.accountNavigation.url} className="shrink-0 sm:hidden">{storefront.accountNavigation.label}</Link>
+                            <AccountDropdown nav={storefront.accountNavigation} className="shrink-0 sm:hidden" menuClassName="left-0" />
                         </div>
                         <form onSubmit={search} role="search" className="mt-3 flex md:hidden">
                             <label htmlFor="mobile-global-search" className="sr-only">Search products, categories and pages</label>
@@ -237,6 +239,62 @@ function CategoryColumn({ category }: { category: CategoryItem }) {
 function MobileCategory({ category }: { category: CategoryItem }) {
     if (category.children.length === 0) return <a href={category.url} className="border-b border-black/10 py-3 font-bold">{category.name}</a>;
     return <details><summary className="cursor-pointer list-none border-b border-black/10 py-3 font-black">{category.name}</summary><div className="grid border-b border-black/10 bg-black/5 px-4 py-2">{category.children.map(child => <div key={child.slug}><a href={child.url} className="block py-2 font-bold">{child.name}</a>{child.children.map(grandchild => <a key={grandchild.slug} href={grandchild.url} className="block border-l-2 border-red-600 py-1.5 pl-3 text-sm">{grandchild.name}</a>)}</div>)}</div></details>;
+}
+
+function AccountDropdown({ nav, className = '', menuClassName = '' }: { nav: AccountNavigation; className?: string; menuClassName?: string }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function close(event: MouseEvent) {
+            if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+        }
+
+        function closeWithKeyboard(event: KeyboardEvent) {
+            if (event.key === 'Escape') setOpen(false);
+        }
+
+        document.addEventListener('mousedown', close);
+        document.addEventListener('keydown', closeWithKeyboard);
+
+        return () => {
+            document.removeEventListener('mousedown', close);
+            document.removeEventListener('keydown', closeWithKeyboard);
+        };
+    }, []);
+
+    if (!nav.items || nav.items.length === 0) {
+        return (
+            <Link href={nav.url} className={className + ' inline-flex rounded-full px-4 py-2.5 text-sm font-bold transition hover:bg-red-600 hover:text-white'}>{nav.label}</Link>
+        );
+    }
+
+    return (
+        <div ref={ref} className={'relative ' + className}>
+            <button
+                type="button"
+                onClick={() => setOpen(open => !open)}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                className="inline-flex items-center gap-1 rounded-full px-4 py-2.5 text-sm font-bold transition hover:bg-red-600 hover:text-white"
+            >
+                {nav.label}
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" className={'size-4 transition ' + (open ? 'rotate-180' : '')} aria-hidden="true"><path d="m5 7.5 5 5 5-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+
+            {open && (
+                <div role="menu" className={'absolute top-full z-50 mt-2 w-44 overflow-hidden rounded-xl bg-white py-2 text-black shadow-2xl ring-1 ring-black/10 ' + menuClassName}>
+                    {nav.items.map(item =>
+                        item.method === 'post' ? (
+                            <button key={item.label} type="button" role="menuitem" onClick={() => { setOpen(false); router.post(item.url); }} className="block w-full px-4 py-2.5 text-left text-sm font-bold transition hover:bg-red-600 hover:text-white">{item.label}</button>
+                        ) : (
+                            <Link key={item.label} href={item.url} role="menuitem" onClick={() => setOpen(false)} className="block px-4 py-2.5 text-sm font-bold transition hover:bg-red-600 hover:text-white">{item.label}</Link>
+                        ),
+                    )}
+                </div>
+            )}
+        </div>
+    );
 }
 
 function SearchIcon() {

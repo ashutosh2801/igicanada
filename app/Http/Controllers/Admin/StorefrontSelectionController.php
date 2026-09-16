@@ -31,7 +31,7 @@ class StorefrontSelectionController extends Controller
         ]);
 
         AdminStorefront::select($validated['sales_channel']);
-        $request->user()->forceFill(['admin_sales_channel' => $validated['sales_channel']])->saveQuietly();
+        $request->user('admin')->forceFill(['admin_sales_channel' => $validated['sales_channel']])->saveQuietly();
 
         return $request->boolean('initial_selection')
             ? redirect('/admin')
@@ -41,8 +41,8 @@ class StorefrontSelectionController extends Controller
     private function ensureAdmin(Request $request): void
     {
         abort_unless(
-            $request->user()?->account_type === 'admin'
-                && $request->user()?->approval_status === 'approved',
+            $request->user('admin')?->account_type === 'admin'
+                && $request->user('admin')?->approval_status === 'approved',
             403,
         );
     }

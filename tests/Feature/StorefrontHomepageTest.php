@@ -47,9 +47,10 @@ class StorefrontHomepageTest extends TestCase
             ->where('homepage.heroSliderInterval', 7)
             ->where('homepage.catalogueTitle', 'Featured wholesale ranges')
             ->where('categories.0.name', 'Wallets')
-            ->where('storefront.headerNavigation.0.label', 'Clearance')
-            ->where('storefront.headerNavigation.0.url', '/clearance')
-            ->where('storefront.headerNavigation.1.label', 'New arrivals'));
+            ->where('storefront.headerNavigation.0.label', 'Products')
+            ->where('storefront.headerNavigation.0.url', '/catalogue')
+            ->where('storefront.headerNavigation.1.label', 'Clearance')
+            ->where('storefront.headerNavigation.2.label', 'New arrivals'));
     }
 
     public function test_header_cart_count_is_shared_for_approved_reseller(): void
@@ -77,6 +78,15 @@ class StorefrontHomepageTest extends TestCase
         $this->actingAs($user)->get('/')->assertInertia(fn (Assert $page) => $page
             ->where('storefront.accountNavigation.label', 'Ashutosh')
             ->where('storefront.accountNavigation.url', '/account')
+            ->where('storefront.accountNavigation.items.0.label', 'Orders')
+            ->where('storefront.accountNavigation.items.0.url', '/orders')
+            ->where('storefront.accountNavigation.items.1.label', 'Addresses')
+            ->where('storefront.accountNavigation.items.1.url', '/account/addresses')
+            ->where('storefront.accountNavigation.items.2.label', 'Profile')
+            ->where('storefront.accountNavigation.items.2.url', '/account')
+            ->where('storefront.accountNavigation.items.3.label', 'Logout')
+            ->where('storefront.accountNavigation.items.3.url', '/logout')
+            ->where('storefront.accountNavigation.items.3.method', 'post')
             ->where('storefront.cartNavigation.url', '/cart')
             ->where('storefront.cartNavigation.available', true)
             ->where('storefront.cartCount', 4)

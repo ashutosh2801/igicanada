@@ -21,7 +21,7 @@ class StandardShippingAdminTest extends TestCase
             'admin_sales_channel' => 'all',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get('/admin/standard-shipping-rates')
             ->assertSuccessful()
             ->assertSee('Bulk edit charges');
@@ -34,7 +34,7 @@ class StandardShippingAdminTest extends TestCase
             'approval_status' => 'approved',
         ]);
         Filament::setCurrentPanel(Filament::getPanel('admin'));
-        $this->actingAs($admin);
+        $this->actingAs($admin, 'admin');
 
         Livewire::test(ListStandardShippingRates::class)
             ->filterTable('country', 'CA')

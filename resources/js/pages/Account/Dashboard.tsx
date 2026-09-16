@@ -1,5 +1,5 @@
 import PublicShell from '@/components/PublicShell';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 
 type Account = {
     name: string;
@@ -16,7 +16,6 @@ export default function Dashboard({ account }: { account: Account }) {
         <PublicShell>
             <Head title="My account" />
                 <main className="mx-auto min-h-[40rem] max-w-6xl px-6 py-14">
-                    <div className="mb-8 flex justify-end gap-5"><Link href="/orders" className="text-sm font-bold">Orders</Link><Link href="/account/addresses" className="text-sm font-bold">Addresses</Link><button onClick={() => router.post('/logout')} className="text-sm font-bold text-red-600">Sign out</button></div>
                     <p className="text-sm font-bold tracking-[0.18em] text-amber-800 uppercase">Wholesale account</p>
                     <h1 className="mt-3 text-4xl font-black tracking-tight">Hello, {account.name}</h1>
                     <p className="mt-2 text-stone-600">{account.company || account.email}</p>

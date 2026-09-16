@@ -18,7 +18,7 @@ class AdminDashboardTest extends TestCase
             'admin_sales_channel' => 'all',
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAs($admin, 'admin')
             ->get('/admin')
             ->assertSuccessful()
             ->assertSeeText('Revenue this month')

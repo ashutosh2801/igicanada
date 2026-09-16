@@ -46,7 +46,7 @@ class ProductsBulkUpdateTest extends TestCase
 
     public function test_bulk_update_sets_prices_for_selected_products(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $a = $this->product('A', 'a');
         $b = $this->product('B', 'b');
@@ -67,7 +67,7 @@ class ProductsBulkUpdateTest extends TestCase
 
     public function test_bulk_update_increases_prices_by_percentage(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $a = $this->product('A', 'a');
 
@@ -84,7 +84,7 @@ class ProductsBulkUpdateTest extends TestCase
 
     public function test_bulk_update_stock_sets_quantity_for_selected_products(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $a = $this->product('A', 'a');
         $b = $this->product('B', 'b');
@@ -102,7 +102,7 @@ class ProductsBulkUpdateTest extends TestCase
 
     public function test_bulk_update_stock_adds_quantity_for_selected_products(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $a = $this->product('A', 'a');
 
@@ -118,7 +118,7 @@ class ProductsBulkUpdateTest extends TestCase
 
     public function test_bulk_edit_selected_lets_user_type_price_and_stock_per_variant(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $a = $this->product('A', 'a');
         $b = $this->product('B', 'b', [
@@ -147,9 +147,50 @@ class ProductsBulkUpdateTest extends TestCase
         $this->assertSame(8, $rows[1]->fresh()->stock_quantity);
     }
 
+    public function test_stock_column_collects_pending_edits_and_saves_with_single_button(): void
+    {
+        $this->actingAs($this->admin(), 'admin');
+
+        $a = $this->product('A', 'a');
+        $b = $this->product('B', 'b');
+
+        $listing = Livewire::test(ListProducts::class)
+            ->set('pendingStockUpdates', [$a->getKey() => 12, $b->getKey() => 5]);
+
+        $column = $listing->instance()->getTable()->getColumn('available_stock_quantity');
+        $column->record($a);
+        $html = $column->toEmbeddedHtml();
+        $this->assertStringContainsString('pendingStockUpdates', $html);
+        $this->assertStringContainsString('aria-label="Stock"', $html);
+        $this->assertStringContainsString((string) $a->available_stock_quantity, $html);
+        $this->assertStringNotContainsString('updateTableColumnState', $html);
+
+        $listing->callTableAction('saveStockUpdates')
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(12, $a->variants->first()->fresh()->stock_quantity);
+        $this->assertSame(5, $b->variants->first()->fresh()->stock_quantity);
+        $this->assertSame([], $listing->instance()->pendingStockUpdates);
+    }
+
+    public function test_stock_column_save_button_is_disabled_without_pending_changes(): void
+    {
+        $this->actingAs($this->admin(), 'admin');
+
+        $listing = Livewire::test(ListProducts::class);
+
+        $action = $listing->instance()->getTable()->getAction('saveStockUpdates');
+        $this->assertTrue($action->isDisabled());
+
+        $listing->set('pendingStockUpdates', ['1' => 3]);
+
+        $action = $listing->instance()->getTable()->getAction('saveStockUpdates');
+        $this->assertFalse($action->isDisabled());
+    }
+
     public function test_bulk_edit_selected_updates_compare_at_min_quantity_and_availability(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $a = $this->product('A', 'a');
         $row = $a->variants->first();
@@ -185,7 +226,7 @@ class ProductsBulkUpdateTest extends TestCase
 
     public function test_bulk_edit_selected_only_updates_fields_visible_in_current_storefront(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin(), 'admin');
 
         $a = $this->product('A', 'a');
         $row = $a->variants->first();
