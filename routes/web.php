@@ -124,7 +124,6 @@ Route::middleware('guest:web')->group(function (): void {
 
 Route::middleware('auth:web')->group(function (): void {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-    Route::get('/orders/{order}/invoice', InvoiceController::class)->name('orders.invoice');
     Route::get('/account/status', function () {
         $user = auth('web')->user();
 
@@ -136,6 +135,10 @@ Route::middleware('auth:web')->group(function (): void {
         ]]);
     })->name('account.status');
 });
+
+Route::get('/orders/{order}/invoice', InvoiceController::class)
+    ->middleware('auth:web,admin')
+    ->name('orders.invoice');
 
 Route::middleware(['auth:web', 'approved.wholesale'])->group(function (): void {
     Route::get('/account', function () {

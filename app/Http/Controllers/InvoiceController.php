@@ -11,7 +11,7 @@ class InvoiceController extends Controller
 {
     public function __invoke(Request $request, Order $order): Response
     {
-        $user = $request->user();
+        $user = $request->user('web') ?? $request->user('admin');
         $isAdmin = $user->account_type === 'admin' && $user->approval_status === 'approved';
         abort_unless($order->user_id === $user->id || $isAdmin, 404);
         $order->loadMissing('user.resellerProfile', 'items');

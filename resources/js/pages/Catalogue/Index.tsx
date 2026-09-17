@@ -77,7 +77,7 @@ export default function Catalogue({ products, categories, filters, pricing, clea
                                     <span className={`mt-1 size-2 shrink-0 rounded-full ${product.inStock ? 'bg-emerald-500' : 'bg-stone-300'}`} title={product.inStock ? 'In stock' : 'Out of stock'} />
                                 </div>
                                 {pricing.authorized ? (
-                                    product.accountPrice ? <div className="mt-3 flex items-baseline gap-2"><p className="font-black text-red-600">From ${product.accountPrice} CAD</p>{product.compareAtPrice && <p className="text-xs text-black/40 line-through">${product.compareAtPrice}</p>}{!product.compareAtPrice && product.accountPrice !== product.wholesalePrice && <p className="text-xs text-black/40 line-through">${product.wholesalePrice}</p>}</div> : <p className="mt-3 text-sm font-semibold text-black/50">Contact for wholesale pricing</p>
+                                    product.accountPrice ? <div className="mt-3 flex items-baseline gap-2"><p className="text-lg font-black text-black">From ${product.accountPrice} CAD</p>{product.compareAtPrice && <p className="text-base text-red-600 line-through">${product.compareAtPrice}</p>}{!product.compareAtPrice && product.accountPrice !== product.wholesalePrice && <p className="text-base text-red-600 line-through">${product.wholesalePrice}</p>}</div> : <p className="mt-3 text-sm font-semibold text-black/50">Contact for wholesale pricing</p>
                                 ) : <p className="mt-3 text-sm font-semibold text-red-600">Sign in to view wholesale price</p>}
                             </article>
                         ))}

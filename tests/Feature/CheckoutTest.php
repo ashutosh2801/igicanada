@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\NewOrderForAdmin;
 use App\Notifications\OrderSubmitted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -122,6 +123,39 @@ class CheckoutTest extends TestCase
             'approval_status' => 'approved',
         ]);
         $this->actingAs($other)->get("/orders/{$order->id}/invoice")->assertNotFound();
+    }
+
+    public function test_admin_can_download_any_order_invoice_pdf(): void
+    {
+        Notification::fake();
+        [$user, $cart, $variant, $address] = $this->checkoutFixture();
+        $this->actingAs($user)->post('/checkout', [
+            'address_id' => $address->id,
+            'address' => '10 King Street',
+            'city' => 'Toronto',
+            'province' => 'Ontario',
+            'country' => 'Canada',
+            'postal_code' => 'M5H 1A1',
+            'phone' => '416-555-0100',
+            'shipping_service_code' => 'STANDARD',
+            'payment_option' => 'enquiry',
+        ]);
+        $order = $user->orders()->firstOrFail();
+
+        $admin = User::factory()->create([
+            'account_type' => 'admin',
+            'approval_status' => 'approved',
+            'admin_sales_channel' => 'all',
+        ]);
+
+        Auth::guard('web')->logout();
+        Auth::guard('admin')->setUser($admin);
+
+        $this->get("/orders/{$order->id}/invoice")
+            ->assertSuccessful()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertHeader('content-disposition', "attachment; filename=IGI-Canada-{$order->order_number}.pdf");
+        $this->assertStringStartsWith('%PDF-', (string) $this->get("/orders/{$order->id}/invoice")->getContent());
     }
 
     public function test_checkout_returns_the_legacy_standard_shipping_charge_for_the_cart(): void
