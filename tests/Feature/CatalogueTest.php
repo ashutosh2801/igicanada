@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\MediaAsset;
+use App\Models\NavigationItem;
 use App\Models\PriceTier;
 use App\Models\Product;
 use App\Models\User;
@@ -301,15 +302,22 @@ class CatalogueTest extends TestCase
                 ->where('products.total', 2));
     }
 
-    public function test_wholesale_header_navigation_includes_products_before_clearance(): void
+    public function test_wholesale_header_navigation_is_dynamic_from_the_database(): void
     {
+        NavigationItem::create([
+            'location' => 'header',
+            'label' => 'Clearance',
+            'url' => '/clearance',
+            'sort_order' => 1,
+            'sales_channel' => 'wholesale',
+            'is_active' => true,
+        ]);
+
         $this->get('/clearance')
             ->assertSuccessful()
             ->assertInertia(fn (Assert $page) => $page
-                ->where('storefront.headerNavigation.0.label', 'Products')
-                ->where('storefront.headerNavigation.0.url', '/catalogue')
-                ->where('storefront.headerNavigation.1.label', 'Clearance')
-                ->where('storefront.headerNavigation.1.url', '/clearance'));
+                ->where('storefront.headerNavigation.0.label', 'Clearance')
+                ->where('storefront.headerNavigation.0.url', '/clearance'));
     }
 
     public function test_guest_does_not_see_compare_at_price_on_wholesale(): void

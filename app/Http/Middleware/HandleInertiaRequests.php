@@ -190,10 +190,7 @@ class HandleInertiaRequests extends Middleware
                 'showCategoryMenu' => $settings?->show_category_menu ?? true,
                 'categoryMenuLabel' => $settings?->category_menu_label ?? 'All categories',
                 'categoryNavigation' => $this->categoryTree($categoriesByParent),
-                'headerNavigation' => collect([
-                    ['label' => 'Products', 'url' => route('catalogue.index', [], false), 'opens_new_tab' => false],
-                    ['label' => 'Clearance', 'url' => route('clearance', [], false), 'opens_new_tab' => false],
-                ])->concat($navigation->get('header') ?? collect())
+                'headerNavigation' => ($navigation->get('header') ?? collect())
                     ->map(fn ($item): array => is_array($item) ? $item : $item->only([
                         'label', 'url', 'opens_new_tab',
                     ]))->values(),

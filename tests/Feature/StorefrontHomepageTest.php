@@ -47,10 +47,7 @@ class StorefrontHomepageTest extends TestCase
             ->where('homepage.heroSliderInterval', 7)
             ->where('homepage.catalogueTitle', 'Featured wholesale ranges')
             ->where('categories.0.name', 'Wallets')
-            ->where('storefront.headerNavigation.0.label', 'Products')
-            ->where('storefront.headerNavigation.0.url', '/catalogue')
-            ->where('storefront.headerNavigation.1.label', 'Clearance')
-            ->where('storefront.headerNavigation.2.label', 'New arrivals'));
+            ->where('storefront.headerNavigation.0.label', 'New arrivals'));
     }
 
     public function test_header_cart_count_is_shared_for_approved_reseller(): void
