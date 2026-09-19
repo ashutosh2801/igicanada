@@ -114,7 +114,7 @@ class HomeController extends Controller
                 return [
                     'name' => $category->name,
                     'slug' => $category->slug,
-                    'image' => $product?->primaryImageUrl() ?: StorefrontAsset::legacy($category->image_path, 'category'),
+                    'image' => $product?->primaryImageUrl() ?: $category->imageUrl(),
                 ];
             }),
         ]);

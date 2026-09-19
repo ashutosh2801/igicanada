@@ -117,7 +117,7 @@ export default function Home({ homepage, categories, newArrivals, catalogue, pri
                                             <span className={`mt-1 size-2.5 shrink-0 rounded-full ${product.inStock ? 'bg-red-600' : 'bg-black/20'}`} title={product.inStock ? 'In stock' : 'Out of stock'} />
                                         </div>
                                         {pricing.authorized ? (
-                                            product.accountPrice ? <div className="mt-3 flex items-baseline gap-2"><p className="text-lg font-black text-black">From ${product.accountPrice} CAD</p>{product.compareAtPrice && <p className="text-base text-red-600 line-through">${product.compareAtPrice}</p>}{!product.compareAtPrice && product.accountPrice !== product.wholesalePrice && <p className="text-base text-red-600 line-through">${product.wholesalePrice}</p>}</div> : <p className="mt-3 text-sm font-semibold text-black/50">Contact for wholesale pricing</p>
+                                            product.accountPrice ? <div className="mt-3 flex items-baseline gap-2"><p className="text-lg font-black text-black">From ${product.accountPrice} CAD</p>{product.compareAtPrice && <p className="text-lg text-red-600 line-through">${product.compareAtPrice}</p>}{!product.compareAtPrice && product.accountPrice !== product.wholesalePrice && <p className="text-lg text-red-600 line-through">${product.wholesalePrice}</p>}</div> : <p className="mt-3 text-sm font-semibold text-black/50">Contact for wholesale pricing</p>
                                         ) : <p className="mt-3 text-sm font-bold text-red-600">Sign in to view wholesale price</p>}
                                     </article>
                                 ))}

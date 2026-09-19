@@ -97,7 +97,7 @@ class HomeController extends Controller
                 'name' => $category->name,
                 'slug' => $category->slug,
                 'description' => trim(strip_tags((string) $category->description)),
-                'image' => StorefrontAsset::legacy($category->image_path, 'category'),
+                'image' => $category->imageUrl(),
                 'products' => $category->products_count,
             ]),
             'newArrivals' => $newArrivals->map(fn (Product $product) => [

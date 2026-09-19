@@ -262,7 +262,7 @@ export default function Show({ product, pricing, similarProducts }: Props) {
                                                 <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-stone-200 pt-5">
                                                     <div>
                                                         <p className="text-xl font-black">{'$' + selected.accountPrice + ' CAD'}</p>
-                                                        {selected.compareAtPrice ? <p className="text-lg text-red-600 line-through">{'$' + selected.compareAtPrice}</p> : (selected.accountPrice !== selected.wholesalePrice && <p className="text-lg text-red-600 line-through">{'$' + selected.wholesalePrice}</p>)}
+                                                        {selected.compareAtPrice ? <p className="text-xl text-red-600 line-through">{'$' + selected.compareAtPrice}</p> : (selected.accountPrice !== selected.wholesalePrice && <p className="text-xl text-red-600 line-through">{'$' + selected.wholesalePrice}</p>)}
                                                     </div>
                                                     <div className="flex flex-wrap items-end gap-3">
                                                         <span className="flex overflow-hidden rounded-full ring-1 ring-stone-300">
@@ -301,7 +301,7 @@ export default function Show({ product, pricing, similarProducts }: Props) {
                                             <span className={'mt-1 size-2 shrink-0 rounded-full ' + (item.inStock ? 'bg-emerald-500' : 'bg-stone-300')} title={item.inStock ? 'In stock' : 'Out of stock'} />
                                         </div>
                                         {pricing.authorized ? (
-                                            item.accountPrice ? <div className="mt-3 flex items-baseline gap-2"><p className="text-lg font-black text-black">From ${item.accountPrice} CAD</p>{item.compareAtPrice && <p className="text-base text-red-600 line-through">${item.compareAtPrice}</p>}{!item.compareAtPrice && item.accountPrice !== item.wholesalePrice && <p className="text-base text-red-600 line-through">${item.wholesalePrice}</p>}</div> : <p className="mt-3 text-sm font-semibold text-black/50">Contact for wholesale pricing</p>
+                                            item.accountPrice ? <div className="mt-3 flex items-baseline gap-2"><p className="text-lg font-black text-black">From ${item.accountPrice} CAD</p>{item.compareAtPrice && <p className="text-lg text-red-600 line-through">${item.compareAtPrice}</p>}{!item.compareAtPrice && item.accountPrice !== item.wholesalePrice && <p className="text-lg text-red-600 line-through">${item.wholesalePrice}</p>}</div> : <p className="mt-3 text-sm font-semibold text-black/50">Contact for wholesale pricing</p>
                                         ) : <p className="mt-3 text-sm font-semibold text-red-600">Sign in to view wholesale price</p>}
                                     </article>
                                 ))}
@@ -351,7 +351,7 @@ function VariantRow({ variant, pricingAuthorized }: { variant: Variant; pricingA
             {pricingAuthorized && (
                 <div className="sm:text-right">
                     <p className="text-xl font-black">{'$' + variant.accountPrice + ' CAD'}</p>
-                    {variant.compareAtPrice ? <p className="text-lg text-red-600 line-through">{'$' + variant.compareAtPrice}</p> : (variant.accountPrice !== variant.wholesalePrice && <p className="text-lg text-red-600 line-through">{'$' + variant.wholesalePrice}</p>)}
+                    {variant.compareAtPrice ? <p className="text-xl text-red-600 line-through">{'$' + variant.compareAtPrice}</p> : (variant.accountPrice !== variant.wholesalePrice && <p className="text-xl text-red-600 line-through">{'$' + variant.wholesalePrice}</p>)}
                     <div className="mt-3 flex flex-wrap items-end gap-3 sm:justify-end">
                         <span className="flex overflow-hidden rounded-full ring-1 ring-stone-300">
                             <button type="button" onClick={() => updateQuantity(quantity - 1)} disabled={!canOrder || quantity <= variant.minimumQuantity} aria-label="Decrease quantity" className="h-9 w-9 bg-stone-100 font-bold disabled:cursor-not-allowed disabled:text-stone-300">−</button>

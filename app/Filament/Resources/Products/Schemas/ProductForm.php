@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\Products\Schemas;
 
+use App\Filament\Components\ModalTableSelect;
 use App\Filament\Resources\MediaAssets\Tables\MediaAssetsPickerTable;
 use App\Models\MediaAsset;
 use App\Support\AdminStorefront;
 use Filament\Actions\Action;
 use Filament\Forms\Components\ColorPicker;
-use Filament\Forms\Components\ModalTableSelect;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;

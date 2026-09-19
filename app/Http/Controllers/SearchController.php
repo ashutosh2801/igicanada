@@ -58,7 +58,7 @@ class SearchController extends Controller
                 'title' => $category->name,
                 'description' => null,
                 'url' => route('catalogue.index', ['category' => $category->slug], false),
-                'image' => StorefrontAsset::legacy($category->image_path, 'category'),
+                'image' => $category->imageUrl(),
                 'accountPrice' => null,
             ]) : collect();
 

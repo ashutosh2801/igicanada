@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\Categories\Tables;
 
 use App\Filament\Tables\Columns\DirectImageColumn;
+use App\Models\Category;
 use App\Support\AdminStorefront;
-use App\Support\StorefrontAsset;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -38,8 +38,16 @@ class CategoriesTable
                         default => 'IGI Canada',
                     })
                     ->visible(fn (): bool => AdminStorefront::current() === 'all'),
-                DirectImageColumn::make('image_path')
-                    ->state(fn ($record): ?string => StorefrontAsset::directUrl($record->image_path) ?? $record->image_path)
+                DirectImageColumn::make('image')
+                    ->state(function (Category $record): ?string {
+                        $url = $record->imageUrl();
+
+                        if ($url === null) {
+                            return null;
+                        }
+
+                        return str_starts_with($url, '/storage/') ? substr($url, strlen('/storage/')) : $url;
+                    })
                     ->disk('public')
                     ->checkFileExistence(false),
                 TextColumn::make('position')
