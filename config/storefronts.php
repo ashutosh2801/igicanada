@@ -20,6 +20,9 @@ return [
     'retail' => [
         'domain' => env('RETAIL_DOMAIN', 'leatherwallets.ca'),
         'aliases' => array_filter(explode(',', (string) env('RETAIL_DOMAIN_ALIASES', 'www.leatherwallets.ca'))),
+        // Additional domains that serve the retail storefront directly (no
+        // canonical redirect), e.g. walletsandbelts.localhost.
+        'siblings' => array_filter(explode(',', (string) env('RETAIL_DOMAIN_SIBLINGS', ''))),
         'name' => 'Leather Wallets Canada',
     ],
 ];

@@ -179,6 +179,53 @@ class MultiStorefrontTest extends TestCase
             ->assertRedirect('https://leatherwallets.ca/');
     }
 
+    public function test_retail_sibling_domain_serves_retail_storefront_directly(): void
+    {
+        $product = Product::create([
+            'name' => 'Sibling Wallet',
+            'retail_name' => 'Slim Leather Wallet',
+            'slug' => 'sibling-wallet',
+            'visibility' => 'both',
+            'is_active' => true,
+            'published_at' => now(),
+        ]);
+        $product->variants()->create([
+            'retail_price' => 49.99,
+            'stock_quantity' => 12,
+            'is_available_retail' => true,
+            'is_active' => true,
+        ]);
+
+        $this->get('https://walletsandbelts.ca/')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Home')
+                ->where('salesChannel', 'retail')
+                ->has('products', 1)
+                ->where('products.0.name', 'Sibling Wallet'));
+
+        $this->get('https://walletsandbelts.ca/shop')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Catalogue/Index')
+                ->where('products.data.0.name', 'Sibling Wallet'));
+
+        $this->get('https://walletsandbelts.ca/products/sibling-wallet')
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('product.name', 'Sibling Wallet'));
+    }
+
+    public function test_retail_sibling_domain_does_not_expose_wholesale_routes(): void
+    {
+        $this->get('https://walletsandbelts.ca/catalogue')->assertNotFound();
+    }
+
+    public function test_retail_sibling_domain_is_not_redirected_to_canonical(): void
+    {
+        $this->get('https://walletsandbelts.ca/')->assertSuccessful();
+    }
+
     public function test_wholesale_domain_keeps_the_existing_storefront(): void
     {
         $this->get('https://igicanada.ca/')

@@ -15,7 +15,11 @@ class DetectStorefront
         app()->instance(StorefrontContext::class, $storefront);
         $request->attributes->set('sales_channel', $storefront->channel);
 
-        if ($storefront->isRetail() && $storefront->domain !== config('storefronts.retail.domain')) {
+        $retailAliases = array_filter(config('storefronts.retail.aliases', []));
+
+        if ($storefront->isRetail()
+            && in_array($storefront->domain, $retailAliases, true)
+            && $storefront->domain !== config('storefronts.retail.domain')) {
             return redirect()->to('https://'.config('storefronts.retail.domain').'/'.ltrim($request->getRequestUri(), '/'), 301);
         }
 
