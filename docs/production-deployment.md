@@ -2,7 +2,7 @@
 
 ## DNS
 
-Point both apex domains to the same production server:
+Point every domain to the same production server:
 
 | Host | Type | Value |
 |---|---|---|
@@ -10,6 +10,8 @@ Point both apex domains to the same production server:
 | `www.igicanada.ca` | CNAME | `igicanada.ca` |
 | `leatherwallets.ca` | A/AAAA | Production server IP |
 | `www.leatherwallets.ca` | CNAME | `leatherwallets.ca` |
+| `walletsandbelts.com` | A/AAAA | Production server IP |
+| `www.walletsandbelts.com` | CNAME | `walletsandbelts.com` |
 
 Keep DNS proxying disabled until the first TLS certificate has been issued and both origin hosts have been tested.
 
@@ -24,6 +26,8 @@ WHOLESALE_DOMAIN=igicanada.ca
 WHOLESALE_DOMAIN_ALIASES=www.igicanada.ca
 RETAIL_DOMAIN=leatherwallets.ca
 RETAIL_DOMAIN_ALIASES=www.leatherwallets.ca
+# walletsandbelts.com serves the retail storefront directly (no canonical redirect).
+RETAIL_DOMAIN_SIBLINGS=walletsandbelts.com
 ADMIN_DOMAIN=igicanada.ca
 STOREFRONT_DEFAULT_CHANNEL=wholesale
 
@@ -48,11 +52,16 @@ Never commit the populated production `.env` file.
 
 ## Web server and TLS
 
-1. Copy `deploy/nginx-multistorefront.conf.example` into the server's Nginx sites directory.
-2. Update the project root and PHP-FPM socket.
-3. Issue certificates for both apex and `www` names using Certbot or the host's certificate manager.
-4. Test the Nginx configuration before reloading it.
+The production server uses Apache2. Example virtual hosts: `deploy/apache-multistorefront.conf.example` (an Nginx equivalent is kept at `deploy/nginx-multistorefront.conf.example`).
+
+1. Copy `deploy/apache-multistorefront.conf.example` into the server's `/etc/apache2/sites-available/` directory.
+2. Update the document root (`/var/www/igicanada/app/public`) to the real project path and enable `rewrite` and `ssl` modules.
+3. Issue certificates for both apex and `www` names using Certbot or the host's certificate manager. `walletsandbelts.com` and `www.walletsandbelts.com` also need certificates; `www.walletsandbelts.com` redirects to the apex.
+4. Run `apachectl configtest` before reloading Apache.
 5. Confirm `https://leatherwallets.ca/admin` returns 404 and `https://igicanada.ca/admin` opens the admin login.
+6. Confirm `https://walletsandbelts.com/`, `/shop`, and a product URL serve the retail storefront, and that `/catalogue` (wholesale route) returns 404.
+
+If walletsandbelts.com previously showed the wholesale site before adding `RETAIL_DOMAIN_SIBLINGS`, clear the stale cached config first: `php artisan config:clear && php artisan optimize:clear` (or `php artisan optimize` after editing `.env`).
 
 ## PayPal
 

@@ -196,7 +196,7 @@ class MultiStorefrontTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->get('https://walletsandbelts.ca/')
+        $this->get('https://walletsandbelts.com/')
             ->assertSuccessful()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Home')
@@ -204,13 +204,13 @@ class MultiStorefrontTest extends TestCase
                 ->has('products', 1)
                 ->where('products.0.name', 'Sibling Wallet'));
 
-        $this->get('https://walletsandbelts.ca/shop')
+        $this->get('https://walletsandbelts.com/shop')
             ->assertSuccessful()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Catalogue/Index')
                 ->where('products.data.0.name', 'Sibling Wallet'));
 
-        $this->get('https://walletsandbelts.ca/products/sibling-wallet')
+        $this->get('https://walletsandbelts.com/products/sibling-wallet')
             ->assertSuccessful()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('product.name', 'Sibling Wallet'));
@@ -218,12 +218,12 @@ class MultiStorefrontTest extends TestCase
 
     public function test_retail_sibling_domain_does_not_expose_wholesale_routes(): void
     {
-        $this->get('https://walletsandbelts.ca/catalogue')->assertNotFound();
+        $this->get('https://walletsandbelts.com/catalogue')->assertNotFound();
     }
 
     public function test_retail_sibling_domain_is_not_redirected_to_canonical(): void
     {
-        $this->get('https://walletsandbelts.ca/')->assertSuccessful();
+        $this->get('https://walletsandbelts.com/')->assertSuccessful();
     }
 
     public function test_wholesale_domain_keeps_the_existing_storefront(): void

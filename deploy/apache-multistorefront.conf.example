@@ -1,0 +1,117 @@
+# Replace paths and certificate paths for the production server.
+# Drop into /etc/apache2/sites-available/ and enable with:
+#   sudo a2enmod rewrite ssl
+#   sudo a2ensite <this-file>
+#   sudo apachectl configtest && sudo systemctl reload apache2
+
+# --- HTTP -> HTTPS for every host --------------------------------------------
+<VirtualHost *:80>
+    ServerName igicanada.ca
+    ServerAlias www.igicanada.ca leatherwallets.ca www.leatherwallets.ca walletsandbelts.com www.walletsandbelts.com
+    Redirect permanent / https://igicanada.ca/
+</VirtualHost>
+
+# --- www aliases -> apex -----------------------------------------------------
+<VirtualHost *:443>
+    ServerName www.igicanada.ca
+    <IfModule mod_ssl.c>
+        SSLCertificateFile /etc/letsencrypt/live/igicanada.ca/fullchain.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/igicanada.ca/privkey.pem
+    </IfModule>
+    Redirect permanent / https://igicanada.ca/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName www.leatherwallets.ca
+    <IfModule mod_ssl.c>
+        SSLCertificateFile /etc/letsencrypt/live/leatherwallets.ca/fullchain.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/leatherwallets.ca/privkey.pem
+    </IfModule>
+    Redirect permanent / https://leatherwallets.ca/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName www.walletsandbelts.com
+    <IfModule mod_ssl.c>
+        SSLCertificateFile /etc/letsencrypt/live/walletsandbelts.com/fullchain.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/walletsandbelts.com/privkey.pem
+    </IfModule>
+    Redirect permanent / https://walletsandbelts.com/
+</VirtualHost>
+
+# --- Wholesale: igicanada.ca (serves /admin) --------------------------------
+<VirtualHost *:443>
+    ServerName igicanada.ca
+    DocumentRoot /var/www/igicanada/app/public
+
+    <Directory /var/www/igicanada/app/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    <IfModule mod_ssl.c>
+        SSLCertificateFile /etc/letsencrypt/live/igicanada.ca/fullchain.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/igicanada.ca/privkey.pem
+    </IfModule>
+
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    ErrorLog ${APACHE_LOG_DIR}/igicanada-error.log
+    CustomLog ${APACHE_LOG_DIR}/igicanada-access.log combined
+</VirtualHost>
+
+# --- Retail: leatherwallets.ca (no /admin) ----------------------------------
+<VirtualHost *:443>
+    ServerName leatherwallets.ca
+    DocumentRoot /var/www/igicanada/app/public
+
+    <Directory /var/www/igicanada/app/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    <LocationMatch "^/admin">
+        Require all denied
+    </LocationMatch>
+
+    <IfModule mod_ssl.c>
+        SSLCertificateFile /etc/letsencrypt/live/leatherwallets.ca/fullchain.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/leatherwallets.ca/privkey.pem
+    </IfModule>
+
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    ErrorLog ${APACHE_LOG_DIR}/leatherwallets-error.log
+    CustomLog ${APACHE_LOG_DIR}/leatherwallets-access.log combined
+</VirtualHost>
+
+# --- Retail sibling: walletsandbelts.com (no /admin) ------------------------
+<VirtualHost *:443>
+    ServerName walletsandbelts.com
+    DocumentRoot /var/www/igicanada/app/public
+
+    <Directory /var/www/igicanada/app/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    <LocationMatch "^/admin">
+        Require all denied
+    </LocationMatch>
+
+    <IfModule mod_ssl.c>
+        SSLCertificateFile /etc/letsencrypt/live/walletsandbelts.com/fullchain.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/walletsandbelts.com/privkey.pem
+    </IfModule>
+
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    ErrorLog ${APACHE_LOG_DIR}/walletsandbelts-error.log
+    CustomLog ${APACHE_LOG_DIR}/walletsandbelts-access.log combined
+</VirtualHost>
