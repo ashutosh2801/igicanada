@@ -14,6 +14,7 @@ class HomepageSetting extends Model
         return [
             'featured_category_ids' => 'array',
             'hero_image_paths' => 'array',
+            'is_active' => 'boolean',
             'show_category_menu' => 'boolean',
             'show_new_arrivals' => 'boolean',
         ];

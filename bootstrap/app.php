@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\DetectStorefront;
 use App\Http\Middleware\EnsureApprovedReseller;
+use App\Http\Middleware\EnsureStorefrontLive;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Support\StorefrontContext;
 use Illuminate\Auth\Middleware\Authenticate;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->web(append: [
             DetectStorefront::class,
+            EnsureStorefrontLive::class,
             HandleInertiaRequests::class,
         ]);
 

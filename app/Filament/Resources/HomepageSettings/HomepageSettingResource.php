@@ -8,12 +8,14 @@ use App\Models\Category;
 use App\Models\HomepageSetting;
 use App\Support\AdminStorefront;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -43,6 +45,12 @@ class HomepageSettingResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
+            Section::make('Site status')->schema([
+                Toggle::make('is_active')
+                    ->label('Site published')
+                    ->helperText('Turn off to take this website down for holidays or maintenance. Visitors will see a maintenance page instead of the storefront.')
+                    ->columnSpanFull(),
+            ])->columnSpanFull(),
             Section::make('Website')->schema([
                 TextInput::make('sales_channel')
                     ->label('Sales channel')
@@ -149,9 +157,30 @@ class HomepageSettingResource extends Resource
                     ->visible(fn (): bool => AdminStorefront::current() === 'all'),
                 TextColumn::make('brand_name')->label('Storefront'),
                 TextColumn::make('hero_title')->limit(70),
+                TextColumn::make('is_active')
+                    ->label('Status')
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Live' : 'Maintenance')
+                    ->color(fn (bool $state): string => $state ? 'success' : 'danger'),
                 TextColumn::make('updated_at')->dateTime(),
             ])
-            ->recordActions([EditAction::make()]);
+            ->recordActions([
+                EditAction::make(),
+                Action::make('togglePublished')
+                    ->label(fn (HomepageSetting $record): string => $record->is_active ? 'Unpublish site' : 'Publish site')
+                    ->color(fn (HomepageSetting $record): string => $record->is_active ? 'danger' : 'success')
+                    ->requiresConfirmation(fn (HomepageSetting $record): bool => $record->is_active)
+                    ->modalHeading(fn (HomepageSetting $record): string => $record->is_active ? 'Unpublish this website?' : 'Publish this website?')
+                    ->modalDescription('While unpublished, visitors see a maintenance page. Use it for holidays or scheduled maintenance.')
+                    ->modalSubmitActionLabel(fn (HomepageSetting $record): string => $record->is_active ? 'Unpublish' : 'Publish')
+                    ->action(function (HomepageSetting $record): void {
+                        $record->update(['is_active' => ! $record->is_active]);
+                        Notification::make()
+                            ->title($record->is_active ? 'Website published' : 'Website unpublished')
+                            ->success()
+                            ->send();
+                    }),
+            ]);
     }
 
     public static function getPages(): array
