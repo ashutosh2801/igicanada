@@ -7,7 +7,6 @@ use App\Filament\Resources\StandardShippingRates\StandardShippingRateResource;
 use App\Models\StandardShippingRate;
 use App\Services\StandardShippingRateManager;
 use Filament\Actions\Action;
-use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -59,8 +58,9 @@ class ListStandardShippingRates extends ListRecords
                     app(StandardShippingRateManager::class)->update($data['rates']);
                     Notification::make()->title('Shipping charges saved')->success()->send();
                 }),
-            CreateAction::make()
+            Action::make('newCharge')
                 ->label('Add standard shipping charge')
+                ->icon('heroicon-m-plus')
                 ->url(fn (): string => CreateStandardShippingRate::getUrl()),
         ];
     }
