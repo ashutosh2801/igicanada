@@ -36,6 +36,26 @@ class PersistentTableSelectLivewireComponent extends TableSelectLivewireComponen
         }
     }
 
+    /**
+     * Persists a drag-and-drop reordering of the selected images so the
+     * selection order (and therefore their display position) follows the
+     * order set in the picker.
+     *
+     * @param  array<int|string>  $orderedIds
+     */
+    public function reorderSelectedImages(array $orderedIds): void
+    {
+        if (! is_array($this->state)) {
+            return;
+        }
+
+        $this->state = collect($orderedIds)
+            ->map(fn (mixed $value): int => (int) $value)
+            ->filter()
+            ->values()
+            ->all();
+    }
+
     public function mount(): void
     {
         $this->paginators['page'] = (int) session()->get($this->getPersistenceKey() . '.page', 1);

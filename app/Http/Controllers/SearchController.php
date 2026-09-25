@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\ContentPage;
 use App\Models\Product;
-use App\Support\StorefrontAsset;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -29,6 +28,7 @@ class SearchController extends Controller
                 ->orWhere('description', 'like', "%{$query}%"))
             ->withMin(['variants as minimum_wholesale_price' => fn ($builder) => $builder->where('is_active', true)], 'wholesale_price')
             ->withMin(['variants as minimum_wholesale_compare_at_price' => fn ($builder) => $builder->where('is_active', true)], 'wholesale_compare_at_price')
+            ->with('primaryMedia:id,disk,path')
             ->orderBy('name')
             ->limit(24)
             ->get()
@@ -37,7 +37,7 @@ class SearchController extends Controller
                 'title' => $product->name,
                 'description' => $product->sku,
                 'url' => route('catalogue.show', $product, false),
-                'image' => StorefrontAsset::legacy($product->primary_image_path),
+                'image' => $product->primaryImageUrl(),
                 'accountPrice' => $canViewPricing && $product->minimum_wholesale_price !== null
                     ? number_format((float) $product->minimum_wholesale_price * (1 - $discount / 100), 2, '.', '')
                     : null,

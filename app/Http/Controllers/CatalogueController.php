@@ -45,7 +45,8 @@ class CatalogueController extends Controller
         $products = $this->productCardQuery()
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search): void {
                 $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%");
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
             }))
             ->when($category !== '', fn ($query) => $query->whereHas('categories', fn ($query) => $query->where('slug', $category)))
             ->when($scope !== null, $scope)

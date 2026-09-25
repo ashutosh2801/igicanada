@@ -61,13 +61,14 @@ class HomeController extends Controller
 
         if ($settings->show_new_arrivals) {
             $newArrivals = Product::query()
-                ->select(['id', 'sku', 'name', 'slug', 'primary_image_path', 'published_at'])
+                ->select(['id', 'sku', 'name', 'slug', 'primary_image_path', 'primary_media_asset_id', 'published_at'])
                 ->where('is_active', true)
                 ->whereIn('visibility', ['wholesale', 'both'])
                 ->withCount(['variants' => fn ($query) => $query->where('is_active', true)])
                 ->withSum(['variants as stock_quantity' => fn ($query) => $query->where('is_active', true)], 'stock_quantity')
                 ->withMin(['variants as minimum_wholesale_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_price')
                 ->withMin(['variants as minimum_wholesale_compare_at_price' => fn ($query) => $query->where('is_active', true)], 'wholesale_compare_at_price')
+                ->with('primaryMedia:id,disk,path')
                 ->orderByDesc('published_at')
                 ->orderByDesc('id')
                 ->limit(min(max((int) $settings->new_arrivals_count, 4), 12))
@@ -105,7 +106,7 @@ class HomeController extends Controller
                 'sku' => $product->sku,
                 'name' => $product->name,
                 'slug' => $product->slug,
-                'image' => StorefrontAsset::legacy($product->primary_image_path),
+                'image' => $product->primaryImageUrl(),
                 'variants' => $product->variants_count,
                 'inStock' => (int) $product->stock_quantity > 0,
                 'wholesalePrice' => $canViewPricing && $product->minimum_wholesale_price !== null

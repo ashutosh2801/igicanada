@@ -15,7 +15,7 @@ class Product extends Model
     protected static function booted(): void
     {
         static::saving(function (Product $product): void {
-            if ($product->isDirty('primary_media_asset_id') && ! $product->primary_media_asset_id) {
+            if ($product->isDirty('primary_media_asset_id')) {
                 $product->primary_image_path = null;
             }
         });

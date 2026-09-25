@@ -7,30 +7,69 @@
     $selectedAssets = $selectedIds
         ? \App\Models\MediaAsset::query()->whereIn('id', $selectedIds)->get()
         : collect();
+    $assetMap = $selectedAssets
+        ->mapWithKeys(fn (\App\Models\MediaAsset $asset): array => [(string) $asset->id => [
+            'url' => $asset->url(),
+            'name' => $asset->display_name,
+        ]])
+        ->all();
 @endphp
 
 @if ($selectedAssets->isNotEmpty())
-    <div class="media-picker-selected">
+    <div
+        class="media-picker-selected"
+        x-data="{
+            dragging: null,
+            ids: {{ Js::from(array_values($selectedIds)) }},
+            assets: {{ Js::from($assetMap) }},
+            commit() {
+                $wire.reorderSelectedImages(this.ids);
+            },
+            removeAt(index) {
+                const [id] = this.ids.splice(index, 1);
+                if (id !== undefined) {
+                    $wire.removeSelectedImage(id);
+                }
+            },
+        }"
+    >
         <div class="media-picker-selected-title">
-            Selected ({{ $selectedAssets->count() }})
-            <span class="media-picker-selected-hint">Click &times; to remove an image you picked by mistake.</span>
+            Selected (<span x-text="ids.length"></span>)
+            <span class="media-picker-selected-hint">Drag the grip to set display order &middot; Click &times; to remove.</span>
         </div>
-        <div class="media-picker-selected-grid">
-            @foreach ($selectedAssets as $asset)
-                <div class="media-picker-selected-item">
-                    <img src="{{ e($asset->url()) }}" alt="{{ e($asset->display_name) }}" title="{{ e($asset->display_name) }}" />
+        <div class="media-picker-selected-grid" @dragover.prevent @drop.prevent="dragging = null">
+            <template x-for="(id, index) in ids" :key="id">
+                <div
+                    class="media-picker-selected-item"
+                    :class="{ 'is-dragging': dragging === index }"
+                    draggable="true"
+                    @dragstart="dragging = index"
+                    @dragenter.prevent="if (dragging !== null && dragging !== index) { const moved = ids.splice(dragging, 1)[0]; ids.splice(index, 0, moved); dragging = index; }"
+                    @dragend="dragging = null; commit()"
+                >
+                    <span class="media-picker-selected-grip" aria-hidden="true" title="Drag to reorder">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20" width="14" height="14">
+                            <circle cx="7" cy="5" r="1.3"></circle>
+                            <circle cx="13" cy="5" r="1.3"></circle>
+                            <circle cx="7" cy="10" r="1.3"></circle>
+                            <circle cx="13" cy="10" r="1.3"></circle>
+                            <circle cx="7" cy="15" r="1.3"></circle>
+                            <circle cx="13" cy="15" r="1.3"></circle>
+                        </svg>
+                    </span>
+                    <img :src="assets[id].url" :alt="assets[id].name" :title="assets[id].name" />
                     <div class="media-picker-selected-meta">
-                        <span class="media-picker-selected-name" title="{{ e($asset->display_name) }}">{{ $asset->display_name }}</span>
+                        <span class="media-picker-selected-name" :title="assets[id].name" x-text="assets[id].name"></span>
                         <button
                             type="button"
                             class="media-picker-selected-remove"
-                            wire:click="removeSelectedImage({{ $asset->id }})"
-                            title="Remove {{ e($asset->display_name) }}"
-                            aria-label="Remove {{ e($asset->display_name) }}"
+                            :title="'Remove ' + assets[id].name"
+                            aria-label="Remove image"
+                            @click.stop.prevent="removeAt(index)"
                         >&times;</button>
                     </div>
                 </div>
-            @endforeach
+            </template>
         </div>
     </div>
 @endif

@@ -217,6 +217,35 @@
         border: 1px solid var(--gray-200);
         border-radius: 0.625rem;
         background: white;
+        cursor: grab;
+    }
+
+    .media-picker-selected-item:active {
+        cursor: grabbing;
+    }
+
+    .media-picker-selected-item.is-dragging {
+        opacity: 0.45;
+        outline: 2px dashed var(--primary-500);
+    }
+
+    .media-picker-selected-grip {
+        position: absolute;
+        z-index: 2;
+        top: 0.3rem;
+        left: 0.3rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.2rem;
+        border-radius: 0.375rem;
+        color: white;
+        background: rgb(0 0 0 / 0.45);
+        cursor: grab;
+    }
+
+    .media-picker-selected-grip:active {
+        cursor: grabbing;
     }
 
     .dark .media-picker-selected-item {
