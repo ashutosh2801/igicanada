@@ -3,7 +3,9 @@
     @php
         $siteSetting = \Illuminate\Support\Facades\Schema::hasTable('homepage_settings')
             && \Illuminate\Support\Facades\Schema::hasColumn('homepage_settings', 'sales_channel')
-            ? \App\Models\HomepageSetting::query()->forChannel('retail')->first()
+            ? \App\Models\HomepageSetting::query()
+                ->forChannel(app(\App\Support\StorefrontContext::class)->settingsChannel())
+                ->first()
             : null;
         $favicon = \App\Support\StorefrontAsset::uploaded($siteSetting?->favicon_path);
         $ogImage = \App\Support\StorefrontAsset::uploaded($siteSetting?->og_image_path);

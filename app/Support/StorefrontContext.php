@@ -47,4 +47,21 @@ final readonly class StorefrontContext
     {
         return $this->channel === 'wholesale';
     }
+
+    /**
+     * The channel whose homepage/branding settings apply to this request.
+     *
+     * The storefront channel stays 'retail' on every retail-served domain so
+     * catalogue, cart and checkout behaviour is shared, but branded sibling
+     * domains (e.g. walletsandbelts.com) resolve to their own settings channel.
+     */
+    public function settingsChannel(): string
+    {
+        if ($this->channel !== 'retail') {
+            return $this->channel;
+        }
+
+        return config('storefronts.retail.branded_domains', [])[$this->domain]
+            ?? 'retail';
+    }
 }

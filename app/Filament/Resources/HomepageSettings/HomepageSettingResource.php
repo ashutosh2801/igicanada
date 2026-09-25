@@ -46,7 +46,7 @@ class HomepageSettingResource extends Resource
             Section::make('Website')->schema([
                 TextInput::make('sales_channel')
                     ->label('Sales channel')
-                    ->formatStateUsing(fn (string $state): string => $state === 'retail' ? 'Leather Wallets · Retail' : 'IGI Canada · Wholesale')
+                    ->formatStateUsing(fn (string $state): string => self::channelLabel($state))
                     ->disabled()
                     ->visible(fn (): bool => AdminStorefront::current() === 'all'),
             ])->columnSpanFull(),
@@ -144,8 +144,8 @@ class HomepageSettingResource extends Resource
                 TextColumn::make('sales_channel')
                     ->label('Website')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => $state === 'retail' ? 'Leather Wallets' : 'IGI Canada')
-                    ->color(fn (string $state): string => $state === 'retail' ? 'warning' : 'info')
+                    ->formatStateUsing(fn (string $state): string => self::channelLabel($state, false))
+                    ->color(fn (string $state): string => in_array($state, ['retail', 'walletsandbelts'], true) ? 'warning' : 'info')
                     ->visible(fn (): bool => AdminStorefront::current() === 'all'),
                 TextColumn::make('brand_name')->label('Storefront'),
                 TextColumn::make('hero_title')->limit(70),
@@ -164,6 +164,19 @@ class HomepageSettingResource extends Resource
 
     private static function showsWholesaleFields(?HomepageSetting $record): bool
     {
-        return ($record?->sales_channel ?? AdminStorefront::current()) !== 'retail';
+        return ! in_array(
+            $record?->sales_channel ?? AdminStorefront::current(),
+            ['retail', 'walletsandbelts'],
+            true,
+        );
+    }
+
+    public static function channelLabel(string $state, bool $withChannel = true): string
+    {
+        return match ($state) {
+            'retail' => $withChannel ? 'Leather Wallets · Retail' : 'Leather Wallets',
+            'walletsandbelts' => $withChannel ? 'Wallets and Belts · Retail' : 'Wallets and Belts',
+            default => $withChannel ? 'IGI Canada · Wholesale' : 'IGI Canada',
+        };
     }
 }

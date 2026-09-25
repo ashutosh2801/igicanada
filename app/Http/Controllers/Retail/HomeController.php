@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\HomepageSetting;
 use App\Models\Product;
 use App\Support\StorefrontAsset;
+use App\Support\StorefrontContext;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -14,7 +15,9 @@ class HomeController extends Controller
 {
     public function __invoke(): Response
     {
-        $settings = HomepageSetting::query()->forChannel('retail')->firstOrFail();
+        $settings = HomepageSetting::query()
+            ->forChannel(app(StorefrontContext::class)->settingsChannel())
+            ->firstOrFail();
         $heroImages = collect($settings->hero_image_paths)
             ->map(fn ($path): ?string => StorefrontAsset::uploaded($path))
             ->filter()

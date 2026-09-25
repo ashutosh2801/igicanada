@@ -78,7 +78,7 @@ class StorefrontBranding extends Page
                         ->options($storefrontOptions)
                         ->live()
                         ->afterStateUpdated(fn (string $state): null => $this->loadSettings($state))
-                        ->helperText('Switch between IGI Canada and Leather Wallets to manage each website’s logo, favicon and meta settings.'),
+                        ->helperText('Switch between IGI Canada, Leather Wallets and Wallets and Belts to manage each website’s logo, favicon and meta settings.'),
                 ])->columns(2)->columnSpanFull(),
                 Section::make('Branding')->schema([
                     TextInput::make('brand_name')->label('Store name')->required()->maxLength(255),

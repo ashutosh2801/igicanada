@@ -23,6 +23,28 @@ return [
         // Additional domains that serve the retail storefront directly (no
         // canonical redirect), e.g. walletsandbelts.localhost.
         'siblings' => array_filter(explode(',', (string) env('RETAIL_DOMAIN_SIBLINGS', ''))),
+        // Sibling retail domains that run as their own branded storefront with
+        // separate homepage/branding settings. Maps domain → sales_channel value.
+        'branded_domains' => [
+            'walletsandbelts.com' => 'walletsandbelts',
+        ],
         'name' => 'Leather Wallets Canada',
+    ],
+
+    // Channel → display metadata for the admin storefront switcher, "view site"
+    // links and storefront fallbacks.
+    'brands' => [
+        'wholesale' => [
+            'name' => 'IGI Canada',
+            'domain' => env('WHOLESALE_DOMAIN', 'igicanada.ca'),
+        ],
+        'retail' => [
+            'name' => 'Leather Wallets Canada',
+            'domain' => env('RETAIL_DOMAIN', 'leatherwallets.ca'),
+        ],
+        'walletsandbelts' => [
+            'name' => 'Wallets and Belts Canada',
+            'domain' => 'walletsandbelts.com',
+        ],
     ],
 ];

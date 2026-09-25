@@ -14,16 +14,26 @@ class EditHomepageSetting extends EditRecord
     {
         return [
             Action::make('viewStorefront')
-                ->label(fn (): string => $this->record->sales_channel === 'retail' ? 'View Leather Wallets' : 'View IGI Canada')
-                ->url(fn (): string => $this->record->sales_channel === 'retail' ? route('retail.home') : route('home'))
+                ->label(fn (): string => match ($this->record->sales_channel) {
+                    'retail' => 'View Leather Wallets',
+                    'walletsandbelts' => 'View Wallets and Belts',
+                    default => 'View IGI Canada',
+                })
+                ->url(fn (): string => match ($this->record->sales_channel) {
+                    'retail' => route('retail.home'),
+                    'walletsandbelts' => 'https://'.config('storefronts.brands.walletsandbelts.domain'),
+                    default => route('home'),
+                })
                 ->openUrlInNewTab(),
         ];
     }
 
     public function getTitle(): string
     {
-        return $this->record->sales_channel === 'retail'
-            ? 'Leather Wallets homepage'
-            : 'IGI Canada homepage';
+        return match ($this->record->sales_channel) {
+            'retail' => 'Leather Wallets homepage',
+            'walletsandbelts' => 'Wallets and Belts homepage',
+            default => 'IGI Canada homepage',
+        };
     }
 }

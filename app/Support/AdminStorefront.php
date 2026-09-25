@@ -15,6 +15,7 @@ class AdminStorefront
             'all' => 'All Stores',
             'wholesale' => 'IGI Canada · Wholesale',
             'retail' => 'Leather Wallets · Retail',
+            'walletsandbelts' => 'Wallets and Belts · Retail',
         ];
     }
 
@@ -42,7 +43,7 @@ class AdminStorefront
 
     public static function showsRetailFields(): bool
     {
-        return in_array(self::current(), ['all', 'retail'], true);
+        return in_array(self::current(), ['all', 'retail', 'walletsandbelts'], true);
     }
 
     public static function showsWholesaleFields(): bool
@@ -66,7 +67,7 @@ class AdminStorefront
     {
         return match (self::current()) {
             'wholesale' => $query->whereIn('visibility', ['wholesale', 'both']),
-            'retail' => $query->whereIn('visibility', ['retail', 'both']),
+            'retail', 'walletsandbelts' => $query->whereIn('visibility', ['retail', 'both']),
             default => $query,
         };
     }
@@ -75,7 +76,7 @@ class AdminStorefront
     {
         return match (self::current()) {
             'wholesale' => $query->whereIn($column, ['wholesale', 'both']),
-            'retail' => $query->whereIn($column, ['retail', 'both']),
+            'retail', 'walletsandbelts' => $query->whereIn($column, ['retail', 'both']),
             default => $query,
         };
     }

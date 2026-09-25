@@ -49,7 +49,8 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         if (app(StorefrontContext::class)->isRetail()) {
-            $settings = HomepageSetting::query()->forChannel('retail')->first();
+            $settingsChannel = app(StorefrontContext::class)->settingsChannel();
+            $settings = HomepageSetting::query()->forChannel($settingsChannel)->first();
             $retailCart = app(RetailCartService::class)->summary($request);
 
             return [
@@ -70,9 +71,9 @@ class HandleInertiaRequests extends Middleware
                     'status' => fn () => $request->session()->get('status'),
                 ],
                 'retailStorefront' => [
-                    'brandName' => $settings?->brand_name ?? config('storefronts.retail.name'),
+                    'brandName' => $settings?->brand_name ?? $this->channelName($settingsChannel),
                     'logoUrl' => StorefrontAsset::uploaded($settings?->logo_path),
-                    'logoAlt' => $settings?->logo_alt ?? config('storefronts.retail.name'),
+                    'logoAlt' => $settings?->logo_alt ?? $this->channelName($settingsChannel),
                     'announcement' => $settings?->announcement_text,
                     'cartCount' => $retailCart['count'],
                     'cartSummary' => [
@@ -252,6 +253,11 @@ class HandleInertiaRequests extends Middleware
     private function absoluteUrl(?string $path): ?string
     {
         return $path ? url($path) : null;
+    }
+
+    private function channelName(string $channel): string
+    {
+        return (string) config("storefronts.brands.{$channel}.name", config('storefronts.retail.name'));
     }
 
     private function seoDefaults(?HomepageSetting $settings, string $channel): array
