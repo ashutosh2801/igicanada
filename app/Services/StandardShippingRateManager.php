@@ -27,7 +27,7 @@ class StandardShippingRateManager
         $data = Validator::make(['rates' => $rates], [
             'rates' => ['required', 'array', 'min:1'],
             'rates.*.id' => ['required', 'integer', 'distinct', Rule::exists('standard_shipping_rates', 'id')],
-            'rates.*.sales_channel' => ['required', Rule::in(['wholesale', 'retail'])],
+            'rates.*.sales_channel' => ['required', Rule::in(['wholesale', 'retail', 'walletsandbelts'])],
             'rates.*.country' => ['required', Rule::in(['CA', 'US'])],
             'rates.*.name' => ['required', 'string', 'max:100'],
             'rates.*.min_order_amount' => ['required', 'numeric', 'min:0'],

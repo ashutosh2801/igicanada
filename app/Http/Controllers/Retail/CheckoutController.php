@@ -14,6 +14,7 @@ use App\Services\RetailAddressService;
 use App\Services\RetailCartService;
 use App\Services\RetailTaxService;
 use App\Services\StandardShippingService;
+use App\Support\StorefrontContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -60,7 +61,7 @@ class CheckoutController extends Controller
         $shippingName = null;
         $shippingTotal = null;
         try {
-            $shippingRate = $shipping->quote($subtotal, $data['country'], $data['country_code'], 'retail');
+            $shippingRate = $shipping->quote($subtotal, $data['country'], $data['country_code'], $this->shippingChannel($request));
             $shippingName = $shippingRate['name'];
             $shippingTotal = round((float) $shippingRate['price'], 2);
         } catch (InvalidArgumentException) {
@@ -173,7 +174,7 @@ class CheckoutController extends Controller
             $subtotal = round($subtotal, 2);
 
             try {
-                $shippingRate = $shipping->quote($subtotal, $data['country'], $data['country_code'], 'retail');
+$shippingRate = $shipping->quote($subtotal, $data['country'], $data['country_code'], $this->shippingChannel($request));
             } catch (InvalidArgumentException $exception) {
                 throw ValidationException::withMessages(['country' => $exception->getMessage()]);
             }
@@ -363,5 +364,15 @@ class CheckoutController extends Controller
         } while (Order::where('order_number', $number)->exists());
 
         return $number;
+    }
+
+    /**
+     * Shipping charges are configured per website, so the domain resolves to
+     * its own channel: Leather Wallets stays 'retail', while branded retail
+     * domains such as walletsandbelts.com get their own rates.
+     */
+    private function shippingChannel(Request $request): string
+    {
+        return StorefrontContext::fromRequest($request)->settingsChannel();
     }
 }

@@ -52,11 +52,16 @@ class StandardShippingRateResource extends Resource
                 ->options([
                     'wholesale' => 'IGI Canada',
                     'retail' => 'Leather Wallets',
+                    'walletsandbelts' => 'Wallets and Belts',
                 ])
                 ->required()
                 ->visible(fn (): bool => AdminStorefront::current() === 'all')
                 ->dehydratedWhenHidden()
-                ->default(fn (): string => AdminStorefront::current() === 'retail' ? 'retail' : 'wholesale'),
+                ->default(fn (): string => match (AdminStorefront::current()) {
+                    'retail' => 'retail',
+                    'walletsandbelts' => 'walletsandbelts',
+                    default => 'wholesale',
+                }),
             Select::make('country')
                 ->options(['CA' => 'Canada', 'US' => 'USA'])
                 ->required()
@@ -100,7 +105,11 @@ class StandardShippingRateResource extends Resource
                 TextColumn::make('sales_channel')
                     ->label('Website')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => $state === 'retail' ? 'Leather Wallets' : 'IGI Canada')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'retail' => 'Leather Wallets',
+                        'walletsandbelts' => 'Wallets and Belts',
+                        default => 'IGI Canada',
+                    })
                     ->visible(fn (): bool => AdminStorefront::current() === 'all'),
                 TextColumn::make('country')
                     ->formatStateUsing(fn (string $state): string => $state === 'CA' ? 'Canada' : 'USA')
@@ -116,6 +125,7 @@ class StandardShippingRateResource extends Resource
                 SelectFilter::make('sales_channel')->label('Website')->options([
                     'wholesale' => 'IGI Canada',
                     'retail' => 'Leather Wallets',
+                    'walletsandbelts' => 'Wallets and Belts',
                 ])->visible(fn (): bool => AdminStorefront::current() === 'all'),
                 SelectFilter::make('country')->options(['CA' => 'Canada', 'US' => 'USA']),
             ])

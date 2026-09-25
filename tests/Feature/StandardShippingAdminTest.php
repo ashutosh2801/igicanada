@@ -41,9 +41,9 @@ class StandardShippingAdminTest extends TestCase
             ->mountAction('bulkEdit')
             ->assertActionDataSet(function (array $data): array {
                 $rates = collect($data['rates']);
-                $this->assertCount(10, $rates);
+                $this->assertCount(15, $rates);
                 $this->assertTrue($rates->every(fn (array $rate): bool => $rate['country'] === 'CA'));
-                $this->assertEqualsCanonicalizing(['retail', 'wholesale'], $rates->pluck('sales_channel')->unique()->values()->all());
+                $this->assertEqualsCanonicalizing(['retail', 'wholesale', 'walletsandbelts'], $rates->pluck('sales_channel')->unique()->values()->all());
 
                 return [];
             });

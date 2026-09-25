@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\StandardShippingRates\Pages;
 
+use App\Filament\Resources\StandardShippingRates\Pages\CreateStandardShippingRate;
 use App\Filament\Resources\StandardShippingRates\StandardShippingRateResource;
 use App\Models\StandardShippingRate;
 use App\Services\StandardShippingRateManager;
@@ -58,7 +59,9 @@ class ListStandardShippingRates extends ListRecords
                     app(StandardShippingRateManager::class)->update($data['rates']);
                     Notification::make()->title('Shipping charges saved')->success()->send();
                 }),
-            CreateAction::make(),
+            CreateAction::make()
+                ->label('Add standard shipping charge')
+                ->url(fn (): string => CreateStandardShippingRate::getUrl()),
         ];
     }
 

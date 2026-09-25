@@ -58,7 +58,7 @@ class RetailLaunchCheck extends Command
 
     private function shippingSlabsAreComplete(): bool
     {
-        foreach (['wholesale', 'retail'] as $channel) {
+        foreach (['wholesale', 'retail', 'walletsandbelts'] as $channel) {
             foreach (['CA', 'US'] as $country) {
                 $rates = StandardShippingRate::query()
                     ->where('sales_channel', $channel)
