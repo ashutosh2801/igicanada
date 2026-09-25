@@ -35,6 +35,8 @@ class EnsureStorefrontLive
     {
         return $request->is('admin*')
             || $request->is('up')
-            || $request->routeIs('paypal.webhook');
+            || $request->is('js/filament*', 'css/filament*', 'fonts/filament*')
+            || $request->routeIs('paypal.webhook', 'filament.*', 'livewire.*')
+            || str_starts_with($request->path(), 'livewire-');
     }
 }

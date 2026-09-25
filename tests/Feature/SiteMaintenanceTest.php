@@ -65,4 +65,25 @@ class SiteMaintenanceTest extends TestCase
         $settings->update(['is_active' => true]);
         $this->get('https://leatherwallets.ca/')->assertSuccessful();
     }
+
+    public function test_backend_and_admin_assets_keep_working_while_unpublished(): void
+    {
+        HomepageSetting::query()->forChannel('wholesale')->firstOrFail()->update(['is_active' => false]);
+
+        $livewirePath = parse_url(route('default-livewire.update'), PHP_URL_PATH);
+        $this->assertStringStartsWith('/livewire-', $livewirePath);
+        $this->assertNotSame(503, $this->postJson($livewirePath, [])->getStatusCode());
+        $this->assertNotSame(
+            503,
+            $this->get(str_replace('/update', '/livewire.js', $livewirePath))->getStatusCode(),
+        );
+
+        $this->assertNotSame(503, $this->get('/css/filament/filament/app.css')->getStatusCode());
+        $this->assertNotSame(503, $this->get('/js/filament/filament/app.js')->getStatusCode());
+
+        $this->assertNotSame(
+            503,
+            $this->getJson(route('filament.exports.download', ['export' => 1]))->getStatusCode(),
+        );
+    }
 }
