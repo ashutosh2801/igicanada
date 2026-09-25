@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Products\Tables;
 
+use App\Filament\Resources\Products\Actions\ProductPublishActions;
 use App\Filament\Tables\Columns\DirectImageColumn;
 use App\Filament\Tables\Columns\StockColumn;
 use App\Models\Product;
@@ -295,6 +296,7 @@ class ProductsTable
                             ->success()
                             ->send();
                     }),
+                ProductPublishActions::toggleRowAction(),
                 EditAction::make(),
             ])
             ->toolbarActions([
@@ -659,7 +661,11 @@ class ProductsTable
                                 ->send();
                         })
                         ->deselectRecordsAfterCompletion(),
-                    DeleteBulkAction::make(),
+                    ProductPublishActions::bulkUnpublishAction(),
+                    ProductPublishActions::bulkPublishAction(),
+                    DeleteBulkAction::make()
+                        ->modalHeading('Delete selected products?')
+                        ->modalDescription('This permanently deletes the selected product(s) and all of their variants. This cannot be undone. Consider disabling a product instead if you only want to hide it from your website.'),
                 ]),
             ]);
     }

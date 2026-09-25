@@ -244,7 +244,8 @@ class ProductForm
         $name = e($asset->display_name);
 
         return new HtmlString(<<<HTML
-            <img src="{$url}" alt="{$name}" title="{$name}" style="width:3.5rem;height:3.5rem;border-radius:0.5rem;object-fit:cover" />
+            <img src="{$url}" alt="{$name}" title="{$name}" style="width:3.5rem;height:3.5rem;border-radius:0.5rem;object-fit:cover;display:block" />
+            <span class="media-badge-name">{$name}</span>
         HTML);
     }
 }

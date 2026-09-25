@@ -54,6 +54,7 @@ class AdminPanelProvider extends PanelProvider
             ->authGuard('admin')
             ->sidebarCollapsibleOnDesktop()
             ->userMenu(position: UserMenuPosition::Topbar)
+            ->unsavedChangesAlerts()
             ->maxContentWidth(Width::Full)
             ->colors([
                 'primary' => Color::Red,
