@@ -8,12 +8,14 @@ use App\Filament\Resources\StandardShippingRates\Pages\ListStandardShippingRates
 use App\Models\StandardShippingRate;
 use App\Support\AdminStorefront;
 use BackedEnum;
+use Closure;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -77,7 +79,46 @@ class StandardShippingRateResource extends Resource
                 ->prefix('$')
                 ->minValue(0)
                 ->step(0.01)
-                ->required(),
+                ->required()
+                ->rules([
+                    static function (Get $get, ?StandardShippingRate $record): Closure {
+                        return static function (string $attribute, mixed $value, Closure $fail) use ($get, $record): void {
+                            $max = $get('max_order_amount');
+
+                            if (is_numeric($max) && (float) $max < (float) $value) {
+                                $fail('Maximum order amount must be greater than or equal to the minimum amount.');
+
+                                return;
+                            }
+
+                            if ($get('is_active') === false) {
+                                return;
+                            }
+
+                            $country = $get('country');
+
+                            if (! filled($country)) {
+                                return;
+                            }
+
+                            $channel = $get('sales_channel') ?? 'wholesale';
+                            $max ??= $value;
+
+                            $overlap = StandardShippingRate::query()
+                                ->where('sales_channel', $channel)
+                                ->where('country', $country)
+                                ->where('is_active', true)
+                                ->when($record, fn ($query) => $query->whereKeyNot($record->getKey()))
+                                ->where('min_order_amount', '<=', (float) $max)
+                                ->where('max_order_amount', '>=', (float) $value)
+                                ->exists();
+
+                            if ($overlap) {
+                                $fail('This amount range overlaps another active rate for the selected website and country.');
+                            }
+                        };
+                    },
+                ]),
             TextInput::make('max_order_amount')
                 ->label('Maximum order amount')
                 ->numeric()
@@ -100,7 +141,7 @@ class StandardShippingRateResource extends Resource
     {
         return $table
             ->striped()
-            ->defaultSort('country')
+            ->defaultSort('min_order_amount', 'asc')
             ->columns([
                 TextColumn::make('sales_channel')
                     ->label('Website')
