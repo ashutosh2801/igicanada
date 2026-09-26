@@ -1,7 +1,7 @@
 <style>
     .shipping-rate-headings {
         display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 1.5rem;
         padding: 0 1.5rem;
         font-size: 0.75rem;

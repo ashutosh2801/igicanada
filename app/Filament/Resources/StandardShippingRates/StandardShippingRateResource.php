@@ -25,6 +25,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
+use function Filament\Support\original_request;
+
 class StandardShippingRateResource extends Resource
 {
     protected static ?string $model = StandardShippingRate::class;
@@ -40,6 +42,15 @@ class StandardShippingRateResource extends Resource
     protected static ?string $modelLabel = 'standard shipping charge';
 
     protected static ?string $pluralModelLabel = 'Standard shipping charges';
+
+    /** @return array<string, string> */
+    public static function countries(): array
+    {
+        return [
+            'CA' => 'Canada',
+            'US' => 'USA',
+        ];
+    }
 
     public static function getEloquentQuery(): Builder
     {
@@ -65,9 +76,10 @@ class StandardShippingRateResource extends Resource
                     default => 'wholesale',
                 }),
             Select::make('country')
-                ->options(['CA' => 'Canada', 'US' => 'USA'])
+                ->options(static::countries())
                 ->required()
-                ->native(false),
+                ->native(false)
+                ->default(static fn (): ?string => static::requestedCountry()),
             TextInput::make('name')
                 ->label('Slab label')
                 ->placeholder('Up to $100')
@@ -152,10 +164,6 @@ class StandardShippingRateResource extends Resource
                         default => 'IGI Canada',
                     })
                     ->visible(fn (): bool => AdminStorefront::current() === 'all'),
-                TextColumn::make('country')
-                    ->formatStateUsing(fn (string $state): string => $state === 'CA' ? 'Canada' : 'USA')
-                    ->badge()
-                    ->sortable(),
                 TextColumn::make('name')->label('Slab')->searchable(),
                 TextColumn::make('min_order_amount')->label('Minimum')->money('CAD')->sortable(),
                 TextColumn::make('max_order_amount')->label('Maximum')->money('CAD')->sortable(),
@@ -168,7 +176,6 @@ class StandardShippingRateResource extends Resource
                     'retail' => 'Leather Wallets',
                     'walletsandbelts' => 'Wallets and Belts',
                 ])->visible(fn (): bool => AdminStorefront::current() === 'all'),
-                SelectFilter::make('country')->options(['CA' => 'Canada', 'US' => 'USA']),
             ])
             ->recordActions([EditAction::make(), DeleteAction::make()]);
     }
@@ -180,5 +187,12 @@ class StandardShippingRateResource extends Resource
             'create' => CreateStandardShippingRate::route('/create'),
             'edit' => EditStandardShippingRate::route('/{record}/edit'),
         ];
+    }
+
+    protected static function requestedCountry(): ?string
+    {
+        $country = strtoupper(trim((string) original_request()->query('country')));
+
+        return array_key_exists($country, static::countries()) ? $country : null;
     }
 }

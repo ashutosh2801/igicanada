@@ -26,6 +26,15 @@ class StandardShippingCreatePageTest extends TestCase
         return $admin;
     }
 
+    public function test_create_page_preselects_the_country_carried_over_from_the_list_tab(): void
+    {
+        $this->admin();
+
+        Livewire::withQueryParams(['country' => 'US'])
+            ->test(CreateStandardShippingRate::class)
+            ->assertSchemaStateSet(['country' => 'US']);
+    }
+
     public function test_create_page_rejects_an_overlapping_slab_with_an_inline_error(): void
     {
         $this->admin();

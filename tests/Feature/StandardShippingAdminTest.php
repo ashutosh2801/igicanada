@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\StandardShippingRates\Pages\ListStandardShippingRates;
+use App\Models\StandardShippingRate;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +28,7 @@ class StandardShippingAdminTest extends TestCase
             ->assertSee('Bulk edit charges');
     }
 
-    public function test_bulk_editor_contains_only_rates_matching_the_country_filter(): void
+    public function test_bulk_editor_contains_only_rates_matching_the_active_country_tab(): void
     {
         $admin = User::factory()->create([
             'account_type' => 'admin',
@@ -37,7 +38,7 @@ class StandardShippingAdminTest extends TestCase
         $this->actingAs($admin, 'admin');
 
         Livewire::test(ListStandardShippingRates::class)
-            ->filterTable('country', 'CA')
+            ->set('activeTab', 'CA')
             ->mountAction('bulkEdit')
             ->assertActionDataSet(function (array $data): array {
                 $rates = collect($data['rates']);
@@ -47,5 +48,34 @@ class StandardShippingAdminTest extends TestCase
 
                 return [];
             });
+    }
+
+    public function test_list_page_separates_rates_into_country_tabs(): void
+    {
+        $admin = User::factory()->create([
+            'account_type' => 'admin',
+            'approval_status' => 'approved',
+        ]);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        $this->actingAs($admin, 'admin');
+
+        Livewire::test(ListStandardShippingRates::class)
+            ->set('tableRecordsPerPage', 50)
+            ->assertSet('activeTab', 'CA')
+            ->assertSee('Canada')
+            ->assertSee('USA')
+            ->assertCanSeeTableRecords(
+                StandardShippingRate::query()->where('country', 'CA')->get(),
+            )
+            ->assertCanNotSeeTableRecords(
+                StandardShippingRate::query()->where('country', 'US')->get(),
+            )
+            ->set('activeTab', 'US')
+            ->assertCanSeeTableRecords(
+                StandardShippingRate::query()->where('country', 'US')->get(),
+            )
+            ->assertCanNotSeeTableRecords(
+                StandardShippingRate::query()->where('country', 'CA')->get(),
+            );
     }
 }
