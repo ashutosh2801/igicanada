@@ -196,6 +196,18 @@ class ProductsTable
                     ])
                     ->visible(fn (): bool => AdminStorefront::current() === 'all'),
                 TernaryFilter::make('is_active'),
+                TernaryFilter::make('has_image')
+                    ->label('Has image')
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->where(fn (Builder $query): Builder => $query
+                            ->whereNotNull('primary_image_path')
+                            ->orWhereNotNull('primary_media_asset_id')
+                            ->orWhereHas('images')),
+                        false: fn (Builder $query): Builder => $query->where(fn (Builder $query): Builder => $query
+                            ->whereNull('primary_image_path')
+                            ->whereNull('primary_media_asset_id')
+                            ->whereDoesntHave('images')),
+                    ),
                 SelectFilter::make('categories')
                     ->label('Category')
                     ->relationship('categories', 'name')

@@ -8,7 +8,6 @@ use App\Support\AdminStorefront;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -80,11 +79,6 @@ class CategoriesTable
                         TextInput::make('value')->label('Name')->placeholder('Search by name…'),
                     ])
                     ->query(fn (Builder $query, array $data): Builder => blank($data['value'] ?? null) ? $query : $query->where('name', 'like', '%'.$data['value'].'%')),
-                Filter::make('slug')
-                    ->schema([
-                        TextInput::make('value')->label('Slug')->placeholder('Search by slug…'),
-                    ])
-                    ->query(fn (Builder $query, array $data): Builder => blank($data['value'] ?? null) ? $query : $query->where('slug', 'like', '%'.$data['value'].'%')),
                 SelectFilter::make('parent')
                     ->label('Parent / submenu')
                     ->options(function (): array {
@@ -163,55 +157,6 @@ class CategoriesTable
                         return $query;
                     }),
                 TernaryFilter::make('is_active'),
-                Filter::make('created_at')
-                    ->label('Created date')
-                    ->schema([
-                        DatePicker::make('from')->label('From'),
-                        DatePicker::make('until')->label('Until'),
-                    ])
-                    ->columns(2)
-                    ->query(function (Builder $query, array $data): Builder {
-                        if (filled($data['from'] ?? null)) {
-                            $query->whereDate('created_at', '>=', $data['from']);
-                        }
-
-                        if (filled($data['until'] ?? null)) {
-                            $query->whereDate('created_at', '<=', $data['until']);
-                        }
-
-                        return $query;
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $indicators = [];
-
-                        if (filled($data['from'] ?? null)) {
-                            $indicators[] = 'Created from '.$data['from'];
-                        }
-
-                        if (filled($data['until'] ?? null)) {
-                            $indicators[] = 'Created until '.$data['until'];
-                        }
-
-                        return $indicators;
-                    }),
-                Filter::make('updated_at')
-                    ->label('Updated date')
-                    ->schema([
-                        DatePicker::make('from')->label('From'),
-                        DatePicker::make('until')->label('Until'),
-                    ])
-                    ->columns(2)
-                    ->query(function (Builder $query, array $data): Builder {
-                        if (filled($data['from'] ?? null)) {
-                            $query->whereDate('updated_at', '>=', $data['from']);
-                        }
-
-                        if (filled($data['until'] ?? null)) {
-                            $query->whereDate('updated_at', '<=', $data['until']);
-                        }
-
-                        return $query;
-                    }),
             ])
             ->recordActions([
                 EditAction::make(),
