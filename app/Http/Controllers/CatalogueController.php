@@ -50,7 +50,8 @@ class CatalogueController extends Controller
             }))
             ->when($category !== '', fn ($query) => $query->whereHas('categories', fn ($query) => $query->where('slug', $category)))
             ->when($scope !== null, $scope)
-            ->orderBy('name')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate(24)
             ->withQueryString()
             ->through(fn (Product $product) => $this->productCard($product, $canViewPricing, $discount));

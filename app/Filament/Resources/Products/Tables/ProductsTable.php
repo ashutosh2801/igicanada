@@ -63,6 +63,7 @@ class ProductsTable
                 return $query->withSum(['variants as available_stock_quantity' => fn (Builder $query): Builder => $query
                     ->where('is_active', true)], 'stock_quantity');
             })
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('sku')
                     ->label('SKU')

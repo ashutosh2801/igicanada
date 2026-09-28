@@ -24,7 +24,8 @@ class CatalogueController extends Controller
                     ->orWhere('sku', 'like', "%{$search}%");
             }))
             ->when($category !== '', fn ($query) => $query->whereHas('categories', fn ($query) => $query->where('slug', $category)))
-            ->orderBy('name')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate(24)
             ->withQueryString()
             ->through(fn (Product $product): array => $this->card($product));
