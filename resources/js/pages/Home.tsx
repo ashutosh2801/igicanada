@@ -76,7 +76,7 @@ export default function Home({ homepage, categories, newArrivals, catalogue, pri
                         {categories.map(category => (
                             <Link key={category.slug} href="/catalogue" data={{ category: category.slug }} className="group overflow-hidden rounded-[1.5rem] bg-white shadow-sm ring-1 ring-stone-900/10 transition hover:-translate-y-1 hover:shadow-xl">
                                 <div className="aspect-[4/3] overflow-hidden bg-stone-100">
-                                    {category.image ? <img src={category.image} alt={category.name} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-xs font-bold tracking-widest text-stone-400 uppercase">Category image</div>}
+                                    {category.image ? <img src={category.image} alt={category.name} loading="lazy" className="h-full w-full object-contain object-center p-4 transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-xs font-bold tracking-widest text-stone-400 uppercase">Category image</div>}
                                 </div>
                                 <div className="p-6">
                                     <p className="text-xs font-bold tracking-[0.15em] text-amber-800 uppercase">{category.products} products</p>

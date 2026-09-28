@@ -51,7 +51,11 @@ class HomeController extends Controller
         $categories = Category::query()
             ->visibleForChannel('retail')
             ->where('is_active', true)
-            ->when($featuredCategoryIds->isNotEmpty(), fn ($query) => $query->whereIn('id', $featuredCategoryIds))
+            ->when(
+                $featuredCategoryIds->isNotEmpty(),
+                fn ($query) => $query->whereIn('id', $featuredCategoryIds),
+                fn ($query) => $query->where('is_featured', true),
+            )
             ->whereHas('products', fn ($query) => $query
                 ->where('is_active', true)
                 ->whereIn('visibility', ['retail', 'both'])

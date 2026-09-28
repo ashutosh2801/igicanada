@@ -86,6 +86,10 @@ class CategoryForm
                     ->numeric()
                     ->helperText('Lower numbers appear first within the same menu level.')
                     ->default(0),
+                Toggle::make('is_featured')
+                    ->label('Show on homepage')
+                    ->helperText('Feature this category in the homepage category section. Drag-and-drop the row on the categories list to set its display order (Menu order).')
+                    ->default(false),
                 Toggle::make('is_active')
                     ->default(true),
             ]);

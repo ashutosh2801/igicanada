@@ -31,7 +31,7 @@ class StorefrontHomepageTest extends TestCase
             'sort_order' => 5,
             'is_active' => true,
         ]);
-        $category = Category::create(['name' => 'Wallets', 'slug' => 'wallets', 'is_active' => true]);
+        $category = Category::create(['name' => 'Wallets', 'slug' => 'wallets', 'is_active' => true, 'is_featured' => true]);
         $product = Product::create([
             'name' => 'Wholesale Wallet',
             'slug' => 'wholesale-wallet',

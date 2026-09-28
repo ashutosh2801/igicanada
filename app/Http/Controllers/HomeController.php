@@ -26,7 +26,11 @@ class HomeController extends Controller
             ->whereHas('products', fn ($query) => $query
                 ->where('is_active', true)
                 ->whereIn('visibility', ['wholesale', 'both']))
-            ->when($featuredIds->isNotEmpty(), fn ($query) => $query->whereIn('id', $featuredIds))
+            ->when(
+                $featuredIds->isNotEmpty(),
+                fn ($query) => $query->whereIn('id', $featuredIds),
+                fn ($query) => $query->where('is_featured', true),
+            )
             ->withCount(['products' => fn ($query) => $query
                 ->where('is_active', true)
                 ->whereIn('visibility', ['wholesale', 'both'])])
