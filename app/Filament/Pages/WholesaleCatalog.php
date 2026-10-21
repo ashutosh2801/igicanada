@@ -59,7 +59,12 @@ class WholesaleCatalog extends Page
                 DatePicker::make('catalog_date')->label('Catalog date')->required()->native(false),
                 Select::make('category_id')
                     ->label('Limit to category')
-                    ->options(fn (): array => Category::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
+                    ->options(fn (): array => Category::query()
+                        ->where('is_active', true)
+                        ->orderBy('name')
+                        ->get(['id', 'name'])
+                        ->mapWithKeys(fn (Category $category): array => [(string) $category->id => $this->safeUtf8($category->name)])
+                        ->all())
                     ->searchable()
                     ->native(false)
                     ->live()
@@ -143,7 +148,11 @@ class WholesaleCatalog extends Page
     /** @return array<int|string, string> */
     private function wholesaleProductOptions(?string $categoryId): array
     {
-        return $this->wholesaleProductQuery($categoryId)->orderBy('name')->pluck('name', 'id')->all();
+        return $this->wholesaleProductQuery($categoryId)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->mapWithKeys(fn (Product $product): array => [(string) $product->id => $this->safeUtf8($product->name)])
+            ->all();
     }
 
     private function wholesaleProductQuery(?string $categoryId): \Illuminate\Database\Eloquent\Builder
@@ -153,5 +162,16 @@ class WholesaleCatalog extends Page
             ->whereIn('visibility', ['wholesale', 'both'])
             ->whereHas('variants', fn ($query) => $query->where('is_active', true)->where('is_available_wholesale', true))
             ->when(filled($categoryId), fn ($query) => $query->whereHas('categories', fn ($categories) => $categories->whereKey($categoryId)));
+    }
+
+    private function safeUtf8(?string $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        $clean = @iconv('UTF-8', 'UTF-8//IGNORE', $value);
+
+        return is_string($clean) ? $clean : '';
     }
 }
