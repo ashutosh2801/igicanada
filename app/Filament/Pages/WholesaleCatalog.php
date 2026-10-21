@@ -16,6 +16,8 @@ use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
@@ -55,8 +57,23 @@ class WholesaleCatalog extends Page
         return $schema->components([
             Section::make('Catalog settings')->description('Generate a dated PDF for selected wholesale products.')->schema([
                 DatePicker::make('catalog_date')->label('Catalog date')->required()->native(false),
-                Select::make('category_id')->label('Limit to category')->options(fn (): array => Category::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())->searchable()->native(false),
-                Select::make('product_ids')->label('Products')->options(fn (): array => Product::query()->where('is_active', true)->whereIn('visibility', ['wholesale', 'both'])->orderBy('name')->pluck('name', 'id')->all())->multiple()->searchable()->preload()->required()->helperText('All active wholesale products are selected by default. Remove products here when creating a smaller catalog.'),
+                Select::make('category_id')
+                    ->label('Limit to category')
+                    ->options(fn (): array => Category::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
+                    ->searchable()
+                    ->native(false)
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, ?string $state): void {
+                        $set('product_ids', $this->wholesaleProductIds($state));
+                    }),
+                Select::make('product_ids')
+                    ->label('Products')
+                    ->options(fn (Get $get): array => $this->wholesaleProductOptions($get('category_id')))
+                    ->multiple()
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->helperText('Selecting a category limits this list to products in that category. Remove products here when creating a smaller catalog.'),
                 Toggle::make('show_prices')->label('Show wholesale prices')->default(true),
                 Toggle::make('show_stock')->label('Show stock quantities')->default(false),
             ])->columns(2)->columnSpanFull(),
@@ -115,5 +132,26 @@ class WholesaleCatalog extends Page
         ])->setPaper('letter');
 
         return $pdf->download('IGI-Canada-Wholesale-Catalog-'.$date->format('Y-m-d').'.pdf');
+    }
+
+    /** @return array<int, int> */
+    private function wholesaleProductIds(?string $categoryId): array
+    {
+        return $this->wholesaleProductQuery($categoryId)->pluck('id')->all();
+    }
+
+    /** @return array<int|string, string> */
+    private function wholesaleProductOptions(?string $categoryId): array
+    {
+        return $this->wholesaleProductQuery($categoryId)->orderBy('name')->pluck('name', 'id')->all();
+    }
+
+    private function wholesaleProductQuery(?string $categoryId): \Illuminate\Database\Eloquent\Builder
+    {
+        return Product::query()
+            ->where('is_active', true)
+            ->whereIn('visibility', ['wholesale', 'both'])
+            ->whereHas('variants', fn ($query) => $query->where('is_active', true)->where('is_available_wholesale', true))
+            ->when(filled($categoryId), fn ($query) => $query->whereHas('categories', fn ($categories) => $categories->whereKey($categoryId)));
     }
 }
