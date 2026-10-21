@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\Pages\Login;
 use App\Filament\Pages\StorefrontBranding;
+use App\Filament\Pages\CustomerEmail;
 use App\Filament\Pages\WholesaleCatalog;
 use App\Filament\Resources\Categories\CategoryResource;
 use App\Filament\Resources\ContactEnquiries\ContactEnquiryResource;
@@ -88,7 +89,10 @@ class AdminPanelProvider extends PanelProvider
                         ...OrderResource::getNavigationItems(),
                         ...StandardShippingRateResource::getNavigationItems(),
                     ])))
-                    ->group($directGroup(UserResource::getNavigationItems()))
+                    ->group($directGroup([
+                        ...UserResource::getNavigationItems(),
+                        ...CustomerEmail::getNavigationItems(),
+                    ]))
                     ->group($directGroup([
                         ...ContactEnquiryResource::getNavigationItems(),
                         ...WishlistRequestResource::getNavigationItems(),

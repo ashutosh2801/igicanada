@@ -6,7 +6,6 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Support\AdminStorefront;
 use BackedEnum;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -21,7 +20,9 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
+use Illuminate\Http\RedirectResponse;
 use UnitEnum;
 
 class WholesaleCatalog extends Page
@@ -79,8 +80,14 @@ class WholesaleCatalog extends Page
                     ->preload()
                     ->required()
                     ->helperText('Selecting a category limits this list to products in that category. Remove products here when creating a smaller catalog.'),
-                Toggle::make('show_prices')->label('Show wholesale prices')->default(true),
-                Toggle::make('show_stock')->label('Show stock quantities')->default(false),
+                Section::make('Catalog details')
+                    ->description('Choose which commercial details appear in the downloaded PDF.')
+                    ->schema([
+                        Toggle::make('show_prices')->label('Show wholesale prices')->default(true),
+                        Toggle::make('show_stock')->label('Show stock quantities')->default(false),
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
             ])->columns(2)->columnSpanFull(),
         ])->statePath('data');
     }
@@ -96,47 +103,16 @@ class WholesaleCatalog extends Page
         ]);
     }
 
-    public function generate()
+    public function generate(): RedirectResponse
     {
         $data = $this->form->getState();
-        $query = Product::query()
-            ->where('is_active', true)
-            ->whereIn('visibility', ['wholesale', 'both'])
-            ->whereIn('id', $data['product_ids'])
-            ->with([
-                'primaryMedia:id,disk,path,alt_text',
-                'images:id,product_id,media_asset_id,path,alt_text,position',
-                'images.mediaAsset:id,disk,path,alt_text,title',
-                'variants' => fn ($query) => $query->where('is_active', true)->where('is_available_wholesale', true)->orderBy('id'),
-            ])
-            ->orderBy('name');
+        $token = Str::random(48);
+        Cache::put('wholesale-catalog-download:'.$token, $data, now()->addMinutes(10));
 
-        if (filled($data['category_id'])) {
-            $query->whereHas('categories', fn ($categories) => $categories->whereKey($data['category_id']));
-        }
-
-        $products = $query->get()->map(function (Product $product): array {
-            $images = collect([$product->primaryImageUrl(), ...$product->images->map->url()->all()])
-                ->filter()
-                ->unique()
-                ->take(2)
-                ->values();
-
-            return ['product' => $product, 'images' => $images];
-        });
-
-        abort_if($products->isEmpty(), 422, 'Select at least one wholesale product.');
-
-        $date = Carbon::parse($data['catalog_date']);
-        $pdf = Pdf::setOption(['isRemoteEnabled' => true])->loadView('pdf.wholesale-catalog', [
-            'products' => $products,
-            'catalogDate' => $date,
-            'showPrices' => (bool) $data['show_prices'],
-            'showStock' => (bool) $data['show_stock'],
-            'company' => config('commerce.company'),
-        ])->setPaper('letter');
-
-        return $pdf->download('IGI-Canada-Wholesale-Catalog-'.$date->format('Y-m-d').'.pdf');
+        // The PDF must be downloaded by a normal HTTP response. Returning binary
+        // PDF content directly from this Livewire action makes Livewire try to
+        // JSON-encode it, which causes a malformed UTF-8 error.
+        return redirect()->route('admin.wholesale-catalog.download', ['token' => $token]);
     }
 
     /** @return array<int, int> */

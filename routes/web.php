@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\Admin\StorefrontSelectionController;
+use App\Http\Controllers\Admin\WholesaleCatalogController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\ResellerApplicationController;
@@ -31,6 +32,13 @@ use App\Http\Controllers\WishlistRequestController;
 use App\Support\StorefrontContext;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+Route::domain(config('storefronts.admin_domain'))
+    ->middleware('auth:admin')
+    ->group(function (): void {
+        Route::get('/admin/wholesale-catalog/download/{token}', [WholesaleCatalogController::class, 'download'])
+            ->name('admin.wholesale-catalog.download');
+    });
 
 Route::domain(config('storefronts.admin_domain'))
     ->prefix('admin/storefront')
