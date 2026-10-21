@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\Pages\Login;
 use App\Filament\Pages\StorefrontBranding;
+use App\Filament\Pages\WholesaleCatalog;
 use App\Filament\Resources\Categories\CategoryResource;
 use App\Filament\Resources\ContactEnquiries\ContactEnquiryResource;
 use App\Filament\Resources\ContentPages\ContentPageResource;
@@ -19,6 +20,7 @@ use App\Filament\Resources\Products\ProductResource;
 use App\Filament\Resources\StandardShippingRates\Pages\ListStandardShippingRates;
 use App\Filament\Resources\StandardShippingRates\StandardShippingRateResource;
 use App\Filament\Resources\Users\UserResource;
+use App\Filament\Resources\WishlistRequests\WishlistRequestResource;
 use App\Http\Middleware\EnsureAdminStorefrontSelected;
 use Filament\Enums\UserMenuPosition;
 use Filament\Http\Middleware\Authenticate;
@@ -82,11 +84,15 @@ class AdminPanelProvider extends PanelProvider
                     ->group($directGroup(Dashboard::getNavigationItems()))
                     ->group(NavigationGroup::make('Catalog')->icon(Heroicon::OutlinedRectangleStack)->collapsible()->items($groupItems([
                         ...ProductResource::getNavigationItems(),
+                        ...WholesaleCatalog::getNavigationItems(),
                         ...OrderResource::getNavigationItems(),
                         ...StandardShippingRateResource::getNavigationItems(),
                     ])))
                     ->group($directGroup(UserResource::getNavigationItems()))
-                    ->group($directGroup(ContactEnquiryResource::getNavigationItems()))
+                    ->group($directGroup([
+                        ...ContactEnquiryResource::getNavigationItems(),
+                        ...WishlistRequestResource::getNavigationItems(),
+                    ]))
                     ->group($directGroup(ContentPageResource::getNavigationItems()))
                     ->group(NavigationGroup::make('Appearance')->icon(Heroicon::OutlinedPaintBrush)->collapsible()->items($groupItems([
                         ...CategoryResource::getNavigationItems(),

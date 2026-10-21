@@ -2,6 +2,7 @@ import RetailShell from '../../components/RetailShell';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import SeoHead, { type BreadcrumbItem } from '@/components/SeoHead';
 import { flyToCart } from '@/lib/flyToCart';
+import WishlistButton from '@/components/WishlistButton';
 import { groupVariants, sizeKeyOf } from '@/lib/variantOptions';
 import { Link, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -160,7 +161,10 @@ export default function ProductShow({ product }: Props) {
                             <button type="button" onClick={addToBag} disabled={!selected.inStock || !selected.price || form.processing} className="flex-1 rounded-full bg-leather-900 px-6 py-3 font-bold text-white transition hover:bg-leather-700 disabled:cursor-not-allowed disabled:opacity-50">{!selected.price ? 'Price coming soon' : (selected.inStock ? (form.processing ? 'Adding…' : 'Add to bag') : 'Sold out')}</button>
                         </div>
                         {form.errors.quantity && <p className="mt-3 text-sm font-bold text-red-700">{form.errors.quantity}</p>}
-                        <p className="mt-4 text-xs text-stone-500">{selected.inStock ? `${selected.stockQuantity} available` : 'Currently unavailable'} · Secure checkout</p>
+                        <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-stone-500">
+                            <span>{selected.inStock ? `${selected.stockQuantity} available` : 'Currently unavailable'} · Secure checkout</span>
+                            {!selected.inStock && <WishlistButton variantId={selected.id} channel="retail" />}
+                        </div>
 
                         {product.description && <div className="prose prose-stone mt-10 border-t border-leather-900/10 pt-8 leading-7 text-stone-600" dangerouslySetInnerHTML={{ __html: product.description }} />}
                     </section>

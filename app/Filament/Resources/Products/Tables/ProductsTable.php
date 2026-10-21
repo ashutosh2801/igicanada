@@ -60,7 +60,9 @@ class ProductsTable
                             ->where('is_active', true)], 'wholesale_price');
                 }
 
-                return $query->withSum(['variants as available_stock_quantity' => fn (Builder $query): Builder => $query
+                return $query
+                    ->with(['images' => fn ($query) => $query->with('mediaAsset')])
+                    ->withSum(['variants as available_stock_quantity' => fn (Builder $query): Builder => $query
                     ->where('is_active', true)], 'stock_quantity');
             })
             ->defaultSort('created_at', 'desc')
@@ -71,9 +73,10 @@ class ProductsTable
                     ->toggleable(),
                 DirectImageColumn::make('primary_image_url')
                     ->label('Image')
-                    ->state(fn (Product $record): ?string => $record->primaryImageUrl())
+                    ->state(fn (Product $record): ?string => $record->primaryImageUrl() ?: $record->images->first()?->url())
                     ->square()
                     ->imageSize(56)
+                    ->extraImgAttributes(['class' => 'object-contain'])
                     ->checkFileExistence(false)
                     ->toggleable(),
                 TextColumn::make('name')

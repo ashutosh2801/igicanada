@@ -181,11 +181,12 @@ class ProductForm
                                 Select::make('sizes')
                                     ->label('Available sizes')
                                     ->multiple()
+                                    ->reorderable()
                                     ->searchable()
                                     ->preload()
                                     ->native(false)
                                     ->options(self::sizeOptions())
-                                    ->helperText('Select one or more sizes. Each selection appears here immediately.'),
+                                    ->helperText('Select sizes for this colour, then drag the selected size chips into the order customers should see.'),
                                 TextInput::make('wholesale_price')->numeric()->prefix('$')
                                     ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                                     ->dehydratedWhenHidden(),

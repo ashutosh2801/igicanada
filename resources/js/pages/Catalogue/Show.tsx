@@ -2,6 +2,7 @@ import PublicShell from '@/components/PublicShell';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import SeoHead, { type BreadcrumbItem } from '@/components/SeoHead';
 import { flyToCart } from '@/lib/flyToCart';
+import WishlistButton from '@/components/WishlistButton';
 import { groupVariants, sizeKeyOf } from '@/lib/variantOptions';
 import { Link, router } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -243,7 +244,10 @@ export default function Show({ product, pricing, similarProducts }: Props) {
                                             <div className="mt-6">
                                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                                     <p className="text-sm font-bold tracking-wide text-stone-500">Size</p>
-                                                    <p className="text-sm text-stone-500">{selected.inStock ? (pricing.authorized ? selected.stockQuantity + ' available' : 'In stock') : 'Out of stock'} · Min. {selected.minimumQuantity}</p>
+                                                    <div className="flex flex-wrap items-center gap-3 text-sm text-stone-500">
+                                                        <span>{selected.inStock ? (pricing.authorized ? selected.stockQuantity + ' available' : 'In stock') : 'Out of stock'} · Min. {selected.minimumQuantity}</span>
+                                                        {!selected.inStock && <WishlistButton variantId={selected.id} channel="wholesale" />}
+                                                    </div>
                                                 </div>
                                                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                                                     {(activeGroup?.variants ?? []).map(variant => {
@@ -346,7 +350,10 @@ function VariantRow({ variant, pricingAuthorized }: { variant: Variant; pricingA
                         {variant.sizes.map((size) => <span key={size} className="rounded-md bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-700 ring-1 ring-stone-200">{size}</span>)}
                     </div>
                 )}
-                <p className="mt-1 text-sm text-stone-500">{variant.inStock ? (pricingAuthorized ? variant.stockQuantity + ' available' : 'In stock') : 'Out of stock'} · Min. {variant.minimumQuantity}</p>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-stone-500">
+                    <span>{variant.inStock ? (pricingAuthorized ? variant.stockQuantity + ' available' : 'In stock') : 'Out of stock'} · Min. {variant.minimumQuantity}</span>
+                    {!variant.inStock && <WishlistButton variantId={variant.id} channel="wholesale" />}
+                </div>
             </div>
             {pricingAuthorized && (
                 <div className="sm:text-right">
