@@ -50,6 +50,7 @@ class CustomerEmail extends Page
                     ->label('Website')
                     ->options(['wholesale' => 'IGI Canada wholesale', 'retail' => 'Leather Wallets retail'])
                     ->visible(fn (): bool => AdminStorefront::current() === 'all')
+                    ->dehydratedWhenHidden()
                     ->live()
                     ->afterStateUpdated(function (Set $set): void {
                         $set('user_ids', []);
@@ -92,7 +93,7 @@ class CustomerEmail extends Page
     public function send(): void
     {
         $data = $this->form->getState();
-        $channel = (string) $data['sales_channel'];
+        $channel = (string) ($data['sales_channel'] ?? $this->defaultChannel());
         $template = EmailTemplate::query()
             ->active()
             ->forChannel($channel)
