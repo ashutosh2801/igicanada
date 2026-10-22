@@ -557,7 +557,7 @@ class ProductsTable
                                         ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                                         ->dehydratedWhenHidden(),
                                     TextInput::make('wholesale_compare_at_price')
-                                        ->label('Wholesale original price')
+                                        ->label('Base W/S price')
                                         ->numeric()
                                         ->prefix('$')
                                         ->minValue(0.01)
