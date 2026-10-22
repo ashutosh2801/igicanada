@@ -32,7 +32,7 @@ class ProductImage extends Model
 
     public function url(): ?string
     {
-        if ($this->mediaAsset) {
+        if ($this->mediaAsset?->isAvailable()) {
             return $this->mediaAsset->url();
         }
 

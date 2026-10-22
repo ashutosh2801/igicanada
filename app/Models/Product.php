@@ -59,7 +59,7 @@ class Product extends Model
 
     public function primaryImageUrl(): ?string
     {
-        if ($this->primaryMedia) {
+        if ($this->primaryMedia?->isAvailable()) {
             return $this->primaryMedia->url();
         }
 

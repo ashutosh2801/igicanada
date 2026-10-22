@@ -68,6 +68,19 @@ class MediaAsset extends Model
         return Storage::disk($this->disk)->url($this->path);
     }
 
+    public function isAvailable(): bool
+    {
+        if (StorefrontAsset::directUrl($this->path)) {
+            return true;
+        }
+
+        if ($this->disk === 'public') {
+            return Storage::disk('public')->exists($this->path);
+        }
+
+        return true;
+    }
+
     public function getPreviewUrlAttribute(): string
     {
         return $this->url();
