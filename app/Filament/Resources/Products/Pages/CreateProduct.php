@@ -12,6 +12,9 @@ class CreateProduct extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['published_at'] ??= now();
+        $data['visibility'] = filled($data['visibility'] ?? null)
+            ? $data['visibility']
+            : 'both';
 
         return $data;
     }

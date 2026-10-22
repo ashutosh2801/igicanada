@@ -552,7 +552,7 @@ class ProductsTable
                                         ->label('Wholesale price')
                                         ->numeric()
                                         ->prefix('$')
-                                        ->minValue(0)
+                                        ->minValue(0.01)
                                         ->step('any')
                                         ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                                         ->dehydratedWhenHidden(),
@@ -560,7 +560,7 @@ class ProductsTable
                                         ->label('Wholesale original price')
                                         ->numeric()
                                         ->prefix('$')
-                                        ->minValue(0)
+                                        ->minValue(0.01)
                                         ->step('any')
                                         ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                                         ->dehydratedWhenHidden(),
@@ -579,7 +579,7 @@ class ProductsTable
                                         ->label('Retail price')
                                         ->numeric()
                                         ->prefix('$')
-                                        ->minValue(0)
+                                        ->minValue(0.01)
                                         ->step('any')
                                         ->visible(fn (): bool => AdminStorefront::showsRetailFields())
                                         ->dehydratedWhenHidden(),
@@ -587,7 +587,7 @@ class ProductsTable
                                         ->label('Retail compare-at price')
                                         ->numeric()
                                         ->prefix('$')
-                                        ->minValue(0)
+                                        ->minValue(0.01)
                                         ->step('any')
                                         ->visible(fn (): bool => AdminStorefront::showsRetailFields())
                                         ->dehydratedWhenHidden(),

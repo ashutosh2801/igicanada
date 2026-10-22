@@ -36,7 +36,7 @@ class EditProduct extends EditRecord
     protected function getRedirectUrl(): ?string
     {
         return $this->closeAfterSave
-            ? ProductResource::getUrl('index')
+            ? ($this->previousUrl ?: ProductResource::getUrl('index'))
             : parent::getRedirectUrl();
     }
 

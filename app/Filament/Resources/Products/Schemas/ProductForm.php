@@ -189,13 +189,14 @@ class ProductForm
                                             ->columnSpan(1),
                                         Grid::make(1)
                                             ->schema([
-                                                TextInput::make('retail_price')->numeric()->prefix('$')
+                                                TextInput::make('retail_price')->numeric()->prefix('$')->minValue(0.01)
                                                     ->visible(fn (): bool => AdminStorefront::showsRetailFields())
                                                     ->dehydratedWhenHidden(),
                                                 TextInput::make('retail_compare_at_price')
                                                     ->label('Retail compare-at price')
                                                     ->numeric()
                                                     ->prefix('$')
+                                                    ->minValue(0.01)
                                                     ->visible(fn (): bool => AdminStorefront::showsRetailFields())
                                                     ->dehydratedWhenHidden(),
                                                 TextInput::make('stock_quantity')->numeric()->integer()->minValue(0)->default(0),
@@ -206,13 +207,14 @@ class ProductForm
                                                     ->minValue(0)
                                                     ->default(10)
                                                     ->helperText('Notify the admin when stock falls to or below this number.'),
-                                                TextInput::make('wholesale_price')->numeric()->prefix('$')
+                                                TextInput::make('wholesale_price')->numeric()->prefix('$')->minValue(0.01)
                                                     ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                                                     ->dehydratedWhenHidden(),
                                                 TextInput::make('wholesale_compare_at_price')
                                                     ->label('Wholesale original price')
                                                     ->numeric()
                                                     ->prefix('$')
+                                                    ->minValue(0.01)
                                                     ->helperText('Optional. Shown struck-through as the original price next to the sale price.')
                                                     ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                                                     ->dehydratedWhenHidden(),
