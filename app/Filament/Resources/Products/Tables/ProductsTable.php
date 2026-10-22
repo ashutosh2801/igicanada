@@ -76,7 +76,10 @@ class ProductsTable
                     ->state(fn (Product $record): ?string => $record->primaryImageUrl() ?: $record->images->first()?->url())
                     ->square()
                     ->imageSize(56)
-                    ->extraImgAttributes(['class' => 'object-contain'])
+                    ->extraImgAttributes([
+                        'class' => 'block rounded-md bg-white object-contain object-center p-1',
+                        'style' => 'width:56px;height:56px;object-fit:contain;object-position:center;',
+                    ])
                     ->checkFileExistence(false)
                     ->toggleable(),
                 TextColumn::make('name')

@@ -8,6 +8,7 @@ use App\Filament\Resources\EmailTemplates\Pages\ListEmailTemplates;
 use App\Models\EmailTemplate;
 use App\Support\AdminStorefront;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\RichEditor;
@@ -21,6 +22,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
@@ -86,7 +88,37 @@ class EmailTemplateResource extends Resource
                 SelectFilter::make('sales_channel')->label('Website')->options(EmailTemplate::channelOptions())
                     ->visible(fn (): bool => AdminStorefront::current() === 'all'),
             ])
-            ->recordActions([EditAction::make(), DeleteAction::make()]);
+            ->recordActions([
+                Action::make('copy')
+                    ->label('Copy')
+                    ->icon('heroicon-o-document-duplicate')
+                    ->requiresConfirmation()
+                    ->action(function (EmailTemplate $record): void {
+                        $baseName = trim((string) $record->name).'-copy';
+                        $name = substr($baseName, 0, 200);
+                        $suffix = 2;
+
+                        while (EmailTemplate::query()
+                            ->where('sales_channel', $record->sales_channel)
+                            ->where('name', $name)
+                            ->exists()) {
+                            $suffixText = '-'.$suffix++;
+                            $name = substr($baseName, 0, 200 - strlen($suffixText)).$suffixText;
+                        }
+
+                        $copy = $record->replicate();
+                        $copy->name = $name;
+                        $copy->save();
+
+                        Notification::make()
+                            ->title('Email template copied')
+                            ->body("Created {$name}.")
+                            ->success()
+                            ->send();
+                    }),
+                EditAction::make(),
+                DeleteAction::make(),
+            ]);
     }
 
     public static function getPages(): array

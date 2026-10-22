@@ -20,7 +20,9 @@ class EditProduct extends EditRecord
             $this->getSaveFormAction(),
             Action::make('saveAndClose')
                 ->label('Save and close')
-                ->submit('saveAndClose'),
+                ->action(function (): void {
+                    $this->saveAndClose();
+                }),
             $this->getCancelFormAction(),
         ];
     }
