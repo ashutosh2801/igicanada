@@ -11,6 +11,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Throwable;
 
 #[Signature('legacy:import-catalogue {--dry-run : Validate the source and show counts without writing} {--include-inactive : Import inactive catalogue records}')]
@@ -154,7 +155,7 @@ class ImportLegacyCatalogue extends Command
      */
     private function uniqueSlug(string $model, ?string $slug, int $legacyId): string
     {
-        $base = trim((string) $slug) ?: 'legacy-'.$legacyId;
+        $base = Str::slug(trim((string) $slug)) ?: 'legacy-'.$legacyId;
         $owner = $model::query()->where('slug', $base)->first();
 
         if (! $owner || (int) $owner->legacy_id === $legacyId) {

@@ -345,7 +345,6 @@ export default function Show({ product, pricing, similarProducts }: Props) {
                                                     <p className="text-sm font-bold tracking-wide text-stone-500">Size</p>
                                                     <div className="flex flex-wrap items-center gap-3 text-sm text-stone-500">
                                                         <span>{selected.inStock ? (pricing.authorized ? selected.stockQuantity + ' available' : 'In stock') : 'Out of stock'} · Min. {selected.minimumQuantity}</span>
-                                                        {!selected.inStock && <WishlistButton variantId={selected.id} channel="wholesale" />}
                                                     </div>
                                                 </div>
                                                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -367,14 +366,16 @@ export default function Show({ product, pricing, similarProducts }: Props) {
                                                         <p className="text-xl font-black">{'$' + selected.accountPrice + ' CAD'}</p>
                                                         {selected.compareAtPrice ? <p className="text-xl text-red-600 line-through">{'$' + selected.compareAtPrice}</p> : (selected.accountPrice !== selected.wholesalePrice && <p className="text-xl text-red-600 line-through">{'$' + selected.wholesalePrice}</p>)}
                                                     </div>
-                                                    <div className="flex flex-wrap items-end gap-3">
-                                                        <span className="flex overflow-hidden rounded-full ring-1 ring-stone-300">
-                                                            <button type="button" onClick={() => updateQuantity(quantity - 1)} disabled={!canOrder || quantity <= selected.minimumQuantity} aria-label="Decrease quantity" className="h-9 w-9 bg-stone-100 font-bold disabled:cursor-not-allowed disabled:text-stone-300">−</button>
-                                                            <input type="number" min={selected.minimumQuantity} max={maximumQuantity} value={quantity} onChange={(event) => updateQuantity(Number(event.target.value) || selected.minimumQuantity)} disabled={!canOrder} aria-label="Quantity" className="h-9 w-16 appearance-none border-x border-stone-200 bg-white text-center text-sm font-bold outline-none [appearance:textfield] disabled:bg-stone-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
-                                                            <button type="button" onClick={() => updateQuantity(quantity + 1)} disabled={!canOrder || quantity >= maximumQuantity} aria-label="Increase quantity" className="h-9 w-9 bg-stone-100 font-bold disabled:cursor-not-allowed disabled:text-stone-300">+</button>
-                                                        </span>
-                                                        <button type="button" disabled={!canOrder || isAdding} onClick={addToCart} className="h-9 rounded-full bg-stone-950 px-5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-stone-300">{isAdding ? 'Adding…' : 'Add to cart'}</button>
-                                                    </div>
+                                                    {selected.inStock ? (
+                                                        <div className="flex flex-wrap items-end gap-3">
+                                                            <span className="flex overflow-hidden rounded-full ring-1 ring-stone-300">
+                                                                <button type="button" onClick={() => updateQuantity(quantity - 1)} disabled={!canOrder || quantity <= selected.minimumQuantity} aria-label="Decrease quantity" className="h-9 w-9 bg-stone-100 font-bold disabled:cursor-not-allowed disabled:text-stone-300">−</button>
+                                                                <input type="number" min={selected.minimumQuantity} max={maximumQuantity} value={quantity} onChange={(event) => updateQuantity(Number(event.target.value) || selected.minimumQuantity)} disabled={!canOrder} aria-label="Quantity" className="h-9 w-16 appearance-none border-x border-stone-200 bg-white text-center text-sm font-bold outline-none [appearance:textfield] disabled:bg-stone-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                                                                <button type="button" onClick={() => updateQuantity(quantity + 1)} disabled={!canOrder || quantity >= maximumQuantity} aria-label="Increase quantity" className="h-9 w-9 bg-stone-100 font-bold disabled:cursor-not-allowed disabled:text-stone-300">+</button>
+                                                            </span>
+                                                            <button type="button" disabled={!canOrder || isAdding} onClick={addToCart} className="h-9 rounded-full bg-stone-950 px-5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-stone-300">{isAdding ? 'Adding…' : 'Add to cart'}</button>
+                                                        </div>
+                                                    ) : <WishlistButton variantId={selected.id} channel="wholesale" />}
                                                 </div>
                                             ) : (
                                                 <div className="mt-6 border-t border-stone-200 pt-5">
@@ -451,21 +452,22 @@ function VariantRow({ variant, pricingAuthorized }: { variant: Variant; pricingA
                 )}
                 <div className="flex flex-wrap items-center gap-3 text-sm text-stone-500">
                     <span>{variant.inStock ? (pricingAuthorized ? variant.stockQuantity + ' available' : 'In stock') : 'Out of stock'} · Min. {variant.minimumQuantity}</span>
-                    {!variant.inStock && <WishlistButton variantId={variant.id} channel="wholesale" />}
                 </div>
             </div>
             {pricingAuthorized && (
                 <div className="sm:text-right">
                     <p className="text-xl font-black">{'$' + variant.accountPrice + ' CAD'}</p>
                     {variant.compareAtPrice ? <p className="text-xl text-red-600 line-through">{'$' + variant.compareAtPrice}</p> : (variant.accountPrice !== variant.wholesalePrice && <p className="text-xl text-red-600 line-through">{'$' + variant.wholesalePrice}</p>)}
-                    <div className="mt-3 flex flex-wrap items-end gap-3 sm:justify-end">
-                        <span className="flex overflow-hidden rounded-full ring-1 ring-stone-300">
-                            <button type="button" onClick={() => updateQuantity(quantity - 1)} disabled={!canOrder || quantity <= variant.minimumQuantity} aria-label="Decrease quantity" className="h-9 w-9 bg-stone-100 font-bold disabled:cursor-not-allowed disabled:text-stone-300">−</button>
-                            <input type="number" min={variant.minimumQuantity} max={maximumQuantity} value={quantity} onChange={(event) => updateQuantity(Number(event.target.value) || variant.minimumQuantity)} disabled={!canOrder} aria-label="Quantity" className="h-9 w-16 appearance-none border-x border-stone-200 bg-white text-center text-sm font-bold outline-none [appearance:textfield] disabled:bg-stone-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
-                            <button type="button" onClick={() => updateQuantity(quantity + 1)} disabled={!canOrder || quantity >= maximumQuantity} aria-label="Increase quantity" className="h-9 w-9 bg-stone-100 font-bold disabled:cursor-not-allowed disabled:text-stone-300">+</button>
-                        </span>
-                        <button type="button" disabled={!canOrder || isAdding} onClick={addToCart} className="h-9 rounded-full bg-stone-950 px-5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-stone-300">{isAdding ? 'Adding…' : 'Add to cart'}</button>
-                    </div>
+                    {variant.inStock ? (
+                        <div className="mt-3 flex flex-wrap items-end gap-3 sm:justify-end">
+                            <span className="flex overflow-hidden rounded-full ring-1 ring-stone-300">
+                                <button type="button" onClick={() => updateQuantity(quantity - 1)} disabled={!canOrder || quantity <= variant.minimumQuantity} aria-label="Decrease quantity" className="h-9 w-9 bg-stone-100 font-bold disabled:cursor-not-allowed disabled:text-stone-300">−</button>
+                                <input type="number" min={variant.minimumQuantity} max={maximumQuantity} value={quantity} onChange={(event) => updateQuantity(Number(event.target.value) || variant.minimumQuantity)} disabled={!canOrder} aria-label="Quantity" className="h-9 w-16 appearance-none border-x border-stone-200 bg-white text-center text-sm font-bold outline-none [appearance:textfield] disabled:bg-stone-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                                <button type="button" onClick={() => updateQuantity(quantity + 1)} disabled={!canOrder || quantity >= maximumQuantity} aria-label="Increase quantity" className="h-9 w-9 bg-stone-100 font-bold disabled:cursor-not-allowed disabled:text-stone-300">+</button>
+                            </span>
+                            <button type="button" disabled={!canOrder || isAdding} onClick={addToCart} className="h-9 rounded-full bg-stone-950 px-5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-stone-300">{isAdding ? 'Adding…' : 'Add to cart'}</button>
+                        </div>
+                    ) : <div className="mt-3 flex justify-end"><WishlistButton variantId={variant.id} channel="wholesale" /></div>}
                 </div>
             )}
         </div>

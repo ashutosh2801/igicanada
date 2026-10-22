@@ -156,14 +156,20 @@ export default function ProductShow({ product }: Props) {
                             </div>}
                         </div>}
 
-                        <div className="mt-8 flex gap-3">
-                            <input type="number" min="1" max={selected.stockQuantity} value={form.data.quantity} onChange={event => form.setData('quantity', Number(event.target.value))} className="w-20 rounded-full bg-white px-4 py-3 text-center font-bold ring-1 ring-leather-900/15 outline-none focus:ring-2 focus:ring-leather-700" />
-                            <button type="button" onClick={addToBag} disabled={!selected.inStock || !selected.price || form.processing} className="flex-1 rounded-full bg-leather-900 px-6 py-3 font-bold text-white transition hover:bg-leather-700 disabled:cursor-not-allowed disabled:opacity-50">{!selected.price ? 'Price coming soon' : (selected.inStock ? (form.processing ? 'Adding…' : 'Add to bag') : 'Sold out')}</button>
-                        </div>
+                        {selected.inStock ? (
+                            <div className="mt-8 flex gap-3">
+                                <input type="number" min="1" max={selected.stockQuantity} value={form.data.quantity} onChange={event => form.setData('quantity', Number(event.target.value))} className="w-20 rounded-full bg-white px-4 py-3 text-center font-bold ring-1 ring-leather-900/15 outline-none focus:ring-2 focus:ring-leather-700" />
+                                <button type="button" onClick={addToBag} disabled={!selected.price || form.processing} className="flex-1 rounded-full bg-leather-900 px-6 py-3 font-bold text-white transition hover:bg-leather-700 disabled:cursor-not-allowed disabled:opacity-50">{!selected.price ? 'Price coming soon' : (form.processing ? 'Adding…' : 'Add to bag')}</button>
+                            </div>
+                        ) : (
+                            <div className="mt-8 flex items-center justify-between gap-4 border-t border-leather-900/10 pt-5">
+                                <span className="text-sm font-bold text-stone-500">Currently unavailable</span>
+                                <WishlistButton variantId={selected.id} channel="retail" />
+                            </div>
+                        )}
                         {form.errors.quantity && <p className="mt-3 text-sm font-bold text-red-700">{form.errors.quantity}</p>}
                         <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-stone-500">
                             <span>{selected.inStock ? `${selected.stockQuantity} available` : 'Currently unavailable'} · Secure checkout</span>
-                            {!selected.inStock && <WishlistButton variantId={selected.id} channel="retail" />}
                         </div>
 
                         {product.description && <div className="prose prose-stone mt-10 border-t border-leather-900/10 pt-8 leading-7 text-stone-600" dangerouslySetInnerHTML={{ __html: product.description }} />}
