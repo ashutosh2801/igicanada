@@ -62,7 +62,7 @@ class MediaAsset extends Model
         // makes previews work when the admin is opened on a different host or
         // port than APP_URL (for example localhost:8001 during development).
         if ($this->disk === 'public') {
-            return '/storage/'.ltrim($this->path, '/');
+            return '/storage/'.$this->normalizedPublicPath();
         }
 
         return Storage::disk($this->disk)->url($this->path);
@@ -75,10 +75,19 @@ class MediaAsset extends Model
         }
 
         if ($this->disk === 'public') {
-            return Storage::disk('public')->exists($this->path);
+            return Storage::disk('public')->exists($this->normalizedPublicPath());
         }
 
         return true;
+    }
+
+    private function normalizedPublicPath(): string
+    {
+        $path = ltrim($this->path, '/');
+
+        return str_starts_with($path, 'storage/')
+            ? substr($path, strlen('storage/'))
+            : $path;
     }
 
     public function getPreviewUrlAttribute(): string

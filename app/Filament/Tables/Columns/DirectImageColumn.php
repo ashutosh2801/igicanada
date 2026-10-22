@@ -13,6 +13,15 @@ class DirectImageColumn extends ImageColumn
             return $directUrl;
         }
 
+        // Product and media models already return browser paths such as
+        // /storage/... or /upload/.... Do not pass them back through
+        // Filament's filesystem resolver, which can prepend /storage again
+        // and generate URLs like /storage//storage/....
+        if (is_string($state) && str_starts_with($state, '/')) {
+            return preg_replace('#^/storage//+#', '/storage/', $state)
+                ?: $state;
+        }
+
         return parent::getImageUrl($state);
     }
 }
