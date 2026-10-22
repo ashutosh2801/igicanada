@@ -81,8 +81,13 @@ export default function Show({ product, pricing, similarProducts }: Props) {
         || activeGroup?.variants.find(variant => variant.inStock)
         || activeGroup?.variants[0]
         || initialVariant;
+    const bulkOrderMode = product.variants.some(variant => variant.sizes.length > 1)
+        || (hasColors && groups.length > 1 && groups.some(group => group.variants.length > 1));
+    const bulkSizes = useMemo(() => Array.from(new Set(groups.flatMap(group => group.variants.flatMap(variant => variant.sizes.length > 0 ? variant.sizes : [sizeKeyOf(variant)])))), [groups]);
+    const [bulkQuantities, setBulkQuantities] = useState<Record<string, number>>({});
     const maximumQuantity = selected ? (selected.stockQuantity ?? selected.minimumQuantity) : 0;
     const canOrder = Boolean(selected && selected.inStock && maximumQuantity >= selected.minimumQuantity);
+    const bulkLineCount = Object.values(bulkQuantities).filter(quantity => quantity > 0).length;
 
     useEffect(() => {
         setQuantity(current => Math.max(selected?.minimumQuantity ?? 1, Math.min(current, maximumQuantity)));
@@ -107,6 +112,37 @@ export default function Show({ product, pricing, similarProducts }: Props) {
         router.post('/cart/items', { variant_id: selected.id, quantity }, {
             preserveScroll: true,
             onStart: () => setIsAdding(true),
+            onFinish: () => setIsAdding(false),
+        });
+    }
+
+    function updateBulkQuantity(variant: Variant, size: string, value: number) {
+        const quantity = value <= 0
+            ? 0
+            : Math.min(variant.stockQuantity ?? variant.minimumQuantity, Math.max(variant.minimumQuantity, value));
+
+        setBulkQuantities(current => ({ ...current, [`${variant.id}:${size}`]: quantity }));
+    }
+
+    function addBulkToCart() {
+        const items = Object.entries(bulkQuantities)
+            .filter(([, quantity]) => quantity > 0)
+            .map(([key, quantity]) => {
+                const separator = key.indexOf(':');
+
+                return {
+                    variant_id: Number(key.slice(0, separator)),
+                    selected_size: key.slice(separator + 1) === 'One size' ? null : key.slice(separator + 1),
+                    quantity,
+                };
+            });
+
+        if (items.length === 0) return;
+        flyToCart(galleryRef.current);
+        router.post('/cart/items/bulk', { items }, {
+            preserveScroll: true,
+            onStart: () => setIsAdding(true),
+            onSuccess: () => setBulkQuantities({}),
             onFinish: () => setIsAdding(false),
         });
     }
@@ -222,7 +258,7 @@ export default function Show({ product, pricing, similarProducts }: Props) {
                         {pricing.authorized && <p className="mt-8 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{pricing.tier || 'Standard wholesale'} pricing applied{pricing.discountPercentage !== '0.00' ? ' · ' + pricing.discountPercentage + '% tier discount' : ''}</p>}
 
                         <div className="mt-7 rounded-2xl bg-white ring-1 ring-stone-200">
-                            {!needsPicker ? (
+                            {!needsPicker && !bulkOrderMode ? (
                                 product.variants.map(variant => <VariantRow key={variant.id} variant={variant} pricingAuthorized={pricing.authorized} />)
                             ) : (
                                 <div className="p-5 sm:p-6">
@@ -239,7 +275,64 @@ export default function Show({ product, pricing, similarProducts }: Props) {
                                             </div>
                                         </div>
                                     )}
-                                    {selected && (
+                                    {bulkOrderMode && (
+                                        <div className="mt-6">
+                                            <div className="flex flex-wrap items-end justify-between gap-2">
+                                                <div>
+                                                    <p className="text-sm font-bold tracking-wide text-stone-500">Order by colour and size</p>
+                                                    <p className="mt-1 text-xs text-stone-500">Enter quantities for any colour/size combination. Leave unused options blank.</p>
+                                                </div>
+                                                <span className="text-xs font-bold text-stone-500">{bulkLineCount} option{bulkLineCount === 1 ? '' : 's'} selected</span>
+                                            </div>
+                                            <div className="mt-4 overflow-x-auto rounded-xl border border-stone-200">
+                                                <table className="min-w-full text-left text-sm">
+                                                    <thead className="bg-stone-50 text-xs font-bold tracking-wide text-stone-500 uppercase">
+                                                        <tr>
+                                                            <th className="whitespace-nowrap px-4 py-3">Colour</th>
+                                                            {bulkSizes.map(size => <th key={size} className="whitespace-nowrap px-3 py-3 text-center">{size}</th>)}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-stone-200">
+                                                        {groups.map(group => (
+                                                            <tr key={group.name}>
+                                                                <th className="whitespace-nowrap px-4 py-3 font-bold text-stone-800">{group.name}</th>
+                                                                {bulkSizes.map(size => {
+                                                                    const variant = group.variants.find(item => item.sizes.includes(size) || (item.sizes.length === 0 && sizeKeyOf(item) === size));
+                                                                    const maximum = variant?.stockQuantity ?? 0;
+                                                                    const quantityKey = variant ? `${variant.id}:${size}` : null;
+
+                                                                    return (
+                                                                        <td key={size} className="px-2 py-2 text-center">
+                                                                            {variant ? (
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min={0}
+                                                                                    max={maximum}
+                                                                                    value={quantityKey ? (bulkQuantities[quantityKey] || '') : ''}
+                                                                                    onChange={event => updateBulkQuantity(variant, size, Number(event.target.value) || 0)}
+                                                                                    disabled={!pricing.authorized || !variant.inStock}
+                                                                                    aria-label={`${group.name}, size ${size}`}
+                                                                                    placeholder={variant.inStock ? '0' : '—'}
+                                                                                    className="h-9 w-16 rounded-lg border border-stone-300 bg-white text-center text-sm font-bold outline-none focus:border-red-600 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-300"
+                                                                                />
+                                                                            ) : <span className="text-stone-300">—</span>}
+                                                                        </td>
+                                                                    );
+                                                                })}
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            {pricing.authorized ? (
+                                                <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-stone-200 pt-5">
+                                                    <p className="text-sm text-stone-500">Each selected size will be added as a separate cart line.</p>
+                                                    <button type="button" disabled={bulkLineCount === 0 || isAdding} onClick={addBulkToCart} className="h-10 rounded-full bg-stone-950 px-5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-stone-300">{isAdding ? 'Adding…' : 'Add selected sizes to cart'}</button>
+                                                </div>
+                                            ) : <p className="mt-5 border-t border-stone-200 pt-5 text-sm font-semibold text-red-600">Sign in to view wholesale pricing and order these sizes.</p>}
+                                        </div>
+                                    )}
+                                    {!bulkOrderMode && selected && (
                                         <>
                                             <div className="mt-6">
                                                 <div className="flex flex-wrap items-center justify-between gap-2">

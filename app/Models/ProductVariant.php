@@ -70,11 +70,11 @@ class ProductVariant extends Model
         return $sizes->all();
     }
 
-    public function optionLabel(): string
+    public function optionLabel(?string $selectedSize = null): string
     {
         return collect([
             $this->color,
-            collect($this->sizeLabels())->join(', '),
+            $selectedSize ?: collect($this->sizeLabels())->join(', '),
         ])->filter()->join(' · ') ?: 'Standard';
     }
 

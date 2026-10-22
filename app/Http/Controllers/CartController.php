@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\ProductVariant;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -31,7 +32,8 @@ class CartController extends Controller
                 'product' => $item->variant->product->name,
                 'slug' => $item->variant->product->slug,
                 'sku' => $item->variant->product->sku,
-                'option' => $item->variant->optionLabel(),
+                'option' => $item->variant->optionLabel($item->selected_size),
+                'selectedSize' => $item->selected_size,
                 'image' => $item->variant->product->primaryImageUrl(),
                 'quantity' => $item->quantity,
                 'minimumQuantity' => $item->variant->wholesale_minimum_quantity,
@@ -62,6 +64,47 @@ class CartController extends Controller
         $item->save();
 
         return back()->with('status', 'Product added to cart.');
+    }
+
+    public function storeMany(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.variant_id' => ['required', 'integer', 'exists:product_variants,id'],
+            'items.*.selected_size' => ['nullable', 'string', 'max:255'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
+
+        DB::transaction(function () use ($cart, $data): void {
+            foreach ($data['items'] as $itemData) {
+                $variant = ProductVariant::query()
+                    ->where('is_active', true)
+                    ->findOrFail($itemData['variant_id']);
+                $selectedSize = filled($itemData['selected_size'] ?? null)
+                    ? trim((string) $itemData['selected_size'])
+                    : null;
+
+                if ($selectedSize !== null && ! in_array($selectedSize, $variant->sizeLabels(), true)) {
+                    throw ValidationException::withMessages([
+                        'items' => "Size {$selectedSize} is not available for {$variant->optionLabel()}.",
+                    ]);
+                }
+
+                $item = $cart->items()->firstOrNew([
+                    'product_variant_id' => $variant->id,
+                    'selected_size' => $selectedSize,
+                ]);
+                $quantity = ($item->exists ? $item->quantity : 0) + $itemData['quantity'];
+
+                $this->validateQuantity($variant, $quantity);
+                $item->quantity = $quantity;
+                $item->save();
+            }
+        });
+
+        return back()->with('status', count($data['items']).' product options added to cart.');
     }
 
     public function update(Request $request, CartItem $item): RedirectResponse

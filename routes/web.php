@@ -178,6 +178,7 @@ Route::middleware(['auth:web', 'approved.wholesale'])->group(function (): void {
     Route::put('/account/addresses/{address}', [AddressController::class, 'update'])->name('account.addresses.update');
     Route::delete('/account/addresses/{address}', [AddressController::class, 'destroy'])->name('account.addresses.destroy');
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+    Route::post('/cart/items/bulk', [CartController::class, 'storeMany'])->name('cart.bulk-store');
     Route::post('/cart/items', [CartController::class, 'store'])->name('cart.store');
     Route::put('/cart/items/{item}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/items/{item}', [CartController::class, 'destroy'])->name('cart.destroy');
