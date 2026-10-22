@@ -330,6 +330,12 @@ export default function Show({ product, pricing, similarProducts }: Props) {
                                                     <button type="button" disabled={bulkLineCount === 0 || isAdding} onClick={addBulkToCart} className="h-10 rounded-full bg-stone-950 px-5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-stone-300">{isAdding ? 'Adding…' : 'Add selected sizes to cart'}</button>
                                                 </div>
                                             ) : <p className="mt-5 border-t border-stone-200 pt-5 text-sm font-semibold text-red-600">Sign in to view wholesale pricing and order these sizes.</p>}
+                                            {product.variants.every(variant => !variant.inStock) && (
+                                                <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-stone-200 pt-5 text-sm text-stone-500">
+                                                    <span>All sizes are currently unavailable.</span>
+                                                    <WishlistButton variantId={product.variants[0].id} channel="wholesale" />
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                     {!bulkOrderMode && selected && (

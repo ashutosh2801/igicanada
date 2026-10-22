@@ -6,6 +6,8 @@ use App\Models\ProductVariant;
 use App\Models\WishlistRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\WishlistRequestReceived;
 
 class WishlistRequestController extends Controller
 {
@@ -14,19 +16,25 @@ class WishlistRequestController extends Controller
         $data = $request->validate([
             'variant_id' => ['required', 'integer', 'exists:product_variants,id'],
             'sales_channel' => ['required', 'in:retail,wholesale'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'name' => ['nullable', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
         ]);
         $variant = ProductVariant::query()->findOrFail($data['variant_id']);
         abort_unless($variant->is_active && $variant->stock_quantity <= 0, 422);
-        WishlistRequest::create([
+        $wishlistRequest = WishlistRequest::create([
             'product_id' => $variant->product_id,
             'product_variant_id' => $variant->id,
             'sales_channel' => $data['sales_channel'],
-            'email' => $data['email'] ?? null,
-            'name' => $data['name'] ?? null,
+            'email' => $data['email'],
+            'name' => $data['name'],
             'ip_hash' => hash('sha256', (string) $request->ip()),
         ]);
-        return back()->with('status', 'Added to your wishlist. We will let you know when it is available.');
+
+        $adminEmail = config('commerce.order_notification_email');
+        if (filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+            Notification::route('mail', $adminEmail)->notify(new WishlistRequestReceived($wishlistRequest));
+        }
+
+        return back()->with('status', 'Your notification request was sent to our team.');
     }
 }

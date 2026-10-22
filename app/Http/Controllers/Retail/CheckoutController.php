@@ -224,7 +224,8 @@ $shippingRate = $shipping->quote($subtotal, $data['country'], $data['country_cod
                     'unit_price' => $unitPrice,
                     'line_total' => round($unitPrice * $item->quantity, 2),
                 ]);
-                $variant->decrement('stock_quantity', $item->quantity);
+                $variant->stock_quantity = max(0, (int) $variant->stock_quantity - (int) $item->quantity);
+                $variant->save();
             }
 
             $cart->items()->delete();

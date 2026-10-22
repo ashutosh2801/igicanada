@@ -151,7 +151,11 @@ class ProductsTable
                         $qty = max(0, (int) $state);
                         $record->variants()
                             ->where('is_active', true)
-                            ->update(['stock_quantity' => $qty]);
+                            ->get()
+                            ->each(function (ProductVariant $variant) use ($qty): void {
+                                $variant->stock_quantity = $qty;
+                                $variant->save();
+                            });
                     }),
                 TextColumn::make('weight_kg')
                     ->label('Weight kg')
@@ -220,7 +224,7 @@ class ProductsTable
                     ->label('Stock status')
                     ->options([
                         'in_stock' => 'In stock',
-                        'low_stock' => 'Low stock (≤ 10)',
+                        'low_stock' => 'Low stock (at threshold)',
                         'out_of_stock' => 'Out of stock',
                     ])
                     ->query(function (Builder $query, array $data): Builder {
@@ -231,7 +235,7 @@ class ProductsTable
                                 ->orWhereDoesntHave('variants', fn (Builder $query): Builder => $query->where('stock_quantity', '>', 0))),
                             'low_stock' => $query->whereHas('variants', fn (Builder $query): Builder => $query
                                 ->where('stock_quantity', '>', 0)
-                                ->where('stock_quantity', '<=', 10)),
+                                ->whereColumn('stock_quantity', '<=', 'stock_threshold')),
                             default => $query,
                         };
                     }),
@@ -333,7 +337,11 @@ class ProductsTable
 
                             $product->variants()
                                 ->where('is_active', true)
-                                ->update(['stock_quantity' => max(0, (int) $quantity)]);
+                                ->get()
+                                ->each(function (ProductVariant $variant) use ($quantity): void {
+                                    $variant->stock_quantity = max(0, (int) $quantity);
+                                    $variant->save();
+                                });
                             $updated++;
                         }
 
@@ -589,6 +597,11 @@ class ProductsTable
                                         ->numeric()
                                         ->integer()
                                         ->minValue(0),
+                                    TextInput::make('stock_threshold')
+                                        ->label('Low-stock threshold')
+                                        ->numeric()
+                                        ->integer()
+                                        ->minValue(0),
                                 ])
                                 ->default(fn (HasTable $livewire): array => collect($livewire->getSelectedTableRecords())
                                     ->flatMap(fn (Product $product): array => $product->variants->map(fn ($variant): array => [
@@ -602,6 +615,7 @@ class ProductsTable
                                         'retail_compare_at_price' => $variant->retail_compare_at_price,
                                         'is_available_retail' => (bool) $variant->is_available_retail,
                                         'stock_quantity' => $variant->stock_quantity,
+                                        'stock_threshold' => $variant->stock_threshold,
                                     ])->all())
                                     ->all())
                                 ->addable(false)
@@ -643,6 +657,7 @@ class ProductsTable
                                 }
 
                                 $variant->stock_quantity = $row['stock_quantity'];
+                                $variant->stock_threshold = $row['stock_threshold'] ?? $variant->stock_threshold;
                                 $variant->save();
                                 $updated++;
                             }

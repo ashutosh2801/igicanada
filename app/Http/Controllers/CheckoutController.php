@@ -190,6 +190,8 @@ class CheckoutController extends Controller
                     'unit_price' => $unitPrice,
                     'line_total' => round($unitPrice * $item->quantity, 2),
                 ]);
+                $variant->stock_quantity = max(0, (int) $variant->stock_quantity - (int) $item->quantity);
+                $variant->save();
             }
 
             $cart->items()->delete();

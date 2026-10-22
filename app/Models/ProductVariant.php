@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Notifications\LowStockAlert;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Collection;
+use Throwable;
 
 class ProductVariant extends Model
 {
@@ -23,7 +26,37 @@ class ProductVariant extends Model
             'wholesale_compare_at_price' => 'decimal:2',
             'sizes' => 'array',
             'image_ids' => 'array',
+            'stock_quantity' => 'integer',
+            'stock_threshold' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function (ProductVariant $variant): void {
+            if (! $variant->wasChanged('stock_quantity')) {
+                return;
+            }
+
+            $previousStock = (int) $variant->getOriginal('stock_quantity');
+            $currentStock = (int) $variant->stock_quantity;
+            $threshold = max(0, (int) $variant->stock_threshold);
+
+            if ($previousStock <= $threshold || $currentStock > $threshold) {
+                return;
+            }
+
+            $adminEmail = config('commerce.order_notification_email');
+            if (! filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+                return;
+            }
+
+            try {
+                Notification::route('mail', $adminEmail)->notify(new LowStockAlert($variant));
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        });
     }
 
     /** @return Collection<int, MediaAsset> */

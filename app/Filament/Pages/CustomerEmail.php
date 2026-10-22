@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Support\AdminStorefront;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -20,6 +21,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use UnitEnum;
 
 class CustomerEmail extends Page
@@ -72,6 +74,29 @@ class CustomerEmail extends Page
                     ->preload()
                     ->required()
                     ->helperText('The selected active template will be personalized with each customer name and login details.'),
+                FileUpload::make('attachments')
+                    ->label('Attachments')
+                    ->multiple()
+                    ->reorderable()
+                    ->disk('local')
+                    ->directory('customer-email-attachments')
+                    ->visibility('private')
+                    ->maxFiles(5)
+                    ->maxSize(10240)
+                    ->acceptedFileTypes([
+                        'application/pdf',
+                        'application/zip',
+                        'application/msword',
+                        'application/vnd.ms-excel',
+                        'application/vnd.ms-powerpoint',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                        'image/*',
+                        'text/plain',
+                        'text/csv',
+                    ])
+                    ->helperText('Optional. Up to 5 files, 10 MB each. These files will be attached to every selected customer email.'),
             ])->columns(2)->columnSpanFull(),
         ])->statePath('data');
     }
@@ -104,23 +129,45 @@ class CustomerEmail extends Page
             ->whereNotNull('email')
             ->get();
 
-        $sent = 0;
-        foreach ($users as $user) {
-            $variables = [
-                'name' => (string) $user->name,
-                'username' => (string) ($user->legacy_username ?: $user->email),
-                'email' => (string) $user->email,
-                'phone' => (string) ($user->phone ?: ''),
-                'type' => $channel,
-                'login_link' => route($channel === 'retail' ? 'retail.account.login' : 'login'),
-            ];
+        $attachments = collect($data['attachments'] ?? [])
+            ->filter(fn (mixed $path): bool => is_string($path) && $path !== '')
+            ->values();
+        $attachmentDisk = Storage::disk('local');
 
-            Mail::html($template->render($variables), function ($message) use ($user, $template, $variables): void {
-                $message
-                    ->to($user->email, $user->name)
-                    ->subject($template->renderSubject($variables));
-            });
-            $sent++;
+        $sent = 0;
+        try {
+            foreach ($users as $user) {
+                $variables = [
+                    'name' => (string) $user->name,
+                    'username' => (string) ($user->legacy_username ?: $user->email),
+                    'email' => (string) $user->email,
+                    'phone' => (string) ($user->phone ?: ''),
+                    'type' => $channel,
+                    'login_link' => route($channel === 'retail' ? 'retail.account.login' : 'login'),
+                ];
+
+                Mail::html($template->render($variables), function ($message) use ($user, $template, $variables, $attachments, $attachmentDisk): void {
+                    $message
+                        ->to($user->email, $user->name)
+                        ->subject($template->renderSubject($variables));
+
+                    foreach ($attachments as $path) {
+                        if (! $attachmentDisk->exists($path)) {
+                            continue;
+                        }
+
+                        $message->attach($attachmentDisk->path($path), [
+                            'as' => basename($path),
+                            'mime' => $attachmentDisk->mimeType($path) ?: 'application/octet-stream',
+                        ]);
+                    }
+                });
+                $sent++;
+            }
+        } finally {
+            foreach ($attachments as $path) {
+                $attachmentDisk->delete($path);
+            }
         }
 
         Notification::make()

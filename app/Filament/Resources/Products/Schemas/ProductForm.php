@@ -67,7 +67,10 @@ class ProductForm
                         TextInput::make('weight_kg')
                             ->numeric(),
                     ]),
-                ModalTableSelect::make('primary_media_asset_id')
+                Grid::make(2)
+                    ->columnSpanFull()
+                    ->schema([
+                        ModalTableSelect::make('primary_media_asset_id')
                     ->label('Primary image')
                     ->relationship('primaryMedia', 'title')
                     ->getOptionLabelFromRecordUsing(fn (MediaAsset $record): HtmlString => self::selectedImageThumbnail($record))
@@ -92,7 +95,7 @@ class ProductForm
                         ->slideOver(false))
                     ->placeholder('No primary image selected')
                     ->helperText('Open the Media Library popup to select one reusable image.'),
-                ModalTableSelect::make('mediaAssets')
+                        ModalTableSelect::make('mediaAssets')
                     ->label('Product images (select multiple)')
                     ->relationship('mediaAssets', 'title')
                     ->getOptionLabelFromRecordUsing(fn (MediaAsset $record): HtmlString => self::selectedImageThumbnail($record))
@@ -117,8 +120,8 @@ class ProductForm
                         ->closeModalByClickingAway(false)
                         ->slideOver(false))
                     ->placeholder('No gallery images selected')
-                    ->columnSpanFull()
                     ->helperText('Open the Media Library popup to view thumbnails and select multiple images.'),
+                    ]),
                 Select::make('visibility')
                     ->options([
                         'wholesale' => 'Wholesale only',
@@ -143,86 +146,108 @@ class ProductForm
                         Repeater::make('variants')
                             ->relationship()
                             ->schema([
-                                TextInput::make('color')
-                                    ->label('Color label')
-                                    ->placeholder('e.g. Vintage Brown')
-                                    ->maxLength(100),
-                                ColorPicker::make('color_code')
-                                    ->label('Color code')
-                                    ->hex(),
-                                ModalTableSelect::make('image_ids')
-                                    ->label('Colour images')
-                                    ->multiple()
-                                    ->placeholder('No colour images selected')
-                                    ->getOptionLabelsUsing(fn (array $values): array => MediaAsset::query()
-                                        ->whereIn('id', $values)
-                                        ->get()
-                                        ->mapWithKeys(fn (MediaAsset $asset): array => [(string) $asset->id => self::selectedImageThumbnail($asset)])
-                                        ->all())
-                                    ->tableConfiguration(MediaAssetsPickerTable::class)
-                                    ->tableSelect(fn (TableSelect $select): TableSelect => $select->relationshipName('mediaAssets'))
-                                    ->helperText('Optional. These images show on the product page when this colour is selected.')
-                                    ->selectAction(fn (Action $action): Action => $action
-                                        ->label('Open media library and select colour images')
-                                        ->icon('heroicon-o-photo')
-                                        ->button()
-                                        ->color('primary')
-                                        ->modalIcon('heroicon-o-photo')
-                                        ->modalIconColor('primary')
-                                        ->modalHeading('Select colour images')
-                                        ->modalDescription('Search the media library, tick the images for this colour, then click Use selected images.')
-                                        ->modalSubmitActionLabel('Use selected images')
-                                        ->modalWidth(Width::ScreenTwoExtraLarge)
-                                        ->extraModalWindowAttributes(['class' => 'media-library-popup'])
-                                        ->stickyModalHeader()
-                                        ->stickyModalFooter()
-                                        ->closeModalByClickingAway(false)
-                                        ->slideOver(false)),
-                                Select::make('sizes')
-                                    ->label('Available sizes')
-                                    ->multiple()
-                                    ->reorderable()
-                                    ->searchable()
-                                    ->preload()
-                                    ->native(false)
-                                    ->options(self::sizeOptions())
-                                    ->helperText('Select sizes for this colour, then drag the selected size chips into the order customers should see.'),
-                                TextInput::make('wholesale_price')->numeric()->prefix('$')
-                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
-                                    ->dehydratedWhenHidden(),
-                                TextInput::make('wholesale_compare_at_price')
-                                    ->label('Wholesale original price')
-                                    ->numeric()
-                                    ->prefix('$')
-                                    ->helperText('Optional. Shown struck-through as the original price next to the sale price.')
-                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
-                                    ->dehydratedWhenHidden(),
-                                TextInput::make('wholesale_minimum_quantity')->numeric()->default(1)->minValue(1)
-                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
-                                    ->dehydratedWhenHidden(),
-                                Toggle::make('is_available_wholesale')
-                                    ->label('Wholesale')
-                                    ->default(true)
-                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
-                                    ->dehydratedWhenHidden(),
-                                TextInput::make('retail_price')->numeric()->prefix('$')
-                                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
-                                    ->dehydratedWhenHidden(),
-                                TextInput::make('retail_compare_at_price')
-                                    ->label('Retail compare-at price')
-                                    ->numeric()
-                                    ->prefix('$')
-                                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
-                                    ->dehydratedWhenHidden(),
-                                Toggle::make('is_available_retail')
-                                    ->label('Retail')
-                                    ->default(true)
-                                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
-                                    ->dehydratedWhenHidden(),
-                                TextInput::make('stock_quantity')->numeric()->default(0),
-                                Toggle::make('is_active')->default(true),
+                                Grid::make(3)
+                                    ->schema([
+                                        Grid::make(1)
+                                            ->schema([
+                                                TextInput::make('color')
+                                                    ->label('Color label')
+                                                    ->placeholder('e.g. Vintage Brown')
+                                                    ->maxLength(100),
+                                                ColorPicker::make('color_code')
+                                                    ->label('Color code')
+                                                    ->hex(),
+                                                ModalTableSelect::make('image_ids')
+                                                    ->label('Colour images')
+                                                    ->multiple()
+                                                    ->placeholder('No colour images selected')
+                                                    ->getOptionLabelsUsing(fn (array $values): array => MediaAsset::query()
+                                                        ->whereIn('id', $values)
+                                                        ->get()
+                                                        ->mapWithKeys(fn (MediaAsset $asset): array => [(string) $asset->id => self::selectedImageThumbnail($asset)])
+                                                        ->all())
+                                                    ->tableConfiguration(MediaAssetsPickerTable::class)
+                                                    ->tableSelect(fn (TableSelect $select): TableSelect => $select->relationshipName('mediaAssets'))
+                                                    ->helperText('Optional. These images show on the product page when this colour is selected.')
+                                                    ->selectAction(fn (Action $action): Action => $action
+                                                        ->label('Open media library and select colour images')
+                                                        ->icon('heroicon-o-photo')
+                                                        ->button()
+                                                        ->color('primary')
+                                                        ->modalIcon('heroicon-o-photo')
+                                                        ->modalIconColor('primary')
+                                                        ->modalHeading('Select colour images')
+                                                        ->modalDescription('Search the media library, tick the images for this colour, then click Use selected images.')
+                                                        ->modalSubmitActionLabel('Use selected images')
+                                                        ->modalWidth(Width::ScreenTwoExtraLarge)
+                                                        ->extraModalWindowAttributes(['class' => 'media-library-popup'])
+                                                        ->stickyModalHeader()
+                                                        ->stickyModalFooter()
+                                                        ->closeModalByClickingAway(false)
+                                                        ->slideOver(false)),
+                                            ])
+                                            ->columnSpan(1),
+                                        Grid::make(1)
+                                            ->schema([
+                                                TextInput::make('retail_price')->numeric()->prefix('$')
+                                                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                                                    ->dehydratedWhenHidden(),
+                                                TextInput::make('retail_compare_at_price')
+                                                    ->label('Retail compare-at price')
+                                                    ->numeric()
+                                                    ->prefix('$')
+                                                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                                                    ->dehydratedWhenHidden(),
+                                                TextInput::make('stock_quantity')->numeric()->integer()->minValue(0)->default(0),
+                                                TextInput::make('stock_threshold')
+                                                    ->label('Low-stock threshold')
+                                                    ->numeric()
+                                                    ->integer()
+                                                    ->minValue(0)
+                                                    ->default(10)
+                                                    ->helperText('Notify the admin when stock falls to or below this number.'),
+                                                TextInput::make('wholesale_price')->numeric()->prefix('$')
+                                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                                    ->dehydratedWhenHidden(),
+                                                TextInput::make('wholesale_compare_at_price')
+                                                    ->label('Wholesale original price')
+                                                    ->numeric()
+                                                    ->prefix('$')
+                                                    ->helperText('Optional. Shown struck-through as the original price next to the sale price.')
+                                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                                    ->dehydratedWhenHidden(),
+                                                TextInput::make('wholesale_minimum_quantity')->numeric()->default(1)->minValue(1)
+                                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                                    ->dehydratedWhenHidden(),
+                                            ])
+                                            ->columnSpan(1),
+                                        Grid::make(1)
+                                            ->schema([
+                                                Select::make('sizes')
+                                                    ->label('Available sizes')
+                                                    ->multiple()
+                                                    ->reorderable()
+                                                    ->searchable()
+                                                    ->preload()
+                                                    ->native(false)
+                                                    ->options(self::sizeOptions())
+                                                    ->helperText('Select sizes for this colour, then drag the selected size chips into the order customers should see.'),
+                                                Toggle::make('is_available_retail')
+                                                    ->label('Retail')
+                                                    ->default(true)
+                                                    ->visible(fn (): bool => AdminStorefront::showsRetailFields())
+                                                    ->dehydratedWhenHidden(),
+                                                Toggle::make('is_available_wholesale')
+                                                    ->label('Wholesale')
+                                                    ->default(true)
+                                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                                    ->dehydratedWhenHidden(),
+                                                Toggle::make('is_active')->default(true),
+                                            ])
+                                            ->columnSpan(1),
+                                    ])
+                                    ->columnSpanFull(),
                             ])
-                            ->columns(4)
                             ->columnSpanFull(),
                     ]),
             ]);
