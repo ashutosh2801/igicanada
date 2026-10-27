@@ -14,6 +14,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TableSelect;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -60,6 +61,7 @@ class ProductForm
                             ->searchable(),
                         TextInput::make('sku')
                             ->label('SKU')
+                            ->extraFieldWrapperAttributes(['class' => 'product-sku-sticky'])
                             ->default(fn (Get $get): ?string => filled($get('name'))
                                 ? 'SKU-'.strtoupper(Str::slug($get('name'), '-'))
                                 : null)
@@ -145,18 +147,42 @@ class ProductForm
                     ->schema([
                         Repeater::make('variants')
                             ->relationship()
+                            ->addable(false)
                             ->schema([
                                 Grid::make(3)
                                     ->schema([
                                         Grid::make(1)
                                             ->schema([
-                                                TextInput::make('color')
+                                                Select::make('color')
                                                     ->label('Color label')
-                                                    ->placeholder('e.g. Vintage Brown')
-                                                    ->maxLength(100),
-                                                ColorPicker::make('color_code')
-                                                    ->label('Color code')
-                                                    ->hex(),
+                                                    ->options([
+                                                        'Black' => 'Black',
+                                                        'Brown' => 'Brown',
+                                                        'Tan' => 'Tan',
+                                                    ])
+                                                    ->searchable()
+                                                    ->native(false)
+                                                    ->live()
+                                                    ->getOptionLabelUsing(fn (?string $state): ?string => $state)
+                                                    ->afterStateUpdated(function (Set $set, ?string $state): void {
+                                                        $colorCodes = [
+                                                            'black' => '#000000',
+                                                            'brown' => '#8B4513',
+                                                            'tan' => '#D2B48C',
+                                                        ];
+
+                                                        if (isset($colorCodes[strtolower((string) $state)])) {
+                                                            $set('color_code', $colorCodes[strtolower((string) $state)]);
+                                                        }
+                                                    })
+                                                    ->createOptionForm([
+                                                        TextInput::make('custom_color')
+                                                            ->label('Custom color')
+                                                            ->required()
+                                                            ->maxLength(100),
+                                                    ])
+                                                    ->createOptionUsing(fn (array $data): string => $data['custom_color'])
+                                                    ->createOptionModalHeading('Add custom color'),
                                                 ModalTableSelect::make('image_ids')
                                                     ->label('Colour images')
                                                     ->multiple()
@@ -189,6 +215,9 @@ class ProductForm
                                             ->columnSpan(1),
                                         Grid::make(1)
                                             ->schema([
+                                                ColorPicker::make('color_code')
+                                                    ->label('Color code')
+                                                    ->hex(),
                                                 TextInput::make('retail_price')->numeric()->prefix('$')->minValue(0.01)
                                                     ->visible(fn (): bool => AdminStorefront::showsRetailFields())
                                                     ->dehydratedWhenHidden(),
@@ -200,13 +229,9 @@ class ProductForm
                                                     ->visible(fn (): bool => AdminStorefront::showsRetailFields())
                                                     ->dehydratedWhenHidden(),
                                                 TextInput::make('stock_quantity')->numeric()->integer()->minValue(0)->default(0),
-                                                TextInput::make('stock_threshold')
-                                                    ->label('Low-stock threshold')
-                                                    ->numeric()
-                                                    ->integer()
-                                                    ->minValue(0)
-                                                    ->default(10)
-                                                    ->helperText('Notify the admin when stock falls to or below this number.'),
+                                                TextInput::make('wholesale_minimum_quantity')->numeric()->default(1)->minValue(1)
+                                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
+                                                    ->dehydratedWhenHidden(),
                                                 TextInput::make('wholesale_price')->numeric()->prefix('$')->minValue(0.01)
                                                     ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                                                     ->dehydratedWhenHidden(),
@@ -216,9 +241,6 @@ class ProductForm
                                                     ->prefix('$')
                                                     ->minValue(0.01)
                                                     ->helperText('Optional. Shown struck-through as the original price next to the sale price.')
-                                                    ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
-                                                    ->dehydratedWhenHidden(),
-                                                TextInput::make('wholesale_minimum_quantity')->numeric()->default(1)->minValue(1)
                                                     ->visible(fn (): bool => AdminStorefront::showsWholesaleFields())
                                                     ->dehydratedWhenHidden(),
                                             ])
@@ -233,7 +255,26 @@ class ProductForm
                                                     ->preload()
                                                     ->native(false)
                                                     ->options(self::sizeOptions())
-                                                    ->helperText('Select sizes for this colour, then drag the selected size chips into the order customers should see.'),
+                                                    ->getOptionLabelsUsing(fn (array $values): array => collect($values)
+                                                        ->mapWithKeys(fn (string $value): array => [$value => $value])
+                                                        ->all())
+                                                    ->createOptionForm([
+                                                        TextInput::make('custom_size')
+                                                            ->label('Custom size')
+                                                            ->placeholder('e.g. OS-46')
+                                                            ->required()
+                                                            ->maxLength(30),
+                                                    ])
+                                                    ->createOptionUsing(fn (array $data): string => strtoupper(trim($data['custom_size'])))
+                                                    ->createOptionModalHeading('Add custom size')
+                                                    ->helperText('Select sizes for this colour, then drag the selected size chips into the order customers should see. Add custom sizes such as OS-46, OS-48, or OS-50.'),
+                                                TextInput::make('stock_threshold')
+                                                    ->label('Low-stock threshold')
+                                                    ->numeric()
+                                                    ->integer()
+                                                    ->minValue(0)
+                                                    ->default(10)
+                                                    ->helperText('Notify the admin when stock falls to or below this number.'),
                                                 Toggle::make('is_available_retail')
                                                     ->label('Retail')
                                                     ->default(true)
@@ -250,6 +291,51 @@ class ProductForm
                                     ])
                                     ->columnSpanFull(),
                             ])
+                            ->columnSpanFull(),
+                        Actions::make([
+                            Action::make('addVariant')
+                                ->label('Add to variants')
+                                ->button()
+                                ->color('gray')
+                                ->action(function (Get $get, Set $set): void {
+                                    $variants = $get('variants');
+
+                                    if (! is_array($variants)) {
+                                        $variants = [];
+                                    }
+
+                                    $variants[(string) Str::uuid()] = [
+                                        'image_ids' => [],
+                                        'sizes' => [],
+                                        'stock_quantity' => 0,
+                                        'stock_threshold' => 10,
+                                        'wholesale_minimum_quantity' => 1,
+                                        'is_available_retail' => true,
+                                        'is_available_wholesale' => true,
+                                        'is_active' => true,
+                                    ];
+
+                                    $set('variants', $variants);
+                                }),
+                            Action::make('cloneVariant')
+                                ->label('Clone variant')
+                                ->icon('heroicon-o-square-2-stack')
+                                ->button()
+                                ->color('gray')
+                                ->disabled(fn (Get $get): bool => blank($get('variants')))
+                                ->action(function (Get $get, Set $set): void {
+                                    $variants = $get('variants');
+
+                                    if (! is_array($variants) || $variants === []) {
+                                        return;
+                                    }
+
+                                    $lastKey = array_key_last($variants);
+                                    $variants[(string) Str::uuid()] = $variants[$lastKey];
+
+                                    $set('variants', $variants);
+                                }),
+                        ])
                             ->columnSpanFull(),
                     ]),
             ]);

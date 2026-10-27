@@ -137,6 +137,11 @@ class AdminPanelProvider extends PanelProvider
                 [CreateProduct::class, EditProduct::class],
             )
             ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
+                fn () => view('filament.styles.product-sku-sticky'),
+                EditProduct::class,
+            )
+            ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn () => view('filament.admin-storefront-switcher'),
             )
