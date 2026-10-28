@@ -11,6 +11,7 @@ use App\Filament\Resources\ContactEnquiries\ContactEnquiryResource;
 use App\Filament\Resources\ContentPages\ContentPageResource;
 use App\Filament\Resources\EmailTemplates\EmailTemplateResource;
 use App\Filament\Resources\HomepageSettings\HomepageSettingResource;
+use App\Filament\Resources\Inventory\InventoryResource;
 use App\Filament\Resources\MediaAssets\MediaAssetResource;
 use App\Filament\Resources\MediaFolders\MediaFolderResource;
 use App\Filament\Resources\NavigationItems\NavigationItemResource;
@@ -85,6 +86,7 @@ class AdminPanelProvider extends PanelProvider
                     ->group($directGroup(Dashboard::getNavigationItems()))
                     ->group(NavigationGroup::make('Catalog')->icon(Heroicon::OutlinedRectangleStack)->collapsible()->items($groupItems([
                         ...ProductResource::getNavigationItems(),
+                        ...InventoryResource::getNavigationItems(),
                         ...WholesaleCatalog::getNavigationItems(),
                         ...OrderResource::getNavigationItems(),
                         ...StandardShippingRateResource::getNavigationItems(),

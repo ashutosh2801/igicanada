@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Products\Tables;
 
+use App\Filament\Resources\Inventory\InventoryResource;
 use App\Filament\Resources\Products\Actions\ProductPublishActions;
 use App\Filament\Tables\Columns\DirectImageColumn;
 use App\Filament\Tables\Columns\StockColumn;
@@ -319,6 +320,18 @@ class ProductsTable
                             ->success()
                             ->send();
                     }),
+                Action::make('variantStock')
+                    ->label('Variant stock')
+                    ->icon('heroicon-o-archive-box')
+                    ->color('warning')
+                    ->modalHeading(fn (Product $record): string => "Stock for {$record->name}")
+                    ->modalDescription('Set a separate stock quantity for each variant of this product.')
+                    ->modalSubmitActionLabel('Save stock')
+                    ->fillForm(fn (Product $record): array => [
+                        'variants' => InventoryResource::variantStockRows($record->variants()->with('product')->orderBy('id')->get()),
+                    ])
+                    ->schema([InventoryResource::variantStockRepeater()])
+                    ->action(fn (array $data) => InventoryResource::saveVariantStock($data['variants'] ?? [])),
                 ProductPublishActions::toggleRowAction(),
                 EditAction::make(),
             ])
