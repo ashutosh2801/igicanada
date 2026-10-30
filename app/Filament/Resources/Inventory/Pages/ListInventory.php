@@ -13,4 +13,9 @@ class ListInventory extends ListRecords
 
     /** @var array<int|string, mixed> */
     public array $pendingStockUpdates = [];
+
+    public function goToTablePage(int $page): void
+    {
+        $this->setPage(max(1, $page), $this->getTablePaginationPageName());
+    }
 }

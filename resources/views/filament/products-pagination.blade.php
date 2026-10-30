@@ -131,7 +131,7 @@
                         : null
 
                     if (livewireComponent) {
-                        livewireComponent.$wire.set(pageName, Number(page))
+                        livewireComponent.$wire.goToTablePage(Number(page))
                     }
                 })
 

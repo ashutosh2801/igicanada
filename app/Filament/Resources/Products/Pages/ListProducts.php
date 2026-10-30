@@ -14,6 +14,11 @@ class ListProducts extends ListRecords
     /** @var array<int|string, mixed> */
     public array $pendingStockUpdates = [];
 
+    public function goToTablePage(int $page): void
+    {
+        $this->setPage(max(1, $page), $this->getTablePaginationPageName());
+    }
+
     public function getTableColumnsSessionKey(): string
     {
         // Reset the old column preferences once so the curated defaults apply to existing admins.
