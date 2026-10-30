@@ -67,6 +67,7 @@ class ProductsTable
                     ->where('is_active', true)], 'stock_quantity');
             })
             ->defaultSort('created_at', 'desc')
+            ->extremePaginationLinks()
             ->columns([
                 TextColumn::make('sku')
                     ->label('SKU')
@@ -362,6 +363,7 @@ class ProductsTable
                         }
 
                         $livewire->pendingStockUpdates = [];
+                        $livewire->dispatch('stock-updates-saved');
 
                         Notification::make()
                             ->title('Stock saved')

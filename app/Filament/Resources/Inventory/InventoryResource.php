@@ -66,6 +66,7 @@ class InventoryResource extends Resource
         return $table
             ->striped()
             ->defaultSort('stock_quantity', 'asc')
+            ->extremePaginationLinks()
             ->columns([
                 DirectImageColumn::make('product_image_url')
                     ->label('Image')
@@ -178,6 +179,7 @@ class InventoryResource extends Resource
                             });
 
                         $livewire->pendingStockUpdates = [];
+                        $livewire->dispatch('stock-updates-saved');
 
                         Notification::make()
                             ->title('Stock saved')

@@ -23,7 +23,7 @@
     <input
         type="number"
         x-model="value"
-        x-on:change="$wire.set('pendingStockUpdates.' + recordKey, value)"
+        x-on:change="window.dispatchEvent(new CustomEvent('admin-stock-changed')); $wire.set('pendingStockUpdates.' + recordKey, value)"
         :style="{
             border: '1px solid ' + (value !== serverValue && value !== '' ? 'var(--color-primary-500)' : '#9ca3af'),
             backgroundColor: '#ffffff',

@@ -12,12 +12,14 @@ use App\Filament\Resources\ContentPages\ContentPageResource;
 use App\Filament\Resources\EmailTemplates\EmailTemplateResource;
 use App\Filament\Resources\HomepageSettings\HomepageSettingResource;
 use App\Filament\Resources\Inventory\InventoryResource;
+use App\Filament\Resources\Inventory\Pages\ListInventory;
 use App\Filament\Resources\MediaAssets\MediaAssetResource;
 use App\Filament\Resources\MediaFolders\MediaFolderResource;
 use App\Filament\Resources\NavigationItems\NavigationItemResource;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
+use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Resources\Products\ProductResource;
 use App\Filament\Resources\StandardShippingRates\Pages\ListStandardShippingRates;
 use App\Filament\Resources\StandardShippingRates\StandardShippingRateResource;
@@ -146,6 +148,20 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn () => view('filament.admin-storefront-switcher'),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn () => view('filament.admin-unsaved-stock-guard'),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn () => view('filament.products-pagination'),
+                ListProducts::class,
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn () => view('filament.products-pagination'),
+                ListInventory::class,
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
