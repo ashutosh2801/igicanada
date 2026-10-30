@@ -85,7 +85,7 @@
                 const lastPage = Number(lastPageMatch?.[1] ?? Math.max(...pageItems.map(({ match }) => Number(match[1]))))
                 const currentPage = pageItems.find(({ current }) => current)?.match?.[1] ?? '1'
                 const pageAction = pageItems.find(({ item }) => item?.getAttribute('wire:click'))?.item?.getAttribute('wire:click') ?? ''
-                const pageName = (lastPageAction || pageAction).match(/gotoPage\(\d+,\s*'([^']+)'/)?.[1]
+                const pageName = (lastPageAction || pageAction).match(/gotoPage\(\d+,\s*'([^']+)'/)?.[1] ?? 'page'
 
                 if (!Number.isFinite(lastPage) || lastPage < 2) {
                     return
@@ -130,7 +130,7 @@
                         ? window.Livewire?.find(component.getAttribute('wire:id'))
                         : null
 
-                    if (livewireComponent && pageName) {
+                    if (livewireComponent) {
                         livewireComponent.$wire.set(pageName, Number(page))
                     }
                 })
