@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Products\Tables;
 use App\Filament\Resources\Inventory\InventoryResource;
 use App\Filament\Resources\Products\Actions\ProductPublishActions;
 use App\Filament\Tables\Columns\DirectImageColumn;
-use App\Filament\Tables\Columns\StockColumn;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\RetailProductActivationService;
@@ -62,9 +61,7 @@ class ProductsTable
                 }
 
                 return $query
-                    ->with(['images' => fn ($query) => $query->with('mediaAsset')])
-                    ->withSum(['variants as available_stock_quantity' => fn (Builder $query): Builder => $query
-                    ->where('is_active', true)], 'stock_quantity');
+                    ->with(['images' => fn ($query) => $query->with('mediaAsset')]);
             })
             ->defaultSort('created_at', 'desc')
             ->extremePaginationLinks()
@@ -147,21 +144,6 @@ class ProductsTable
                     ->visible(fn (): bool => AdminStorefront::showsRetailFields())
                     ->toggleable()
                     ->toggledHiddenByDefault(),
-                StockColumn::make('available_stock_quantity')
-                    ->label('Stock')
-                    ->width('6rem')
-                    ->rules(['integer', 'min:0'])
-                    ->toggleable()
-                    ->updateStateUsing(function (Product $record, mixed $state): void {
-                        $qty = max(0, (int) $state);
-                        $record->variants()
-                            ->where('is_active', true)
-                            ->get()
-                            ->each(function (ProductVariant $variant) use ($qty): void {
-                                $variant->stock_quantity = $qty;
-                                $variant->save();
-                            });
-                    }),
                 TextColumn::make('weight_kg')
                     ->label('Weight kg')
                     ->numeric()
@@ -337,40 +319,6 @@ class ProductsTable
                 EditAction::make(),
             ])
             ->toolbarActions([
-                Action::make('saveStockUpdates')
-                    ->label('Save stock')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->disabled(fn (HasTable $livewire): bool => blank($livewire->pendingStockUpdates))
-                    ->action(function (HasTable $livewire): void {
-                        $updated = 0;
-
-                        foreach ($livewire->pendingStockUpdates as $productId => $quantity) {
-                            $product = Product::query()->find((int) $productId);
-
-                            if (! $product) {
-                                continue;
-                            }
-
-                            $product->variants()
-                                ->where('is_active', true)
-                                ->get()
-                                ->each(function (ProductVariant $variant) use ($quantity): void {
-                                    $variant->stock_quantity = max(0, (int) $quantity);
-                                    $variant->save();
-                                });
-                            $updated++;
-                        }
-
-                        $livewire->pendingStockUpdates = [];
-                        $livewire->dispatch('stock-updates-saved');
-
-                        Notification::make()
-                            ->title('Stock saved')
-                            ->body("Updated stock for {$updated} product(s).")
-                            ->success()
-                            ->send();
-                    }),
                 BulkActionGroup::make([
                     BulkAction::make('enableRetail')
                         ->label('Enable for retail')

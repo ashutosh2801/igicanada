@@ -147,45 +147,14 @@ class ProductsBulkUpdateTest extends TestCase
         $this->assertSame(8, $rows[1]->fresh()->stock_quantity);
     }
 
-    public function test_stock_column_collects_pending_edits_and_saves_with_single_button(): void
+    public function test_products_table_has_no_inline_stock_column_or_save_stock_button(): void
     {
         $this->actingAs($this->admin(), 'admin');
 
-        $a = $this->product('A', 'a');
-        $b = $this->product('B', 'b');
+        $table = Livewire::test(ListProducts::class)->instance()->getTable();
 
-        $listing = Livewire::test(ListProducts::class)
-            ->set('pendingStockUpdates', [$a->getKey() => 12, $b->getKey() => 5]);
-
-        $column = $listing->instance()->getTable()->getColumn('available_stock_quantity');
-        $column->record($a);
-        $html = $column->toEmbeddedHtml();
-        $this->assertStringContainsString('pendingStockUpdates', $html);
-        $this->assertStringContainsString('aria-label="Stock"', $html);
-        $this->assertStringContainsString((string) $a->available_stock_quantity, $html);
-        $this->assertStringNotContainsString('updateTableColumnState', $html);
-
-        $listing->callTableAction('saveStockUpdates')
-            ->assertHasNoActionErrors();
-
-        $this->assertSame(12, $a->variants->first()->fresh()->stock_quantity);
-        $this->assertSame(5, $b->variants->first()->fresh()->stock_quantity);
-        $this->assertSame([], $listing->instance()->pendingStockUpdates);
-    }
-
-    public function test_stock_column_save_button_is_disabled_without_pending_changes(): void
-    {
-        $this->actingAs($this->admin(), 'admin');
-
-        $listing = Livewire::test(ListProducts::class);
-
-        $action = $listing->instance()->getTable()->getAction('saveStockUpdates');
-        $this->assertTrue($action->isDisabled());
-
-        $listing->set('pendingStockUpdates', ['1' => 3]);
-
-        $action = $listing->instance()->getTable()->getAction('saveStockUpdates');
-        $this->assertFalse($action->isDisabled());
+        $this->assertNull($table->getColumn('available_stock_quantity'));
+        $this->assertNull($table->getAction('saveStockUpdates'));
     }
 
     public function test_bulk_edit_selected_updates_compare_at_min_quantity_and_availability(): void

@@ -181,7 +181,7 @@ class AdminContextualFieldsTest extends TestCase
             $this->assertFalse($defaultColumns[$column]['isToggled'], "Expected {$column} to be hidden by default.");
         }
 
-        foreach (['sku', 'primary_image_url', 'name', 'categories.name', 'variants_count', 'available_stock_quantity', 'weight_kg'] as $column) {
+        foreach (['sku', 'primary_image_url', 'name', 'categories.name', 'variants_count', 'weight_kg'] as $column) {
             $this->assertTrue($defaultColumns[$column]['isToggled'], "Expected {$column} to be visible by default.");
         }
 

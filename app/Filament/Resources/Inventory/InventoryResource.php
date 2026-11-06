@@ -7,6 +7,7 @@ use App\Filament\Resources\Products\ProductResource;
 use App\Filament\Tables\Columns\DirectImageColumn;
 use App\Filament\Tables\Columns\StockColumn;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Support\AdminStorefront;
 use BackedEnum;
@@ -20,7 +21,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\TextInputColumn;
 use Filament\Tables\Contracts\HasTable;
@@ -65,7 +65,16 @@ class InventoryResource extends Resource
     {
         return $table
             ->striped()
-            ->defaultSort('stock_quantity', 'asc')
+            // Keep rows in a fixed order (product name, then variant) so a row stays in
+            // place after its stock is saved instead of jumping to a new position.
+            ->defaultSort(fn (Builder $query): Builder => $query
+                ->orderBy(
+                    Product::query()
+                        ->select('name')
+                        ->whereColumn('products.id', 'product_variants.product_id')
+                        ->limit(1),
+                )
+                ->orderBy('product_variants.id'))
             ->extremePaginationLinks()
             ->columns([
                 DirectImageColumn::make('product_image_url')
@@ -79,6 +88,16 @@ class InventoryResource extends Resource
                     ])
                     ->checkFileExistence(false)
                     ->toggleable(),
+                TextColumn::make('sku')
+                    ->label('SKU')
+                    ->state(fn (ProductVariant $record): ?string => $record->sku ?: $record->product?->sku)
+                    ->placeholder('—')
+                    ->weight('semibold')
+                    ->copyable()
+                    ->searchable(query: fn (Builder $query, string $search): Builder => $query
+                        ->where(fn (Builder $query): Builder => $query
+                            ->where('product_variants.sku', 'like', "%{$search}%")
+                            ->orWhereHas('product', fn (Builder $query): Builder => $query->where('sku', 'like', "%{$search}%")))),
                 TextColumn::make('product.name')
                     ->label('Product')
                     ->width('14rem')
@@ -86,11 +105,6 @@ class InventoryResource extends Resource
                     ->limit(60)
                     ->sortable()
                     ->searchable(),
-                TextColumn::make('sku')
-                    ->label('SKU')
-                    ->placeholder('—')
-                    ->searchable()
-                    ->toggleable(),
                 TextColumn::make('variant_label')
                     ->label('Variant')
                     ->state(fn (ProductVariant $record): string => $record->optionLabel())
@@ -124,9 +138,27 @@ class InventoryResource extends Resource
                         'low_stock' => 'warning',
                         default => 'success',
                     }),
-                IconColumn::make('is_active')
-                    ->label('Active')
-                    ->boolean()
+                // "Published" mirrors the Publish / Unpublish switch on the Products page
+                // (products.is_active). A published product can still have individual
+                // variants switched off, which is shown separately.
+                TextColumn::make('publish_status')
+                    ->label('Published')
+                    ->badge()
+                    ->state(fn (ProductVariant $record): string => match (true) {
+                        ! $record->product?->is_active => 'unpublished',
+                        ! $record->is_active => 'variant_off',
+                        default => 'published',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'unpublished' => 'Unpublished',
+                        'variant_off' => 'Variant off',
+                        default => 'Published',
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'unpublished' => 'danger',
+                        'variant_off' => 'gray',
+                        default => 'success',
+                    })
                     ->toggleable(),
             ])
             ->filters([
@@ -150,8 +182,16 @@ class InventoryResource extends Resource
                     ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null)
                         ? $query->whereHas('product.categories', fn (Builder $query): Builder => $query->whereKey($data['value']))
                         : $query),
+                TernaryFilter::make('published')
+                    ->label('Published (Products page)')
+                    ->trueLabel('Published only')
+                    ->falseLabel('Unpublished only')
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->whereHas('product', fn (Builder $query): Builder => $query->where('is_active', true)),
+                        false: fn (Builder $query): Builder => $query->whereHas('product', fn (Builder $query): Builder => $query->where('is_active', false)),
+                    ),
                 TernaryFilter::make('is_active')
-                    ->label('Active variants')
+                    ->label('Variant enabled')
                     ->default(true),
             ])
             ->recordActions([

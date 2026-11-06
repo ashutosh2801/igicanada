@@ -58,108 +58,7 @@
 
         installTableLoading()
 
-        const enhancePagination = () => {
-            document.querySelectorAll('.fi-pagination').forEach((pagination) => {
-                if (pagination.dataset.productsGoToPage === 'true') {
-                    const existingControls = pagination.querySelector('.fi-pagination-products-right-controls')
-                    pagination.style.position = 'relative'
-                    existingControls?.style.setProperty('position', 'absolute')
-                    existingControls?.style.setProperty('right', '0')
-                    existingControls?.style.setProperty('top', '50%')
-                    existingControls?.style.setProperty('transform', 'translateY(-50%)')
-                    return
-                }
-
-                const pageItems = [...pagination.querySelectorAll('.fi-pagination-item button[aria-label]')]
-                    .map((item) => ({
-                        item: item.closest('.fi-pagination-item'),
-                        match: item.getAttribute('aria-label')?.match(/(\d+)$/),
-                        current: item.getAttribute('aria-current') === 'page',
-                    }))
-                    .filter(({ match }) => match)
-
-                const lastPageButton = [...pagination.querySelectorAll('.fi-pagination-item button[aria-label]')]
-                    .find((button) => /last page/i.test(button.getAttribute('aria-label') ?? ''))
-                const lastPageAction = lastPageButton?.closest('.fi-pagination-item')?.getAttribute('wire:click') ?? ''
-                const lastPageMatch = lastPageAction.match(/gotoPage\((\d+)/)
-                const lastPage = Number(lastPageMatch?.[1] ?? Math.max(...pageItems.map(({ match }) => Number(match[1]))))
-                const currentPage = pageItems.find(({ current }) => current)?.match?.[1] ?? '1'
-                const pageAction = pageItems.find(({ item }) => item?.getAttribute('wire:click'))?.item?.getAttribute('wire:click') ?? ''
-                const pageName = (lastPageAction || pageAction).match(/gotoPage\(\d+,\s*'([^']+)'/)?.[1] ?? 'page'
-
-                if (!Number.isFinite(lastPage) || lastPage < 2) {
-                    return
-                }
-
-                const wrapper = document.createElement('label')
-                wrapper.className = 'fi-pagination-products-go-to-page'
-                wrapper.innerHTML = '<span>Go to page</span>'
-
-                const select = document.createElement('select')
-                select.setAttribute('aria-label', 'Go to page')
-                select.className = 'fi-input'
-
-                for (let page = 1; page <= lastPage; page++) {
-                    const option = document.createElement('option')
-                    option.value = page
-                    option.textContent = page
-
-                    if (String(page) === currentPage) {
-                        option.selected = true
-                    }
-
-                    select.append(option)
-                }
-
-                select.addEventListener('change', () => {
-                    const page = select.value
-                    const existingPage = pageItems.find(({ match }) => match[1] === page)?.item
-
-                    if (existingPage) {
-                        existingPage.click()
-                        return
-                    }
-
-                    let component = pagination
-
-                    while (component && !component.getAttribute('wire:id')) {
-                        component = component.parentElement
-                    }
-
-                    const livewireComponent = component
-                        ? window.Livewire?.find(component.getAttribute('wire:id'))
-                        : null
-
-                    if (livewireComponent) {
-                        livewireComponent.$wire.goToTablePage(Number(page))
-                    }
-                })
-
-                wrapper.append(select)
-                const pageItemsList = pagination.querySelector('.fi-pagination-items')
-                const nextButton = pagination.querySelector('.fi-pagination-next-btn')
-                const rightControls = document.createElement('div')
-                rightControls.className = 'fi-pagination-products-right-controls'
-                pagination.style.position = 'relative'
-                rightControls.style.cssText = 'position:absolute;right:0;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:.75rem;z-index:2;'
-
-                if (nextButton) {
-                    nextButton.style.display = 'none'
-                }
-
-                if (pageItemsList) {
-                    pageItemsList.style.display = 'none'
-                }
-
-                rightControls.append(wrapper)
-                pagination.append(rightControls)
-                pagination.dataset.productsGoToPage = 'true'
-            })
-        }
-
-        enhancePagination()
         document.addEventListener('livewire:init', installTableLoading, { once: true })
-        new MutationObserver(enhancePagination).observe(document.body, { childList: true, subtree: true })
     })()
 </script>
 
@@ -196,12 +95,13 @@
         to { transform: rotate(360deg); }
     }
 
-    .fi-pagination-products-go-to-page {
-        position: absolute !important;
-        inset-inline-end: 0 !important;
-        top: 50% !important;
-        transform: translateY(-50%) !important;
-        display: inline-flex !important;
+    .fi-pagination-go-to-ctn {
+        grid-column-start: 3;
+        justify-self: end;
+    }
+
+    .fi-pagination-go-to {
+        display: inline-flex;
         align-items: center;
         gap: 0.5rem;
         white-space: nowrap;
@@ -209,27 +109,12 @@
         font-weight: 600;
     }
 
-    .fi-pagination-products-go-to-page select {
-        min-width: 4.5rem;
-        border-radius: 0.5rem;
-        padding: 0.45rem 0.65rem;
+    .fi-pagination-go-to .fi-input-wrp {
+        min-width: 5rem;
     }
 
-    .fi-pagination-products-right-controls {
-        position: absolute !important;
-        inset-inline-end: 0 !important;
-        top: 50% !important;
-        transform: translateY(-50%) !important;
-        display: inline-flex !important;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .fi-pagination {
-        position: relative;
-    }
-
-    .fi-pagination-products-right-controls .fi-pagination-items {
-        display: flex !important;
+    .fi-pagination-go-to-total {
+        font-weight: 500;
+        color: rgb(107 114 128);
     }
 </style>

@@ -10,14 +10,15 @@
 
     $isRtl = __('filament-panels::layout.direction') === 'rtl';
     $isSimple = ! $paginator instanceof \Illuminate\Pagination\LengthAwarePaginator;
-    $isProductsPage = $this instanceof \App\Filament\Resources\Products\Pages\ListProducts;
+    $usesGoToPage = $this instanceof \App\Filament\Resources\Products\Pages\ListProducts
+        || $this instanceof \App\Filament\Resources\Inventory\Pages\ListInventory;
 @endphp
 
 <nav
     aria-label="{{ __('filament::components/pagination.label') }}"
     {{ $attributes->class(['fi-pagination', 'fi-simple' => $isSimple]) }}
 >
-    @if (! $paginator->onFirstPage())
+    @if ((! $usesGoToPage) && (! $paginator->onFirstPage()))
         @php
             $wireClickAction = $paginator instanceof CursorPaginator
                 ? "setPage('{$paginator->previousCursor()->encode()}', '{$paginator->getCursorName()}')"
@@ -57,25 +58,30 @@
                 </x-filament::input.wrapper>
             </label>
 
-            @if ($isProductsPage && ! $isSimple && $paginator->hasPages())
-                <label class="fi-pagination-records-per-page-select">
-                    <x-filament::input.wrapper prefix="Go to page">
-                        <x-filament::input.select
-                            wire:change="gotoPage($event.target.value, '{{ $paginator->getPageName() }}')"
-                            :wire:key="$this->getId() . '.pagination.go-to-page'"
-                            aria-label="Go to page"
-                        >
-                            @for ($page = 1; $page <= $paginator->lastPage(); $page++)
-                                <option value="{{ $page }}" @selected($page === $paginator->currentPage())>{{ $page }}</option>
-                            @endfor
-                        </x-filament::input.select>
-                    </x-filament::input.wrapper>
-                </label>
-            @endif
         </div>
     @endif
 
-    @if ($paginator->hasMorePages())
+    @if ($usesGoToPage && (! $isSimple) && $paginator->hasPages())
+        <div class="fi-pagination-go-to-ctn">
+            <label class="fi-pagination-go-to">
+                <span>Go to page</span>
+                <x-filament::input.wrapper>
+                    <x-filament::input.select
+                        wire:change="gotoPage(Number($event.target.value), '{{ $paginator->getPageName() }}')"
+                        :wire:key="$this->getId() . '.pagination.go-to-page.' . $paginator->currentPage() . '.' . $paginator->lastPage()"
+                        aria-label="Go to page"
+                    >
+                        @for ($page = 1; $page <= $paginator->lastPage(); $page++)
+                            <option value="{{ $page }}" @selected($page === $paginator->currentPage())>{{ $page }}</option>
+                        @endfor
+                    </x-filament::input.select>
+                </x-filament::input.wrapper>
+                <span class="fi-pagination-go-to-total">of {{ \Illuminate\Support\Number::format($paginator->lastPage()) }}</span>
+            </label>
+        </div>
+    @endif
+
+    @if ((! $usesGoToPage) && $paginator->hasMorePages())
         @php
             $wireClickAction = $paginator instanceof CursorPaginator
                 ? "setPage('{$paginator->nextCursor()->encode()}', '{$paginator->getCursorName()}')"
@@ -86,7 +92,7 @@
         </x-filament::button>
     @endif
 
-    @if ((! $isSimple) && $paginator->hasPages())
+    @if ((! $usesGoToPage) && (! $isSimple) && $paginator->hasPages())
         <ol class="fi-pagination-items">
             @if (! $paginator->onFirstPage())
                 @if ($extremeLinks)
