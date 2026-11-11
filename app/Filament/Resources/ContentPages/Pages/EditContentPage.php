@@ -14,8 +14,9 @@ class EditContentPage extends EditRecord
     {
         return [
             Action::make('view')
+                ->label('View page')
                 ->visible(fn (): bool => $this->record->status === 'published')
-                ->url(fn (): string => route('pages.show', $this->record->slug))
+                ->url(fn (): string => ContentPageResource::publicUrl($this->record))
                 ->openUrlInNewTab(),
         ];
     }

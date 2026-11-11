@@ -8,6 +8,7 @@ use App\Filament\Resources\ContentPages\Pages\ListContentPages;
 use App\Models\ContentPage;
 use App\Support\AdminStorefront;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -15,6 +16,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -22,6 +24,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rules\Unique;
 use UnitEnum;
 
 class ContentPageResource extends Resource
@@ -50,7 +53,18 @@ class ContentPageResource extends Resource
                 ->dehydratedWhenHidden()
                 ->default(fn (): string => AdminStorefront::current() === 'retail' ? 'retail' : 'wholesale'),
             TextInput::make('title')->required()->maxLength(255),
-            TextInput::make('slug')->required()->unique(ignoreRecord: true)->maxLength(255),
+            // Slugs are unique per website (DB index: sales_channel + slug), so the
+            // same slug — e.g. "privacy-policy" — may exist on both storefronts.
+            TextInput::make('slug')->required()->maxLength(255)
+                ->unique(
+                    ignoreRecord: true,
+                    modifyRuleUsing: fn (Unique $rule, Get $get, ?ContentPage $record): Unique => $rule->where(
+                        'sales_channel',
+                        $get('sales_channel')
+                            ?: $record?->sales_channel
+                            ?: (AdminStorefront::current() === 'retail' ? 'retail' : 'wholesale'),
+                    ),
+                ),
             Select::make('status')->options([
                 'draft' => 'Draft',
                 'review_required' => 'Review required',
@@ -97,7 +111,26 @@ class ContentPageResource extends Resource
                     'published' => 'Published',
                 ]),
             ])
-            ->recordActions([EditAction::make()]);
+            ->recordActions([
+                Action::make('view')
+                    ->label('View page')
+                    ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                    ->visible(fn (ContentPage $record): bool => $record->status === 'published')
+                    ->url(fn (ContentPage $record): string => static::publicUrl($record))
+                    ->openUrlInNewTab(),
+                EditAction::make(),
+            ]);
+    }
+
+    /**
+     * Public storefront URL for a page. Wholesale pages live at /page/{slug}
+     * on IGI Canada; retail pages live at /policies/{slug} on the retail domain.
+     */
+    public static function publicUrl(ContentPage $page): string
+    {
+        return $page->sales_channel === 'retail'
+            ? route('retail.pages.show', $page->slug)
+            : route('pages.show', $page->slug);
     }
 
     public static function getPages(): array
