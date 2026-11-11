@@ -68,7 +68,7 @@
                 <x-filament::input.wrapper>
                     <x-filament::input.select
                         {{-- Alpine (not wire:change): Livewire's action parser mistakes Number(...) for the method name. --}}
-                        x-on:change="$wire.gotoPage(parseInt($event.target.value, 10), @js($paginator->getPageName()))"
+                        x-on:change="$wire.gotoPage(parseInt($event.target.value, 10), '{{ $paginator->getPageName() }}')"
                         :wire:key="$this->getId() . '.pagination.go-to-page.' . $paginator->currentPage() . '.' . $paginator->lastPage()"
                         aria-label="Go to page"
                     >

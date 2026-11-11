@@ -28,7 +28,10 @@ class AdminGoToPageTest extends TestCase
         }
 
         Livewire::test(ListProducts::class)
-            ->assertSeeHtml('x-on:change="$wire.gotoPage(parseInt($event.target.value, 10)')
+            // Full attribute: Blade directives like @js are not compiled inside
+            // component tags, so assert the exact JS the browser receives.
+            ->assertSeeHtml('x-on:change="$wire.gotoPage(parseInt($event.target.value, 10), \'page\')"')
+            ->assertDontSeeHtml('@js(')
             ->assertDontSeeHtml('wire:change="gotoPage(Number(')
             ->call('gotoPage', 2, 'page')
             ->assertHasNoErrors()
