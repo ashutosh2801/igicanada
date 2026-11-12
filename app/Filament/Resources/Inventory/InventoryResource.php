@@ -94,6 +94,11 @@ class InventoryResource extends Resource
                     ->placeholder('—')
                     ->weight('semibold')
                     ->copyable()
+                    // Sort by the SKU shown: the variant's own, else the product's.
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query
+                        ->orderByRaw(
+                            "COALESCE(NULLIF(product_variants.sku, ''), (SELECT products.sku FROM products WHERE products.id = product_variants.product_id)) ".($direction === 'desc' ? 'desc' : 'asc'),
+                        ))
                     ->searchable(query: fn (Builder $query, string $search): Builder => $query
                         ->where(fn (Builder $query): Builder => $query
                             ->where('product_variants.sku', 'like', "%{$search}%")

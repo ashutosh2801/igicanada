@@ -69,6 +69,7 @@ class ProductsTable
                 TextColumn::make('sku')
                     ->label('SKU')
                     ->searchable()
+                    ->sortable()
                     ->toggleable(),
                 DirectImageColumn::make('primary_image_url')
                     ->label('Image')
